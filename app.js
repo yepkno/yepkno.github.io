@@ -1242,6 +1242,101 @@ var _mapZoomBound = false;
 
 var MAP_ZMIN = 1, MAP_ZMAX = 4;
 
+// 分级显示（LOD）：主要地点（住宿）永远显示；次级地点（途经）在 1× 下若出现「压盖」，
+// 就记一个最小显示缩放（data-mz = 2），放大到该级别后才露出来 ——
+// 与其用避让把名字推到远处，不如先不占版面。
+//
+// ⚠️ 只在渲染完成时算一次。若每次缩放都重测，结果会随视野里剩下哪些元素而变化，
+// 标签就会来回闪（实测奔子栏在 3.4× 下又被判成压盖而消失）。
+//
+// 三类压盖都算。只查「标签 vs 标签」是不够的：实测「奔子栏」压住的是「飞来寺」的圆点，
+// 而次级标签常常正好压在路线上。
+function _lblRect(t) {
+  var r = t.getBoundingClientRect();
+  return { x0: r.left, y0: r.top, x1: r.right, y1: r.bottom };
+}
+
+function _lblHit(a, b) {
+  return !(a.x1 + 3 < b.x0 || a.x0 - 3 > b.x1 || a.y1 + 1 < b.y0 || a.y0 - 1 > b.y1);
+}
+
+// 路线采样成屏幕坐标点列，用来判断「标签是否压在线上」（只取主路线 .rte，不含逐日高亮层）
+function _routeSamplePoints() {
+  var svg = document.getElementById("routeMap");
+  var out = [];
+  [].forEach.call(svg.querySelectorAll("path.rte"), function (p) {
+    if (p.id === "routeHi" || !p.getAttribute("d")) return;
+    var m = p.getScreenCTM();
+    if (!m) return;
+    var len = 0;
+    try { len = p.getTotalLength(); } catch (e) { return; }
+    if (!len) return;
+    var cnt = Math.max(24, Math.min(150, Math.round(len / 10)));
+    for (var i = 0; i <= cnt; i++) {
+      var pt = p.getPointAtLength(len * i / cnt);
+      out.push([pt.x * m.a + pt.y * m.c + m.e, pt.x * m.b + pt.y * m.d + m.f]);
+    }
+  });
+  return out;
+}
+
+function refreshLabelVisibility() {
+  var svg = document.getElementById("routeMap");
+  if (!svg) return;
+  var all = [].slice.call(svg.querySelectorAll(".lbl"));
+  if (!all.length) return;
+  all.forEach(function (t) { t.style.display = ""; t.setAttribute("data-mz", "1"); });
+
+  var pts = [].slice.call(svg.querySelectorAll(".stop")).map(function (c) {
+    var r = c.getBoundingClientRect();
+    return { i: c.getAttribute("data-i"), x0: r.left, y0: r.top, x1: r.right, y1: r.bottom,
+             cx: r.left + r.width / 2, cy: r.top + r.height / 2 };
+  });
+  var route = _routeSamplePoints();
+  var shown = [];
+
+  // 主要地点先占位
+  all.filter(function (t) { return t.getAttribute("data-pri") === "1"; })
+     .forEach(function (t) { shown.push(_lblRect(t)); });
+
+  // 次级地点：任一压盖就隐藏
+  all.filter(function (t) { return t.getAttribute("data-pri") !== "1"; })
+     .forEach(function (t) {
+       var r = _lblRect(t), myI = t.getAttribute("data-i"), hit = false, i;
+       for (i = 0; i < shown.length && !hit; i++) hit = _lblHit(r, shown[i]);
+       for (i = 0; i < pts.length && !hit; i++) {
+         var p = pts[i];
+         if (p.i === myI) continue;                         // 自己的点不算压盖
+         hit = _lblHit(r, { x0: p.x0 - 2, y0: p.y0 - 2, x1: p.x1 + 2, y1: p.y1 + 2 });
+       }
+       if (!hit) {
+         var own = null;
+         for (i = 0; i < pts.length; i++) if (pts[i].i === myI) own = pts[i];
+         for (i = 0; i < route.length && !hit; i++) {
+           var rx = route[i][0], ry = route[i][1];
+           if (rx < r.x0 - 2 || rx > r.x1 + 2 || ry < r.y0 - 2 || ry > r.y1 + 2) continue;
+           // 自己点附近的路线必然穿过，不算压盖
+           if (own && Math.hypot(rx - own.cx, ry - own.cy) < 46) continue;
+           hit = true;
+         }
+       }
+       if (hit) t.setAttribute("data-mz", "2");   // 压盖 → 放大到 2× 之后才显示
+       else shown.push(r);
+     });
+  applyLabelLOD();
+}
+
+// 按当前缩放级别控制显隐。拖动不必调用（那时标签与路线是同步平移的，关系没变）。
+function applyLabelLOD() {
+  var svg = document.getElementById("routeMap");
+  if (!svg) return;
+  var z = _mapZoom || 1;
+  [].forEach.call(svg.querySelectorAll(".lbl"), function (t) {
+    var mz = +t.getAttribute("data-mz") || 1;
+    t.style.display = (z + 0.001 >= mz) ? "" : "none";
+  });
+}
+
 function applyMapZoom() {
   var svg = document.getElementById("routeMap");
   var g = document.getElementById("mapZoomG");
@@ -1295,6 +1390,7 @@ function zoomMap(s) {
   if (_mapZoom <= MAP_ZMIN + 0.001) { _mapPanX = 0; _mapPanY = 0; }
   clampPan();
   applyMapZoom();
+  applyLabelLOD();
 }
 
 function bindMapZoom() {
@@ -1593,6 +1689,7 @@ function drawTourRoute(d) {
       // —— 否则点和标签在同一个 <g> 里一起放大，偏移也会 ×s，
       //    放大后名字飘到几百像素外，看着就像"这个点没名字"。
       labels += '<text class="lbl" data-i="' + i + '" data-fs="' + fs.toFixed(2) +
+                '" data-pri="' + (isStay ? "1" : "0") +
                 '" data-px="' + a.x.toFixed(1) + '" data-py="' + a.y.toFixed(1) +
                 '" data-dx="' + (lx + fs * 0.55 - a.x).toFixed(2) +
                 '" data-dy="' + (ly + fs * 0.35 - a.y).toFixed(2) +
@@ -1623,6 +1720,7 @@ function drawTourRoute(d) {
   renderMapDays(d);
   bindMapZoom();
   applyMapZoom();
+  refreshLabelVisibility();
 
   // 右上角读数
   var rd = document.getElementById("mapRead");
