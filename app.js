@@ -1255,8 +1255,15 @@ function applyMapZoom() {
   svg.querySelectorAll("[data-fs]").forEach(function (t) {
     var f0 = +t.getAttribute("data-fs");
     t.style.fontSize = (f0 / s).toFixed(2) + "px";
-    if (t.classList.contains("lbl"))
-      t.style.strokeWidth = (f0 / s * 0.30).toFixed(2) + "px";
+    if (!t.classList.contains("lbl")) return;
+    t.style.strokeWidth = (f0 / s * 0.30).toFixed(2) + "px";
+    // 地名标签还要把"相对点的偏移"一起反缩放 ——
+    // 这样放大后名字始终贴在点旁边，而不是被拉开到几百像素之外。
+    var px = t.getAttribute("data-px");
+    if (px === null) return;
+    var dx = +t.getAttribute("data-dx"), dy = +t.getAttribute("data-dy");
+    t.setAttribute("x", (+px + dx / s + f0 * 0.55 / s).toFixed(1));
+    t.setAttribute("y", (+t.getAttribute("data-py") + dy / s + f0 * 0.35 / s).toFixed(1));
   });
   // 记号半径同理
   svg.querySelectorAll("[data-r]").forEach(function (c) {
@@ -1514,7 +1521,7 @@ function drawTourRoute(d) {
   // 统一"屏幕单位"：记号 / 文字都按 viewBox 宽度换算尺寸，
   // 这样视野大小不同的每篇地图，在屏幕上看到的记号大小是一致的
   var u = vw / 148.0;
-  var marks = "", labels = "", leaders = "", seen = {}, li = 0, placed = [];
+  var marks = "", labels = "", seen = {}, li = 0, placed = [];
   pts.forEach(function (a, i) {
     var isStay = !!a.p.stay;
     var rr = isStay ? u * 1.42 : u * 0.85;
@@ -1547,13 +1554,13 @@ function drawTourRoute(d) {
       for (var k = 0; k < txt.length; k++) {
         w += /[\u4e00-\u9fa5]/.test(txt.charAt(k)) ? fs * 1.03 : fs * 0.62;
       }
-      var box = fs * 1.7, gap = fs * 0.95;
-      // 候选位：先左右、再上下；既避开已放标签，也避开其它行程点
+      var box = fs * 1.7;
+      // 备注就贴在点旁边。候选位只在"点周围 ±1.6 个字高"的范围里挪，
+      // 不再为了躲开别的标签把名字推到老远 —— 名字一飘远，看着就像"这个点没名字"。
+      var gp = u * 1.95;
       var CAND = [
-        [gap, -fs * 0.5], [-w - gap, -fs * 0.5],
-        [gap, fs * 1.25], [-w - gap, fs * 1.25],
-        [-w / 2, fs * 2.0], [-w / 2, -fs * 1.6],
-        [gap, -fs * 2.2], [-w - gap, -fs * 2.2]
+        [gp, -fs * 0.42], [gp, fs * 1.15], [gp, -fs * 1.62],
+        [-w - gp, -fs * 0.42], [-w - gp, fs * 1.15], [-w - gp, -fs * 1.62]
       ];
       var lx = null, ly = null;
       for (var ci = 0; ci < CAND.length; ci++) {
@@ -1562,41 +1569,30 @@ function drawTourRoute(d) {
         if (cy < y0 + box || cy > y0 + vh - box) continue;
         var rct = { x0: cx, y0: cy - box / 2, x1: cx + w, y1: cy + box / 2 }, hit = false;
         for (var q = 0; q < placed.length; q++) {
-          var p = placed[q];
-          if (!(rct.x1 < p.x0 || rct.x0 > p.x1 || rct.y1 < p.y0 || rct.y0 > p.y1)) {
+          var pl = placed[q];
+          if (!(rct.x1 < pl.x0 || rct.x0 > pl.x1 || rct.y1 < pl.y0 || rct.y0 > pl.y1)) {
             hit = true; break;
-          }
-        }
-        if (!hit) {
-          for (var q2 = 0; q2 < pts.length; q2++) {
-            var sp = pts[q2];
-            if (sp === a) continue;
-            if (sp.x > rct.x0 - u * 1.7 && sp.x < rct.x1 + u * 1.7 &&
-                sp.y > rct.y0 - u * 1.7 && sp.y < rct.y1 + u * 1.7) { hit = true; break; }
           }
         }
         if (!hit) { placed.push(rct); lx = cx; ly = cy; break; }
       }
-      if (lx === null) {                                 // 全都挤 -> 退回默认位
-        lx = Math.max(x0 + fs, Math.min(a.x + gap, x0 + vw - w - fs));
-        ly = a.y + (li % 2 ? fs * 1.4 : -fs * 0.5);
+      if (lx === null) {          // 周围都占满了 -> 就用最紧贴的右侧，允许轻微压字
+        lx = Math.max(x0 + fs, Math.min(a.x + gp, x0 + vw - w - fs));
+        ly = a.y - fs * 0.42;
+        placed.push({ x0: lx, y0: ly - box / 2, x1: lx + w, y1: ly + box / 2 });
       }
       li++;
-      // 标签被避让算法推远时，画一条引线连回原点 ——
-      // 否则"这个名字属于哪个点"要靠猜，看着就像"有声点没名字"。
-      var ty = ly + fs * 0.35;
-      var far = Math.abs(lx - a.x) > fs * 2.2 || Math.abs(ly - a.y) > fs * 1.6;
-      if (far) {
-        // 引线止于文字边缘（左/右各取近端），不要穿进字里
-        var ex = (lx + w / 2 >= a.x) ? lx : (lx + w);
-        leaders += '<line class="lead" x1="' + a.x.toFixed(1) + '" y1="' + a.y.toFixed(1) +
-                   '" x2="' + ex.toFixed(1) + '" y2="' + ty.toFixed(1) + '"/>';
-      }
       // 地名用"描边文字"（halo）而不是方框 —— 点一密集，方框就把路线全盖住了
+      // data-px/py = 所属点的坐标，data-dx/dy = 相对点的偏移。
+      // 缩放时靠它们把偏移量反算回"屏幕恒定"，名字才会一直贴在点旁边
+      // —— 否则点和标签在同一个 <g> 里一起放大，偏移也会 ×s，
+      //    放大后名字飘到几百像素外，看着就像"这个点没名字"。
       labels += '<text class="lbl" data-i="' + i + '" data-fs="' + fs.toFixed(2) +
+                '" data-px="' + a.x.toFixed(1) + '" data-py="' + a.y.toFixed(1) +
+                '" data-dx="' + (lx - a.x).toFixed(2) + '" data-dy="' + (ly - a.y).toFixed(2) +
                 '" style="font-size:' + fs.toFixed(2) + 'px;stroke-width:' +
                 (fs * 0.30).toFixed(2) + 'px" x="' + (lx + fs * 0.55).toFixed(1) + '" y="' +
-                ty.toFixed(1) + '">' + escapeHtml(a.p.n) + '</text>';
+                (ly + fs * 0.35).toFixed(1) + '">' + escapeHtml(a.p.n) + '</text>';
     }
   });
 
@@ -1612,7 +1608,7 @@ function drawTourRoute(d) {
     (dback ? '<path class="rte back" id="routeBack" d="' + dback + '"/>' : '') +
     // 逐日高亮层：默认空 d（不显示），点右侧 DAY 时只填当天那几段
     '<path class="rte hi" id="routeHi" d=""/>' +
-    marks + leaders + labels + '</g>';
+    marks + labels + '</g>';
 
   // 逐日查看：先清掉上一天的选中态，再重建 DAY 按钮
   _tourPts = pts;
