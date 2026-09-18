@@ -561,8 +561,15 @@ function renderTagCloud() {
 }
 
 // ===== 文档数据（纯静态，来自 docs.js）=====
+// 受限栏目未解锁时，其文档对访客「完全不可见」：
+// 列表、搜索、标签云、跨分类标签视图一律不出现
+// （堵住「绕过密码墙看到受限栏目标题/摘要」的豁口）
+function isDocVisible(d) {
+  return !isWallCategory(d.category) || isDocWallUnlocked(d.category);
+}
+
 function allDocs() {
-  return window.DOCS || [];
+  return (window.DOCS || []).filter(isDocVisible);
 }
 
 function filteredDocs() {
