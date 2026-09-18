@@ -744,8 +744,9 @@ function renderTourWall(docs) {
   var W = home.clientWidth, H = home.clientHeight;
   if (!W || !H) return;      // 容器还没显示（尺寸为 0）时不要布局，否则卡片会挤到角落
   // 卡片尺寸：参考 demo 的 w-80（320px）等比缩到视口
-  var cw = Math.min(326, Math.max(184, Math.round(W * 0.222)));
-  var ch = Math.round(cw * 1.31);
+  var cw = Math.min(334, Math.max(188, Math.round(W * 0.225)));
+  // 卡高 = 照片(cw，正方形) + 卡下信息条(50) —— 与 CSS 里 .ph 的 bottom:50px 对齐
+  var ch = cw + 50;
 
   // 散落位置 —— 对齐参考 demo 的布局语言（"absolute top-x left-y% rotate-z"）：
   // 卡片刻意互相重叠、角度各异，像随手摊在桌上的一叠照片，而不是整齐排开。
@@ -787,12 +788,18 @@ function renderTourWall(docs) {
     twApply(el);
     el.innerHTML =
       '<div class="fc">' +
-        '<img src="' + getDocCover(d) + '" alt="" draggable="false">' +
-        '<span class="sc"></span>' +
-        '<span class="glare"></span>' +
-        '<span class="no">' + String(i + 1).padStart(2, "0") + '</span>' +
-        '<span class="rg">' + escapeHtml(d.region || "") + '</span>' +
-        '<span class="nm">' + escapeHtml(d.title) + '</span>' +
+        '<div class="ph">' +
+          '<img src="' + getDocCover(d) + '" alt="" draggable="false">' +
+          '<span class="glare"></span>' +
+        '</div>' +
+        '<div class="cap">' +
+          '<div class="r1">' +
+            '<span class="no">' + String(i + 1).padStart(2, "0") + '</span>' +
+            '<i class="sep"></i>' +
+            '<span class="rg">' + escapeHtml(d.region || "") + '</span>' +
+          '</div>' +
+          '<div class="nm">' + escapeHtml(d.title) + '</div>' +
+        '</div>' +
       '</div>';
     home.appendChild(el);
     tourCards.push(el);

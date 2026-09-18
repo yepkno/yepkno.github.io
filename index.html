@@ -110,18 +110,28 @@ img{display:block}
   cursor:pointer;color:var(--muted);background:rgba(255,255,255,.05);border:1px solid var(--border);
   transition:.22s;clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%)}
 #tourStage .texit:hover{color:#fff;border-color:var(--accent);background:rgba(255,70,31,.18)}
-#tourStage .thint{position:absolute;left:0;right:0;bottom:18px;text-align:center;font-size:11.5px;
+#tourStage .thint{position:absolute;left:0;right:0;bottom:24px;text-align:center;font-size:11.5px;
   color:var(--faint);letter-spacing:.06em;z-index:300;pointer-events:none}
-#tourStage .tcor{position:absolute;width:20px;height:20px;border-color:var(--accent);opacity:.55;
-  pointer-events:none;z-index:300}
-#tourStage .tcor.tl{left:16px;top:74px;border-left:2px solid;border-top:2px solid}
-#tourStage .tcor.tr{right:16px;top:74px;border-right:2px solid;border-top:2px solid}
-#tourStage .tcor.bl{left:16px;bottom:16px;border-left:2px solid;border-bottom:2px solid}
-#tourStage .tcor.br{right:16px;bottom:16px;border-right:2px solid;border-bottom:2px solid}
-/* 可自由拖动的卡片 —— 两层结构：
-   外层 .tcard 只管"位置"（拖动 → 必须即时跟手，所以拖拽中关掉过渡）
-   内层 .fc   只管"倾斜"（鼠标经过 → 带弹性的 3D 倾斜）
-   两者分开，才能既跟手又有弹性；perspective 放在外层，供内层旋转使用 */
+/* 拖动区外框：左 / 右 / 下三条渐隐细线（顶部由顶栏分割线收口）
+   —— 旧的"四角 L 形"上角在 74px、下角在 16px 且被顶栏切断，看着像没对齐的碎框，已删 */
+#tourStage .tframe{position:absolute;left:16px;right:16px;top:60px;bottom:14px;
+  pointer-events:none;z-index:1}
+#tourStage .tframe i{position:absolute;display:block}
+#tourStage .tframe .v{top:0;bottom:0;width:1px;
+  background:linear-gradient(180deg,rgba(255,255,255,0),rgba(255,255,255,.18) 16%,
+             rgba(255,255,255,.18) 84%,rgba(255,255,255,.22))}
+#tourStage .tframe .l{left:0}
+#tourStage .tframe .r{right:0}
+#tourStage .tframe .h{left:0;right:0;bottom:0;height:1px;
+  background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.18) 16%,
+             rgba(255,255,255,.18) 84%,rgba(255,255,255,0))}
+/* 暗角：让视觉收在中间，边界自然内收（不用画死框） */
+#tourStage::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:1;
+  background:radial-gradient(ellipse 76% 66% at 50% 50%,rgba(0,0,0,0) 40%,rgba(0,0,0,.40) 100%)}
+/* 可自由拖动的卡片 —— 关注点分离：
+   .tcard 外层只管"位置"（拖动必须即时跟手 → 拖拽中关掉过渡）
+   .fc    内层只管"倾斜"（鼠标经过 → 带弹性的 3D 倾斜）
+   .ph/.cap 内容是「照片 + 卡下信息条」—— 文字不压在照片上（浅色照片上白字会发虚） */
 .tcard{position:absolute;left:0;top:0;cursor:grab;touch-action:none;
   perspective:1100px;
   transform:translate3d(var(--x,0px),var(--y,0px),0) rotate(var(--r,0deg)) scale(var(--sc,1));
@@ -129,29 +139,38 @@ img{display:block}
   will-change:transform;
   user-select:none;-webkit-user-select:none;-webkit-user-drag:none}
 .tcard.drag{cursor:grabbing;transition:none}
-.tcard .fc{position:absolute;inset:0;overflow:hidden;background:#0d1420;
-  border:1px solid rgba(255,255,255,.30);box-shadow:0 18px 48px rgba(0,0,0,.55);
+.tcard .fc{position:absolute;inset:0;overflow:hidden;border-radius:5px;
+  background:linear-gradient(170deg,#17202d 0%,#0f1621 62%,#0b111a 100%);
+  border:1px solid rgba(255,255,255,.15);
+  box-shadow:0 26px 54px rgba(0,0,0,.55),0 7px 20px rgba(0,0,0,.4),
+             inset 0 1px 0 rgba(255,255,255,.10);
   transform:rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));
-  transition:transform .3s cubic-bezier(.22,1,.36,1);
-  clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px))}
+  transition:transform .3s cubic-bezier(.22,1,.36,1),border-color .3s,box-shadow .3s}
 .tcard.drag .fc{transition:transform .16s cubic-bezier(.22,1,.36,1)}
-.tcard:hover .fc{border-color:var(--accent);box-shadow:0 26px 68px rgba(255,70,31,.36)}
+.tcard:hover .fc{border-color:rgba(255,70,31,.62);
+  box-shadow:0 36px 80px rgba(0,0,0,.6),0 0 0 1px rgba(255,70,31,.22),
+             0 0 36px rgba(255,70,31,.16),inset 0 1px 0 rgba(255,255,255,.12)}
+/* 照片满铺卡面上部，卡下留 50px 给信息条 —— 文字不压在照片上 */
+.tcard .ph{position:absolute;left:0;right:0;top:0;bottom:50px;
+  overflow:hidden;background:#0a0f17}
 /* img 必须不吃指针事件：否则按在图片上会触发浏览器"原生图片拖拽"，
    pointermove 被掐断（pointercancel）→ 表现就是"拖不动"。参考源码的 img 也写了 pointer-events-none */
-.tcard img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;
+.tcard img{width:100%;height:100%;object-fit:cover;display:block;
   pointer-events:none;-webkit-user-drag:none;user-select:none}
-.tcard .no,.tcard .rg,.tcard .nm,.tcard .sc,.tcard .glare{pointer-events:none}
-.tcard .sc{position:absolute;left:0;right:0;bottom:0;height:82px;pointer-events:none;
-  background:linear-gradient(180deg,rgba(6,11,19,0),rgba(6,11,19,.9))}
 .tcard .glare{position:absolute;inset:0;background:#fff;opacity:var(--glare,0);pointer-events:none}
-.tcard .no{position:absolute;left:9px;top:8px;padding:2px 7px;font-size:10.5px;letter-spacing:.1em;
-  color:#fff;background:rgba(255,70,31,.92);font-family:ui-monospace,Consolas,monospace;
-  clip-path:polygon(0 0,calc(100% - 5px) 0,100% 5px,100% 100%,0 100%)}
-.tcard .rg{position:absolute;right:10px;top:11px;font-size:11.5px;letter-spacing:.06em;
-  color:#fff;opacity:.94;text-shadow:0 1px 4px #000}
-.tcard .nm{position:absolute;left:12px;right:12px;bottom:11px;font-size:14.5px;font-weight:600;
-  color:#fff;line-height:1.35;text-shadow:0 1px 5px #000;overflow:hidden;
-  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+/* 卡下信息条：编号 · 分隔线 · 地区 / 标题 */
+.tcard .cap{position:absolute;left:0;right:0;bottom:0;height:50px;padding:0 12px;
+  background:linear-gradient(180deg,#141d29,#0f1621);
+  border-top:1px solid rgba(255,255,255,.09);
+  display:flex;flex-direction:column;justify-content:center;gap:5px;pointer-events:none}
+.tcard .r1{display:flex;align-items:center;gap:7px}
+.tcard .no{font-size:9.5px;letter-spacing:.16em;line-height:1;color:var(--accent);
+  font-family:ui-monospace,"SFMono-Regular",Consolas,monospace}
+.tcard .sep{width:15px;height:1px;background:rgba(255,255,255,.18)}
+.tcard .rg{margin-left:auto;font-size:10px;letter-spacing:.12em;color:rgba(255,255,255,.5);
+  font-family:ui-monospace,"SFMono-Regular",Consolas,monospace}
+.tcard .nm{font-size:14.5px;font-weight:600;color:#eef4fd;line-height:1.25;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* 全屏内的三卡详情（可滚动） */
 #tourDetail{position:relative}
 #tourStage #tourDetail{position:absolute;inset:60px 0 0;overflow-y:auto;z-index:320;
@@ -644,7 +663,7 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
       <div class="tfloor"></div>
       <div class="tmark">TOUR · DATABASE</div>
       <div id="tourWallStage"></div>
-      <i class="tcor tl"></i><i class="tcor tr"></i><i class="tcor bl"></i><i class="tcor br"></i>
+      <div class="tframe"><i class="v l"></i><i class="v r"></i><i class="h"></i></div>
       <div class="ttop">
         <span class="brand">TOUR-DB <b>//</b> 旅游攻略</span>
         <span class="stats" id="trStats"></span>
@@ -780,7 +799,7 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
   </div>
 </div>
 
-<script src="docs.js?v=20260918l"></script>
-<script src="app.js?v=20260918l"></script>
+<script src="docs.js?v=20260918n"></script>
+<script src="app.js?v=20260918n"></script>
 </body>
 </html>
