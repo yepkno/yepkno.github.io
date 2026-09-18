@@ -926,49 +926,190 @@ function showTourPane(p) {
   if (p === "3") animateTourBars();
 }
 
+// ---- 报表：配色与两个图表 ----
+var TCOLORS = ["#ff461f", "#ff8f4d", "#ffc75a", "#63b3ff", "#57d6a8", "#b388ff", "#ff6f9c"];
+
+// 费用分类环形图（用 stroke-dasharray 逐段画圆环，无需第三方库）
+function donutChart(keys, cost, total) {
+  var cx = 86, cy = 86, r = 52, sw = 19;
+  var C = 2 * Math.PI * r;
+  var acc = 0, segs = "";
+  keys.forEach(function (k, i) {
+    var frac = total ? cost[k] / total : 0;
+    var len = frac * C;
+    segs += '<circle class="dseg" cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="none" ' +
+            'stroke="' + TCOLORS[i % TCOLORS.length] + '" stroke-width="' + sw + '" ' +
+            'stroke-linecap="butt" stroke-dasharray="0 99999" ' +
+            'stroke-dashoffset="' + (-acc).toFixed(2) + '" ' +
+            'data-da="' + len.toFixed(2) + ' ' + (C - len).toFixed(2) + '" ' +
+            'transform="rotate(-90 ' + cx + ' ' + cy + ')">' +
+            '<title>' + escapeHtml(k) + ' ' + fmtMoney(cost[k]) + '（' +
+            (total ? Math.round(cost[k] / total * 100) : 0) + '%）</title></circle>';
+    acc += len;
+  });
+  return '<div class="tdonut"><svg viewBox="0 0 172 172">' + segs +
+    '<text class="dsum" x="' + cx + '" y="' + (cy - 3) + '">' + fmtMoney(total) + '</text>' +
+    '<text class="dcap" x="' + cx + '" y="' + (cy + 16) + '">TOTAL</text>' +
+    '</svg></div>';
+}
+
+function fmtMoney(v) { return "\u00a5" + (+v || 0).toLocaleString(); }
+
+// 分类明细（色点 + 名称 + 金额 + 占比 + 迷你条）
+function costList(keys, cost, total) {
+  return '<div class="tclist">' + keys.map(function (k, i) {
+    var pc = total ? Math.round(cost[k] / total * 100) : 0;
+    var col = TCOLORS[i % TCOLORS.length];
+    return '<div class="tcrow">' +
+      '<i style="background:' + col + '"></i>' +
+      '<span>' + escapeHtml(k) + '</span>' +
+      '<div class="tcmb"><div data-w="' + pc + '" style="background:' + col + '"></div></div>' +
+      '<b>' + fmtMoney(cost[k]) + '</b>' +
+      '<u>' + pc + '%</u>' +
+      '</div>';
+  }).join('') + '</div>';
+}
+
+// 组合图：柱 = 每段里程，折线 + 面积 = 累计里程（双轴）
+function distCombo(rows) {
+  if (!rows.length) return '<div class="tempty">暂无行程数据</div>';
+  var W = 720, H = 246, pl = 52, pr = 52, pt = 18, pb = 42;
+  var pw = W - pl - pr, ph = H - pt - pb;
+  var n = rows.length;
+  var vals = rows.map(function (r) {
+    var v = parseInt(String(r[3]).replace(/[^0-9]/g, ""), 10);
+    return isNaN(v) ? 0 : v;
+  });
+  var cum = [], s = 0;
+  vals.forEach(function (v) { s += v; cum.push(s); });
+  var maxV = Math.max.apply(null, vals.concat([1]));
+  var maxC = Math.max(cum[cum.length - 1] || 1, 1);
+  var step = pw / n, bw = Math.min(46, step * 0.46);
+
+  var grid = "", i, x, y;
+  for (i = 0; i <= 4; i++) {
+    y = pt + ph * i / 4;
+    grid += '<line class="cgrid" x1="' + pl + '" y1="' + y.toFixed(1) + '" x2="' + (pl + pw) +
+            '" y2="' + y.toFixed(1) + '"/>';
+    grid += '<text class="cax" x="' + (pl - 8) + '" y="' + (y + 3.4).toFixed(1) +
+            '" text-anchor="end">' + Math.round(maxV * (1 - i / 4)).toLocaleString() + '</text>';
+    grid += '<text class="cax cax2" x="' + (pl + pw + 8) + '" y="' + (y + 3.4).toFixed(1) +
+            '">' + Math.round(maxC * (1 - i / 4)).toLocaleString() + '</text>';
+  }
+
+  var bars = "", pts = [], xl = "";
+  rows.forEach(function (r, k) {
+    x = pl + step * (k + 0.5);
+    var h = vals[k] / maxV * ph * 0.92;
+    bars += '<rect class="cbar" x="' + (x - bw / 2).toFixed(1) + '" y="' + (pt + ph - h).toFixed(1) +
+            '" width="' + bw.toFixed(1) + '" height="' + Math.max(h, 0.6).toFixed(1) +
+            '" rx="3" data-final="' + (pt + ph - h).toFixed(1) + '">' +
+            '<title>' + escapeHtml(r[0] || "") + '  ' + escapeHtml(r[1] || "") + '  ' +
+            vals[k].toLocaleString() + ' KM</title></rect>';
+    var ly = pt + ph - cum[k] / maxC * ph * 0.92;
+    pts.push({ x: x, y: ly });
+    xl += '<text class="cx" x="' + x.toFixed(1) + '" y="' + (H - 16) + '">' +
+          escapeHtml(r[0] || "") + '</text>';
+  });
+
+  var line = "M" + pts.map(function (p) { return p.x.toFixed(1) + " " + p.y.toFixed(1); }).join(" L");
+  var area = line + " L" + pts[pts.length - 1].x.toFixed(1) + " " + (pt + ph) +
+             " L" + pts[0].x.toFixed(1) + " " + (pt + ph) + " Z";
+  var dots = pts.map(function (p) {
+    return '<circle class="cdot" cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="3.4"/>';
+  }).join("");
+
+  var lg = '<g class="cleg">' +
+    '<rect x="' + pl + '" y="4" width="10" height="10" rx="2" class="csw b"/>' +
+    '<text x="' + (pl + 16) + '" y="13">每段里程</text>' +
+    '<line x1="' + (pl + 96) + '" y1="9" x2="' + (pl + 120) + '" y2="9" class="cswline"/>' +
+    '<text x="' + (pl + 126) + '" y="13">累计里程</text></g>';
+
+  var cdefs = '<defs>' +
+    '<linearGradient id="cbarG" x1="0" y1="1" x2="0" y2="0">' +
+      '<stop offset="0" stop-color="#ff461f" stop-opacity=".38"/>' +
+      '<stop offset="1" stop-color="#ff7a4d" stop-opacity=".88"/></linearGradient>' +
+    '<linearGradient id="careaG" x1="0" y1="0" x2="0" y2="1">' +
+      '<stop offset="0" stop-color="#ff461f" stop-opacity=".24"/>' +
+      '<stop offset="1" stop-color="#ff461f" stop-opacity="0"/></linearGradient>' +
+    '</defs>';
+
+  return '<svg class="tcombo" viewBox="0 0 ' + W + ' ' + H + '">' + cdefs + grid + bars +
+    '<path class="carea" d="' + area + '"/>' +
+    '<path class="cline" id="distLine" d="' + line + '"/>' + dots + xl + lg + '</svg>';
+}
+
 function renderTourReport(d) {
   var cost = d.cost || {};
   var keys = Object.keys(cost);
   var total = keys.reduce(function (a, k) { return a + cost[k]; }, 0);
   var people = 2;
-  var days = 0;
-  (d.plan || []).forEach(function (r) { days++; });
+  var rows = d.plan || [];
+  var days = rows.length;
   var km = 0;
-  (d.plan || []).forEach(function (r) {
+  rows.forEach(function (r) {
     var v = parseInt(String(r[3]).replace(/[^0-9]/g, ""), 10);
     if (!isNaN(v)) km += v;
   });
   var paid = total ? Math.round(total / people) : 0;
+  var perDay = days ? Math.round(total / days) : 0;
 
-  var bars = keys.map(function (k) {
-    var v = cost[k], pc = total ? Math.round(v / total * 100) : 0;
-    return '<div class="tbar"><i>' + escapeHtml(k) + '</i><span class="t"><div data-w="' +
-           pc + '"></div></span><u>&#165;' + v + ' / ' + pc + '%</u></div>';
-  }).join("");
-
-  var plan = (d.plan || []).map(function (r) {
+  var plan = rows.map(function (r) {
     return "<tr><td class=\"m\">" + escapeHtml(r[0]) + "</td><td>" + escapeHtml(r[1]) +
            "</td><td>" + escapeHtml(r[2]) + "</td><td class=\"m\">" + escapeHtml(r[3]) + "</td></tr>";
   }).join("");
 
   document.getElementById("tdP3").innerHTML =
     '<div class="tgr">' +
-      '<div class="tmetric"><span>TOTAL COST</span><b>&#165;' + total.toLocaleString() + '</b></div>' +
-      '<div class="tmetric"><span>PER PERSON</span><b>&#165;' + paid.toLocaleString() + '</b></div>' +
+      '<div class="tmetric"><span>TOTAL COST</span><b>' + fmtMoney(total) + '</b></div>' +
+      '<div class="tmetric"><span>PER PERSON</span><b>' + fmtMoney(paid) + '</b></div>' +
+      '<div class="tmetric"><span>PER DAY</span><b>' + fmtMoney(perDay) + '</b></div>' +
       '<div class="tmetric"><span>DAYS</span><b>' + days + '<em>D</em></b></div>' +
       '<div class="tmetric"><span>DISTANCE</span><b>' + km.toLocaleString() + '<em>KM</em></b></div>' +
-    "</div>" +
-    '<div class="tbox"><h4>COST BREAKDOWN</h4>' + bars + "</div>" +
-    '<div class="tbox"><h4>PLAN</h4><table><tr><th>DAY</th><th>ROUTE</th><th>STAY</th><th>KM</th></tr>' +
-      plan + "</table></div>";
+    '</div>' +
+    '<div class="tbox"><h4>COST BY CATEGORY<em>费用分类构成</em></h4>' +
+      '<div class="tcostflex">' + donutChart(keys, cost, total) + costList(keys, cost, total) + '</div>' +
+    '</div>' +
+    '<div class="tbox"><h4>DISTANCE &amp; CUMULATIVE<em>分段里程 / 累计里程</em></h4>' +
+      distCombo(rows) +
+    '</div>' +
+    '<div class="tbox"><h4>PLAN<em>逐日行程</em></h4><table><tr><th>DAY</th><th>ROUTE</th>' +
+      '<th>STAY</th><th>KM</th></tr>' + plan + '</table></div>';
 }
 
+// 图表入场动画：环形图扫出、柱子升起、折线描绘、面积淡入
 function animateTourBars() {
-  var bs = document.querySelectorAll("#tdP3 .tbar .t div");
-  bs.forEach(function (b) { b.style.width = "0"; });
+  // 迷你条
+  var ms = document.querySelectorAll("#tdP3 .tcmb div");
+  ms.forEach(function (b) { b.style.width = "0"; });
+  // 环形图：先把 dasharray 归零，再扫出
+  var segs = document.querySelectorAll("#tdP3 .dseg");
+  segs.forEach(function (s, i) {
+    s.style.strokeDasharray = "0 99999";
+    s.style.transitionDelay = (i * 0.09) + "s";      // 分段错峰扫出
+  });
+  // 柱子先压扁
+  var bars = document.querySelectorAll("#tdP3 .cbar");
+  bars.forEach(function (b) { b.style.transform = "scaleY(0)"; });
+  var area = document.querySelector("#tdP3 .carea");
+  if (area) area.style.opacity = "0";
+  var line = document.getElementById("distLine");
+  if (line) {
+    var L = line.getTotalLength();
+    line.style.strokeDasharray = L;
+    line.style.strokeDashoffset = L;
+    line.style.transition = "none";
+  }
   requestAnimationFrame(function () {
     requestAnimationFrame(function () {
-      bs.forEach(function (b) { b.style.width = b.getAttribute("data-w") + "%"; });
+      ms.forEach(function (b) { b.style.width = b.getAttribute("data-w") + "%"; });
+      segs.forEach(function (s) { s.style.strokeDasharray = s.getAttribute("data-da"); });
+      bars.forEach(function (b) { b.style.transform = "scaleY(1)"; });
+      if (area) area.style.opacity = "1";
+      if (line) {
+        line.style.transition = "stroke-dashoffset 1.5s cubic-bezier(.3,.7,.3,1) .25s";
+        line.style.strokeDashoffset = 0;
+      }
     });
   });
 }
@@ -990,6 +1131,34 @@ function pathBBox(dd) {
   }
   var r = { x0: x0, y0: y0, x1: x1, y1: y1 };
   _bbCache[dd] = r;
+  return r;
+}
+
+// 省级行政区简称（adcode -> 名），给地图做地名参照
+var ADNAME = {
+  "110000": "北京", "120000": "天津", "130000": "河北", "140000": "山西", "150000": "内蒙古",
+  "210000": "辽宁", "220000": "吉林", "230000": "黑龙江", "310000": "上海", "320000": "江苏",
+  "330000": "浙江", "340000": "安徽", "350000": "福建", "360000": "江西", "370000": "山东",
+  "410000": "河南", "420000": "湖北", "430000": "湖南", "440000": "广东", "450000": "广西",
+  "460000": "海南", "500000": "重庆", "510000": "四川", "520000": "贵州", "530000": "云南",
+  "540000": "西藏", "610000": "陕西", "620000": "甘肃", "630000": "青海", "640000": "宁夏",
+  "650000": "新疆", "710000": "台湾", "810000": "香港", "820000": "澳门"
+};
+
+// 一个省所有子路径的合并包围盒（含岛屿、飞地）
+var _pbCache = {};
+function provBBox(segs) {
+  if (_pbCache[segs]) return _pbCache[segs];
+  var r = { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity };
+  segs.forEach(function (dd) {
+    var b = pathBBox(dd);
+    if (!isFinite(b.x0)) return;
+    if (b.x0 < r.x0) r.x0 = b.x0;
+    if (b.y0 < r.y0) r.y0 = b.y0;
+    if (b.x1 > r.x1) r.x1 = b.x1;
+    if (b.y1 > r.y1) r.y1 = b.y1;
+  });
+  _pbCache[segs] = r;
   return r;
 }
 
@@ -1028,7 +1197,7 @@ function drawTourRoute(d) {
     bx0 = Math.min.apply(null, xs) - 260; bx1 = Math.max.apply(null, xs) + 260;
     by0 = Math.min.apply(null, ys) - 260; by1 = Math.max.apply(null, ys) + 260;
   }
-  var mw = (bx1 - bx0) * 0.10, mh = (by1 - by0) * 0.10;   // 留 10% 余量
+  var mw = (bx1 - bx0) * 0.18, mh = (by1 - by0) * 0.18;   // 留 18% 余量：看得见邻省，不然只剩一个色块
   bx0 -= mw; bx1 += mw; by0 -= mh; by1 += mh;
 
   var x0 = bx0, y0 = by0, vw = bx1 - bx0, vh = by1 - by0, ratio = 1000 / 620;
@@ -1036,6 +1205,17 @@ function drawTourRoute(d) {
   else { var nh = vw / ratio; y0 -= (nh - vh) / 2; vh = nh; }
   svg.setAttribute("viewBox", x0.toFixed(0) + " " + y0.toFixed(0) + " " +
                               vw.toFixed(0) + " " + vh.toFixed(0));
+
+  // ---- 渐变定义：用渐变代替死板的平涂，色块才有"厚度" ----
+  var defs = '<defs>' +
+    '<linearGradient id="tgOn" x1="0" y1="0" x2="0.25" y2="1">' +
+      '<stop offset="0" stop-color="#ff6a40" stop-opacity=".30"/>' +
+      '<stop offset="0.55" stop-color="#ff461f" stop-opacity=".17"/>' +
+      '<stop offset="1" stop-color="#ff461f" stop-opacity=".07"/></linearGradient>' +
+    '<linearGradient id="tgOff" x1="0" y1="0" x2="0.25" y2="1">' +
+      '<stop offset="0" stop-color="#ffffff" stop-opacity=".085"/>' +
+      '<stop offset="1" stop-color="#ffffff" stop-opacity=".030"/></linearGradient>' +
+    '</defs>';
 
   // ---- 高亮行程省份，其余淡显 ----
   var base = "", hi = "";
@@ -1047,6 +1227,54 @@ function drawTourRoute(d) {
       M.provinces[a].forEach(function (dd) { base += '<path class="prov" d="' + dd + '"/>'; });
     }
   });
+
+  // ---- 省名参照：只画落在视野里的省，行程省高亮 ----
+  // 省名：默认放在省的最中央，但会**躲开行程点与已放省名**（沿纵向挪几档），
+  // 挪不掉就干脆不画 —— 宁可少一个，也不要压住路线
+  var names = "", nfs = vw / 62, nplaced = [];
+  if (nfs >= 6) {
+    // 按"该省在视野里的面积"排序：远的省虽然包围盒中心可能落进来，但面积占比极小，会被筛掉。
+    // 行程省给一个极大的加权，保证它一定在候选里。
+    var cand = [];
+    Object.keys(M.provinces).forEach(function (a) {
+      if (a === "100000_JD" || !ADNAME[a]) return;
+      var bb = provBBox(M.provinces[a]);
+      if (!isFinite(bb.x0)) return;
+      var ox = Math.min(bb.x1, x0 + vw) - Math.max(bb.x0, x0);
+      var oy = Math.min(bb.y1, y0 + vh) - Math.max(bb.y0, y0);
+      if (ox <= 0 || oy <= 0) return;
+      cand.push({ a: a, s: ox * oy + (on[a] ? 1e9 : 0) });
+    });
+    cand.sort(function (p1, p2) { return p2.s - p1.s; });
+
+    cand.slice(0, 8).forEach(function (cc) {
+      var a = cc.a;
+      var b = provBBox(M.provinces[a]);
+      if (!isFinite(b.x0)) return;
+      var ph = b.y1 - b.y0;
+      var wn = nfs * ADNAME[a].length * 1.06;
+      var offs = [0, 0.16, -0.16, 0.32, -0.32, 0.46];
+      for (var oi = 0; oi < offs.length; oi++) {
+        var cx = (b.x0 + b.x1) / 2, cy = (b.y0 + b.y1) / 2 + ph * offs[oi];
+        if (cx - wn / 2 < x0 + nfs || cx + wn / 2 > x0 + vw - nfs) continue;
+        if (cy < y0 + nfs * 2 || cy > y0 + vh - nfs * 2) continue;
+        var hit = false;
+        for (var q = 0; q < pts.length && !hit; q++) {
+          if (Math.abs(pts[q].x - cx) < wn * 0.62 && Math.abs(pts[q].y - cy) < nfs * 2.4) hit = true;
+        }
+        for (var q2 = 0; q2 < nplaced.length && !hit; q2++) {
+          var nb = nplaced[q2];
+          if (Math.abs(nb.x - cx) < (nb.w + wn) / 2 && Math.abs(nb.y - cy) < nfs * 2.8) hit = true;
+        }
+        if (hit) continue;
+        nplaced.push({ x: cx, y: cy, w: wn });
+        names += '<text class="pnm' + (on[a] ? ' on' : '') + '" style="font-size:' +
+                 nfs.toFixed(2) + 'px" x="' + cx.toFixed(1) + '" y="' + cy.toFixed(1) + '">' +
+                 ADNAME[a] + '</text>';
+        break;
+      }
+    });
+  }
   // 九段线：数据保持完整（淡显，不喧宾夺主）
   (M.provinces["100000_JD"] || []).forEach(function (dd) {
     base += '<path class="prov" d="' + dd + '"/>';
@@ -1056,60 +1284,81 @@ function drawTourRoute(d) {
     return a.x.toFixed(1) + " " + a.y.toFixed(1);
   }).join(" L");
 
+  // 统一"屏幕单位"：记号 / 文字都按 viewBox 宽度换算尺寸，
+  // 这样视野大小不同的每篇地图，在屏幕上看到的记号大小是一致的
+  var u = vw / 148.0;
   var marks = "", labels = "", seen = {}, li = 0, placed = [];
   pts.forEach(function (a, i) {
-    if (a.p.stay)
-      marks += '<circle class="stop stay" cx="' + a.x.toFixed(1) + '" cy="' + a.y.toFixed(1) + '" r="5.5"/>';
-    else
-      marks += '<circle class="stop" cx="' + a.x.toFixed(1) + '" cy="' + a.y.toFixed(1) + '" r="3.2"/>';
+    var isStay = !!a.p.stay;
+    var rr = isStay ? u * 1.42 : u * 0.72;
+    marks += '<circle class="stop' + (isStay ? ' stay' : '') + '" cx="' + a.x.toFixed(1) +
+             '" cy="' + a.y.toFixed(1) + '" r="' + rr.toFixed(2) + '"/>';
 
-    // 起点：菱形
+    // 住宿点：把"第几天"写进圆点里 —— 标签就不用再带 "D? · " 前缀，宽度少一半
+    if (isStay && a.p.d) {
+      marks += '<text class="sday" style="font-size:' + (u * 1.32).toFixed(2) + 'px" x="' +
+               a.x.toFixed(1) + '" y="' + (a.y + u * 0.47).toFixed(1) + '">' +
+               escapeHtml(String(a.p.d)) + '</text>';
+    }
+    // 起 / 终点：只加一圈外环，不再拿菱形盖住圆点
     if (i === 0)
-      marks += '<rect class="start" x="' + (a.x - 5).toFixed(1) + '" y="' + (a.y - 5).toFixed(1) +
-               '" width="10" height="10" transform="rotate(45 ' + a.x.toFixed(1) + ' ' +
-               a.y.toFixed(1) + ')"/>';
-    // 终点：双环
+      marks += '<circle class="startring" cx="' + a.x.toFixed(1) + '" cy="' + a.y.toFixed(1) +
+               '" r="' + (rr + u * 0.95).toFixed(2) + '"/>';
     if (i === pts.length - 1 && pts.length > 1)
-      marks += '<circle class="endl" cx="' + a.x.toFixed(1) + '" cy="' + a.y.toFixed(1) + '" r="11"/>' +
-               '<circle class="endl2" cx="' + a.x.toFixed(1) + '" cy="' + a.y.toFixed(1) + '" r="3.4"/>';
+      marks += '<circle class="endring" cx="' + a.x.toFixed(1) + '" cy="' + a.y.toFixed(1) +
+               '" r="' + (rr + u * 0.95).toFixed(2) + '"/>';
 
     if (!seen[a.p.n]) {
       seen[a.p.n] = 1;
-      var txt = "D" + a.p.d + " \u00b7 " + a.p.n;
-      var fs = vw / 54;                                  // 字号随视野缩放，显示尺寸恒定
-      var w = fs * 1.1;
-      for (var k = 0; k < txt.length; k++) w += /[\u4e00-\u9fa5]/.test(txt.charAt(k)) ? fs * 1.02 : fs * 0.62;
-      var box = fs * 1.8, gap = fs * 0.85;
-      // 8 向候选位置 + 碰撞避让：挑第一个不与已放标签重叠、且不越出画面的位置
-      var dxs = [gap, -w - gap], dys = [-fs * 0.5, fs * 1.45, fs * 3.1, -fs * 2.3];
+      var txt = a.p.n;                                  // 只写地名
+      var fs = vw / 74;
+      var w = fs * 1.15;
+      for (var k = 0; k < txt.length; k++) {
+        w += /[\u4e00-\u9fa5]/.test(txt.charAt(k)) ? fs * 1.03 : fs * 0.62;
+      }
+      var box = fs * 1.7, gap = fs * 0.95;
+      // 候选位：先左右、再上下；既避开已放标签，也避开其它行程点
+      var CAND = [
+        [gap, -fs * 0.5], [-w - gap, -fs * 0.5],
+        [gap, fs * 1.25], [-w - gap, fs * 1.25],
+        [-w / 2, fs * 2.0], [-w / 2, -fs * 1.6],
+        [gap, -fs * 2.2], [-w - gap, -fs * 2.2]
+      ];
       var lx = null, ly = null;
-      for (var ci = 0; ci < 8; ci++) {
-        var cx = a.x + dxs[ci % 2], cy = a.y + dys[(ci >> 1)];
+      for (var ci = 0; ci < CAND.length; ci++) {
+        var cx = a.x + CAND[ci][0], cy = a.y + CAND[ci][1];
         if (cx < x0 + fs || cx + w > x0 + vw - fs) continue;
-        var r = { x0: cx, y0: cy - box / 2, x1: cx + w, y1: cy + box / 2 }, hit = false;
+        if (cy < y0 + box || cy > y0 + vh - box) continue;
+        var rct = { x0: cx, y0: cy - box / 2, x1: cx + w, y1: cy + box / 2 }, hit = false;
         for (var q = 0; q < placed.length; q++) {
           var p = placed[q];
-          if (!(r.x1 < p.x0 || r.x0 > p.x1 || r.y1 < p.y0 || r.y0 > p.y1)) { hit = true; break; }
+          if (!(rct.x1 < p.x0 || rct.x0 > p.x1 || rct.y1 < p.y0 || rct.y0 > p.y1)) {
+            hit = true; break;
+          }
         }
-        if (!hit) { placed.push(r); lx = cx; ly = cy; break; }
+        if (!hit) {
+          for (var q2 = 0; q2 < pts.length; q2++) {
+            var sp = pts[q2];
+            if (sp === a) continue;
+            if (sp.x > rct.x0 - u * 1.7 && sp.x < rct.x1 + u * 1.7 &&
+                sp.y > rct.y0 - u * 1.7 && sp.y < rct.y1 + u * 1.7) { hit = true; break; }
+          }
+        }
+        if (!hit) { placed.push(rct); lx = cx; ly = cy; break; }
       }
       if (lx === null) {                                 // 全都挤 -> 退回默认位
         lx = Math.max(x0 + fs, Math.min(a.x + gap, x0 + vw - w - fs));
-        ly = a.y + (li % 2 ? fs * 1.5 : -fs * 0.55);
+        ly = a.y + (li % 2 ? fs * 1.4 : -fs * 0.5);
       }
       li++;
-      labels += '<line class="lln" x1="' + a.x.toFixed(1) + '" y1="' + a.y.toFixed(1) +
-                '" x2="' + (lx > a.x ? lx : lx + w).toFixed(1) + '" y2="' + ly.toFixed(1) + '"/>' +
-                '<rect class="lblbg" x="' + lx.toFixed(1) + '" y="' + (ly - box / 2).toFixed(1) +
-                '" width="' + w.toFixed(1) + '" height="' + box.toFixed(1) +
-                '" rx="' + (fs * 0.16).toFixed(1) + '"/>' +
-                '<text class="lbl" style="font-size:' + fs.toFixed(2) + 'px" x="' +
-                (lx + fs * 0.62).toFixed(1) + '" y="' + (ly + fs * 0.34).toFixed(1) +
-                '">' + "D" + a.p.d + " &#183; " + escapeHtml(a.p.n) + "</text>";
+      // 地名用"描边文字"（halo）而不是方框 —— 点一密集，方框就把路线全盖住了
+      labels += '<text class="lbl" style="font-size:' + fs.toFixed(2) + 'px;stroke-width:' +
+                (fs * 0.30).toFixed(2) + 'px" x="' + (lx + fs * 0.55).toFixed(1) + '" y="' +
+                (ly + fs * 0.35).toFixed(1) + '">' + escapeHtml(a.p.n) + '</text>';
     }
   });
 
-  svg.innerHTML = base + hi +
+  svg.innerHTML = defs + base + hi + names +
     '<path class="glow" id="routeGlow" d="' + dpath + '"/>' +
     '<path class="rte" id="routePath" d="' + dpath + '"/>' +
     '<path class="dash" id="routeDash" d="' + dpath + '"/>' +

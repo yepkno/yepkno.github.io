@@ -218,21 +218,36 @@ img{display:block}
   background-size:27px 27px;
   clip-path:polygon(0 0,calc(100% - 16px) 0,100% 16px,100% 100%,16px 100%,0 calc(100% - 16px))}
 #routeMap{display:block;width:100%;height:auto;position:relative;z-index:1}
-#routeMap .prov{fill:rgba(255,255,255,.030);stroke:rgba(255,255,255,.10);stroke-width:.65;stroke-linejoin:round}
-#routeMap .prov.on{fill:rgba(255,70,31,.14);stroke:rgba(255,70,31,.44);stroke-width:1}
-#routeMap .glow{fill:none;stroke:rgba(255,70,31,.22);stroke-width:8;stroke-linejoin:round;stroke-linecap:round}
-#routeMap .rte{fill:none;stroke:var(--accent);stroke-width:2.4;stroke-linejoin:round;stroke-linecap:round}
-#routeMap .dash{fill:none;stroke:rgba(255,255,255,.9);stroke-width:1.6;stroke-linecap:round;
-  stroke-dasharray:2 11;animation:rflow 1.1s linear infinite}
+/* 暗角：让地图内容收在中间 */
+.tmapbox::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:2;
+  background:radial-gradient(ellipse 80% 72% at 50% 50%,rgba(0,0,0,0) 42%,rgba(0,0,0,.45) 100%)}
+/* 线宽统一用 non-scaling-stroke：地图缩放时描边粗细不变，各篇观感一致 */
+#routeMap .prov{fill:url(#tgOff);stroke:rgba(255,255,255,.13);stroke-width:.7;
+  stroke-linejoin:round;vector-effect:non-scaling-stroke}
+#routeMap .prov.on{fill:url(#tgOn);stroke:rgba(255,102,64,.62);stroke-width:1.1;
+  vector-effect:non-scaling-stroke}
+/* 省名参照（SVG 内文字，字号由 JS 随视野给） */
+#routeMap .pnm{fill:rgba(255,255,255,.30);text-anchor:middle;letter-spacing:.08em;pointer-events:none}
+#routeMap .pnm.on{fill:rgba(255,158,130,.9)}
+#routeMap .glow{fill:none;stroke:rgba(255,70,31,.22);stroke-width:8;stroke-linejoin:round;
+  stroke-linecap:round;vector-effect:non-scaling-stroke}
+#routeMap .rte{fill:none;stroke:var(--accent);stroke-width:2.6;stroke-linejoin:round;
+  stroke-linecap:round;vector-effect:non-scaling-stroke}
+#routeMap .dash{fill:none;stroke:rgba(255,255,255,.92);stroke-width:1.5;stroke-linecap:round;
+  stroke-dasharray:2 11;animation:rflow 1.1s linear infinite;vector-effect:non-scaling-stroke}
 @keyframes rflow{from{stroke-dashoffset:0}to{stroke-dashoffset:-26}}
-#routeMap .stop{fill:#0b1119;stroke:var(--accent);stroke-width:2}
-#routeMap .stop.stay{fill:var(--accent);stroke:#ffd6ca}
-#routeMap .start{fill:var(--accent)}
-#routeMap .endl{fill:none;stroke:var(--accent);stroke-width:2}
-#routeMap .endl2{fill:var(--accent)}
-#routeMap .lln{stroke:rgba(255,70,31,.5);stroke-width:.9;stroke-dasharray:2 2}
-#routeMap .lblbg{fill:rgba(8,13,20,.9);stroke:rgba(255,70,31,.5);stroke-width:.9}
-#routeMap .lbl{fill:#eaf2fb;font-size:12.5px;font-family:ui-monospace,Consolas,monospace}
+#routeMap .stop{fill:#0b1119;stroke:var(--accent);stroke-width:1.8;vector-effect:non-scaling-stroke}
+#routeMap .stop.stay{fill:var(--accent);stroke:#ffd9cd}
+/* 圆点里的"第几天" */
+#routeMap .sday{fill:#fff;font-weight:700;text-anchor:middle;
+  font-family:ui-monospace,"SFMono-Regular",Consolas,monospace;pointer-events:none}
+#routeMap .startring{fill:none;stroke:rgba(255,214,202,.6);stroke-width:1;stroke-dasharray:2 3;
+  vector-effect:non-scaling-stroke}
+#routeMap .endring{fill:none;stroke:rgba(255,214,202,.85);stroke-width:1.4;
+  vector-effect:non-scaling-stroke}
+/* 地名：描边文字，自带深色描边做底（比方块省地方，也不会把路线盖死） */
+#routeMap .lbl{fill:#eaf2fb;paint-order:stroke;stroke:rgba(5,9,15,.9);stroke-linejoin:round;
+  font-family:ui-monospace,"SFMono-Regular",Consolas,monospace;pointer-events:none}
 .tmapbox .mgrid-tl,.tmapbox .mgrid-br{position:absolute;width:16px;height:16px;
   border-color:var(--accent);opacity:.55;pointer-events:none;z-index:3}
 .tmapbox .mgrid-tl{left:8px;top:8px;border-left:2px solid;border-top:2px solid}
@@ -248,7 +263,7 @@ img{display:block}
 .tleg .sw.f{background:var(--accent)}
 .tleg .sw.dia{transform:rotate(45deg);background:var(--accent)}
 .tleg .sw.ring{border-radius:50%;border-width:2px}
-.tgr{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.tgr{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px}
 .tmetric{background:var(--card);border:1px solid var(--border);padding:14px 16px;
   clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,0 100%)}
 .tmetric span{display:block;font-size:10.5px;color:var(--faint);letter-spacing:.1em;
@@ -268,6 +283,46 @@ img{display:block}
   font-family:ui-monospace,Consolas,monospace}
 #tourDetail td{color:var(--muted)}
 #tourDetail td.m{font-family:ui-monospace,Consolas,monospace;color:var(--accent)}
+/* ---- 报表：图表区 ---- */
+.tcostflex{display:flex;align-items:center;gap:30px;flex-wrap:wrap}
+.tdonut{flex:0 0 176px;width:176px}
+.tdonut svg{display:block;width:100%;height:auto}
+#tdP3 .dseg{transition:stroke-dasharray .95s cubic-bezier(.3,.8,.3,1)}
+#tdP3 .dsum{fill:#eef4fd;font-size:20px;font-weight:600;text-anchor:middle;
+  font-family:ui-monospace,"SFMono-Regular",Consolas,monospace}
+#tdP3 .dcap{fill:var(--faint);font-size:9px;letter-spacing:.2em;text-anchor:middle;
+  font-family:ui-monospace,"SFMono-Regular",Consolas,monospace}
+.tclist{flex:1;min-width:260px}
+/* 一行搞定：色点 | 名称 | 占比条 | 金额 | 占比 */
+.tcrow{display:grid;grid-template-columns:10px 58px 1fr 76px 42px;align-items:center;gap:12px;
+  padding:9px 0;border-bottom:1px solid var(--border);font-size:12.5px}
+.tcrow:last-child{border-bottom:0}
+.tcrow i{width:10px;height:10px;display:block;border-radius:2px}
+.tcrow span{color:var(--muted)}
+.tcrow b{color:var(--text);font-weight:500;font-family:ui-monospace,Consolas,monospace;
+  font-size:12px;text-align:right}
+.tcrow u{text-decoration:none;color:var(--faint);font-family:ui-monospace,Consolas,monospace;
+  font-size:11.5px;text-align:right}
+.tcrow .tcmb{height:5px;background:rgba(255,255,255,.07);border-radius:3px;overflow:hidden}
+.tcrow .tcmb div{height:100%;width:0;border-radius:3px;
+  transition:width .9s cubic-bezier(.3,.8,.3,1)}
+.tcombo{display:block;width:100%;height:auto}
+#tdP3 .cgrid{stroke:rgba(255,255,255,.075);stroke-width:.7}
+#tdP3 .cax{fill:var(--faint);font-size:10px;font-family:ui-monospace,Consolas,monospace}
+#tdP3 .cax2{fill:rgba(255,122,77,.75)}
+#tdP3 .cx{fill:var(--faint);font-size:10.5px;text-anchor:middle;
+  font-family:ui-monospace,Consolas,monospace}
+#tdP3 .cbar{fill:url(#cbarG);transform-box:fill-box;transform-origin:bottom;
+  transition:transform .8s cubic-bezier(.3,.85,.3,1)}
+#tdP3 .carea{fill:url(#careaG);opacity:0;transition:opacity .8s ease .35s}
+#tdP3 .cline{fill:none;stroke:#ffd0c2;stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round}
+#tdP3 .cdot{fill:#0b1119;stroke:#ffd0c2;stroke-width:1.8}
+#tdP3 .cleg text{fill:var(--faint);font-size:10.5px;
+  font-family:ui-monospace,Consolas,monospace}
+#tdP3 .cleg .csw.b{fill:rgba(255,110,70,.7)}
+#tdP3 .cleg .cswline{stroke:#ffd0c2;stroke-width:2.2;stroke-linecap:round}
+.tempty{padding:22px 0;color:var(--faint);font-size:12.5px;text-align:center}
+
 @media (max-width:720px){
   #tourStage .ttop{padding:0 16px;gap:12px}
   #tourStage .stats{display:none}
@@ -804,7 +859,7 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
   </div>
 </div>
 
-<script src="docs.js?v=20260918p"></script>
-<script src="app.js?v=20260918p"></script>
+<script src="docs.js?v=20260918r"></script>
+<script src="app.js?v=20260918r"></script>
 </body>
 </html>
