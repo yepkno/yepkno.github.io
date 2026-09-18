@@ -1293,22 +1293,24 @@ function drawTourRoute(d) {
   pts.forEach(function (a, i) {
     var isStay = !!a.p.stay;
     var rr = isStay ? u * 1.42 : u * 0.72;
-    marks += '<circle class="stop' + (isStay ? ' stay' : '') + '" cx="' + a.x.toFixed(1) +
+    marks += '<circle class="stop' + (isStay ? ' stay' : '') + '" data-i="' + i +
+             '" cx="' + a.x.toFixed(1) +
              '" cy="' + a.y.toFixed(1) + '" r="' + rr.toFixed(2) + '"/>';
 
     // 住宿点：把"第几天"写进圆点里 —— 标签就不用再带 "D? · " 前缀，宽度少一半
     if (isStay && a.p.d) {
-      marks += '<text class="sday" style="font-size:' + (u * 1.32).toFixed(2) + 'px" x="' +
+      marks += '<text class="sday" data-i="' + i + '" style="font-size:' +
+               (u * 1.32).toFixed(2) + 'px" x="' +
                a.x.toFixed(1) + '" y="' + (a.y + u * 0.47).toFixed(1) + '">' +
                escapeHtml(String(a.p.d)) + '</text>';
     }
     // 起 / 终点：只加一圈外环，不再拿菱形盖住圆点
     if (i === 0)
-      marks += '<circle class="startring" cx="' + a.x.toFixed(1) + '" cy="' + a.y.toFixed(1) +
-               '" r="' + (rr + u * 0.95).toFixed(2) + '"/>';
+      marks += '<circle class="startring" data-i="' + i + '" cx="' + a.x.toFixed(1) +
+               '" cy="' + a.y.toFixed(1) + '" r="' + (rr + u * 0.95).toFixed(2) + '"/>';
     if (i === pts.length - 1 && pts.length > 1)
-      marks += '<circle class="endring" cx="' + a.x.toFixed(1) + '" cy="' + a.y.toFixed(1) +
-               '" r="' + (rr + u * 0.95).toFixed(2) + '"/>';
+      marks += '<circle class="endring" data-i="' + i + '" cx="' + a.x.toFixed(1) +
+               '" cy="' + a.y.toFixed(1) + '" r="' + (rr + u * 0.95).toFixed(2) + '"/>';
 
     if (!seen[a.p.n]) {
       seen[a.p.n] = 1;
@@ -1354,7 +1356,8 @@ function drawTourRoute(d) {
       }
       li++;
       // 地名用"描边文字"（halo）而不是方框 —— 点一密集，方框就把路线全盖住了
-      labels += '<text class="lbl" style="font-size:' + fs.toFixed(2) + 'px;stroke-width:' +
+      labels += '<text class="lbl" data-i="' + i + '" style="font-size:' + fs.toFixed(2) +
+                'px;stroke-width:' +
                 (fs * 0.30).toFixed(2) + 'px" x="' + (lx + fs * 0.55).toFixed(1) + '" y="' +
                 (ly + fs * 0.35).toFixed(1) + '">' + escapeHtml(a.p.n) + '</text>';
     }
@@ -1364,7 +1367,15 @@ function drawTourRoute(d) {
     '<path class="glow" id="routeGlow" d="' + dpath + '"/>' +
     '<path class="rte" id="routePath" d="' + dpath + '"/>' +
     '<path class="dash" id="routeDash" d="' + dpath + '"/>' +
+    // 逐日高亮层：默认空 d（不显示），点右侧 DAY 时只填当天那几段
+    '<path class="rte hi" id="routeHi" d=""/>' +
     marks + labels;
+
+  // 逐日查看：先清掉上一天的选中态，再重建 DAY 按钮
+  _tourPts = pts;
+  _tourDoc = d;
+  clearDay();
+  renderMapDays(d);
 
   // 右上角读数
   var rd = document.getElementById("mapRead");
@@ -1412,6 +1423,141 @@ function drawTourRoute(d) {
       x.style.strokeDashoffset = "";
     });
   }, 2450);
+}
+
+// ===== 逐日查看：右侧 DAY 按钮 → 地图上只看这一天 + 弹出当天行程 =====
+var _tourPts = [], _tourDoc = null, _dayIdx = 0;
+
+// 第 k 天的几何。
+// 段的归属按「上一站第 a 天 → 这一站第 b 天」这段路经过的天来算：
+//   a=4、b=6 的段（大柴旦→敦煌，走了 5、6 两天）→ 第 5、6 天都算这段，
+//   否则 pts 里跳过的第 5 天会「点了没反应」；
+//   a、b 相同（同一天的几个途经点）→ 归给这一天。
+function dayGeometry(k) {
+  var segs = [], set = {};
+  for (var i = 0; i < _tourPts.length - 1; i++) {
+    var a = +_tourPts[i].p.d || 0, b = +_tourPts[i + 1].p.d || 0;
+    var lo = (b <= a) ? b : a + 1;
+    if (k >= lo && k <= b) {
+      segs.push([_tourPts[i], _tourPts[i + 1]]);
+      set[i] = 1; set[i + 1] = 1;
+    }
+  }
+  _tourPts.forEach(function (a, i) { if (+a.p.d === k) set[i] = 1; });
+  // 兜底：这一天在 pts 里完全没有点（例如返程日）→ 点亮"当天出发时所在的位置"，
+  // 免得点了按钮地图上一点动静都没有。
+  if (!Object.keys(set).length && _tourPts.length) {
+    var last = -1;
+    _tourPts.forEach(function (a, i) { if ((+a.p.d || 0) <= k) last = i; });
+    if (last >= 0) set[last] = 1;
+  }
+  return { segs: segs, idx: Object.keys(set).map(Number) };
+}
+
+// 当天的「城市 / 景点」清单（数据来自 docs.js 每篇的 days 字段）
+function daySpots(k) {
+  var it = ((_tourDoc && _tourDoc.days) || []).filter(function (x) {
+    return +x.d === k;
+  })[0];
+  if (!it || !it.spots || !it.spots.length)
+    return '<div class="mdnone">这一天途经的城市与景点待补充</div>';
+  return '<div class="mds">' + it.spots.map(function (s) {
+    return '<div class="mdcity"><i></i>' + escapeHtml(s.city) + '</div>' +
+      '<div class="mdlist">' + (s.list || []).map(function (t) {
+        return '<span>' + escapeHtml(t) + '</span>';
+      }).join("") + '</div>';
+  }).join("") + '</div>';
+}
+
+// 一共多少天：取「pts 里最大的 d」和「plan 首列标签里最大的数字」的较大值。
+// 因为 plan 可能是 "D1-D2" 这种跨天写法，而 pts 只标了住宿点那天 ——
+// 只看 plan 行数会把 9 天的云南篇算成 5 天。
+function tourDayCount(d) {
+  var n = 0;
+  (d.pts || []).forEach(function (p) { n = Math.max(n, +p.d || 0); });
+  (d.plan || []).forEach(function (r) {
+    var m = String(r[0] || "").match(/\d+/g);
+    if (m) m.forEach(function (x) { n = Math.max(n, +x); });
+  });
+  return n;
+}
+
+// plan 里"覆盖第 k 天"的那一行（"D5-D6" 要能同时命中第 5、6 天）
+function planRowFor(d, k) {
+  var rows = d.plan || [];
+  for (var i = 0; i < rows.length; i++) {
+    var m = String(rows[i][0] || "").match(/\d+/g);
+    if (!m) continue;
+    var a = +m[0], b = m.length > 1 ? +m[m.length - 1] : a;
+    if (k >= a && k <= b) return rows[i];
+  }
+  return rows[k - 1] || [];
+}
+
+function renderMapDays(d) {
+  var box = document.getElementById("mapDays");
+  if (!box) return;
+  box.innerHTML = "";
+  var n = tourDayCount(d);
+  for (var k = 1; k <= n; k++) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.setAttribute("data-day", k);
+    b.textContent = "DAY " + k;
+    b.addEventListener("click", function () {
+      var k2 = +this.getAttribute("data-day");
+      if (_dayIdx === k2) clearDay();      // 再点一次 = 收起
+      else selectDay(k2);
+    });
+    box.appendChild(b);
+  }
+}
+
+function selectDay(k) {
+  var svg = document.getElementById("routeMap");
+  var hi = document.getElementById("routeHi");
+  var box = document.getElementById("mapDayBox");
+  if (!svg || !hi || !_tourDoc) return;
+  _dayIdx = k;
+  var g = dayGeometry(k);
+  hi.setAttribute("d", g.segs.map(function (s) {
+    return "M" + s[0].x.toFixed(1) + " " + s[0].y.toFixed(1) +
+           " L" + s[1].x.toFixed(1) + " " + s[1].y.toFixed(1);
+  }).join(" "));
+  svg.classList.add("on-day");
+  // 当天涉及的点 / 标签点亮，其余压暗（CSS 里按 .on-day 统一降透明度）
+  svg.querySelectorAll("[data-i]").forEach(function (el) {
+    el.classList.toggle("on", g.idx.indexOf(+el.getAttribute("data-i")) >= 0);
+  });
+  document.querySelectorAll("#mapDays button").forEach(function (b) {
+    b.classList.toggle("on", +b.getAttribute("data-day") === k);
+  });
+  if (box) {
+    var row = planRowFor(_tourDoc, k);
+    box.innerHTML =
+      '<div class="mdh"><b>DAY ' + k + '</b><span>' +
+        escapeHtml(row[1] || "当日路线待补充") + '</span></div>' +
+      '<div class="mdm">住宿 <b>' + escapeHtml(row[2] || "—") + '</b>' +
+        (row[3] ? ' ｜ ' + escapeHtml(row[3]) + ' KM' : '') + '</div>' +
+      daySpots(k);
+    box.hidden = false;
+  }
+}
+
+function clearDay() {
+  _dayIdx = 0;
+  var svg = document.getElementById("routeMap");
+  var hi = document.getElementById("routeHi");
+  var box = document.getElementById("mapDayBox");
+  if (svg) {
+    svg.classList.remove("on-day");
+    svg.querySelectorAll("[data-i].on").forEach(function (el) { el.classList.remove("on"); });
+  }
+  if (hi) hi.setAttribute("d", "");
+  if (box) { box.hidden = true; box.innerHTML = ""; }
+  document.querySelectorAll("#mapDays button").forEach(function (b) {
+    b.classList.remove("on");
+  });
 }
 
 // 三卡按钮绑定（DOM 已就绪：app.js 在 body 末尾加载）

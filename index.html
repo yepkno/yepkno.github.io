@@ -265,13 +265,73 @@ img{display:block}
   color:var(--faint);font-family:ui-monospace,Consolas,monospace;z-index:2;pointer-events:none}
 .tmapbox .mread{position:absolute;right:17px;top:15px;font-size:10px;letter-spacing:.14em;
   color:var(--accent);font-family:ui-monospace,Consolas,monospace;z-index:2;pointer-events:none}
-.tleg{display:flex;gap:18px;padding:11px 4px 0;font-size:11px;color:var(--faint);flex-wrap:wrap}
-.tleg b{color:var(--accent)}
-.tleg .sw{display:inline-block;width:9px;height:9px;margin-right:6px;
-  border:1.5px solid var(--accent);vertical-align:-1px}
-.tleg .sw.f{background:var(--accent)}
-.tleg .sw.dia{transform:rotate(45deg);background:var(--accent)}
-.tleg .sw.ring{border-radius:50%;border-width:2px}
+/* ---- 图例：与地图上真正画出来的记号一一对应（2026-09-18 重做）
+   旧版画的是"方块 + 菱形"，而地图上早已改成"圆点 + 外环"，所以对不上 ---- */
+.tleg{display:flex;align-items:center;gap:16px;padding:12px 4px 0;font-size:11px;
+  color:var(--faint);flex-wrap:wrap}
+.tleg span{display:inline-flex;align-items:center;gap:7px}
+.tleg i.lg{position:relative;display:inline-block;width:11px;height:11px;flex:0 0 auto}
+.tleg i.stay{background:var(--accent);border:1.5px solid #ffd9cd;border-radius:50%}
+.tleg i.stop{background:#0b1119;border:1.5px solid var(--accent);border-radius:50%}
+.tleg i.start{background:#0b1119;border:1.5px solid var(--accent);border-radius:50%}
+.tleg i.start::after{content:"";position:absolute;inset:-3.5px;border-radius:50%;
+  border:1px dashed rgba(255,214,202,.65)}
+.tleg i.end{background:var(--accent);border:1.5px solid #ffd9cd;border-radius:50%}
+.tleg i.end::after{content:"";position:absolute;inset:-3.5px;border-radius:50%;
+  border:1.5px solid rgba(255,214,202,.85)}
+.tleg i.route{width:18px;height:2.6px;border-radius:2px;background:var(--accent)}
+.tleg i.flow{width:18px;height:2px;
+  background:repeating-linear-gradient(90deg,rgba(255,255,255,.92) 0 2px,transparent 2px 7px)}
+.tleg i.prov{width:13px;height:11px;border-radius:2px;
+  background:linear-gradient(160deg,rgba(255,106,64,.55),rgba(255,70,31,.16));
+  border:1px solid rgba(255,102,64,.62)}
+.tleg .dim{opacity:.8}
+/* ---- 逐日查看：右侧按钮列 ---- */
+.tmapbox .mapdays{position:absolute;right:15px;top:50%;transform:translateY(-50%);
+  display:flex;flex-direction:column;gap:7px;z-index:4}
+.mapdays button{padding:6px 11px;font-size:10.5px;letter-spacing:.1em;cursor:pointer;
+  font-family:ui-monospace,Consolas,monospace;color:var(--muted);
+  background:rgba(10,16,26,.74);border:1px solid var(--border);transition:.18s;
+  -webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);
+  clip-path:polygon(0 0,calc(100% - 6px) 0,100% 6px,100% 100%,0 100%)}
+.mapdays button:hover{color:var(--text);border-color:rgba(255,70,31,.5)}
+.mapdays button.on{color:#fff;background:var(--accent);border-color:var(--accent);
+  box-shadow:0 0 14px rgba(255,70,31,.5)}
+/* ---- 当天详情卡（点 DAY 弹出，再点一次收起）---- */
+.tmapbox .mapday{position:absolute;right:76px;top:50%;transform:translateY(-50%);width:268px;
+  max-height:80%;overflow:auto;z-index:4;padding:15px 17px;text-align:left;
+  background:rgba(9,14,22,.93);border:1px solid rgba(255,70,31,.34);
+  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+  box-shadow:0 14px 44px rgba(0,0,0,.55)}
+.mapday[hidden]{display:none}
+.mapday .mdh{display:flex;align-items:baseline;gap:9px;padding-bottom:9px;
+  border-bottom:1px solid var(--border)}
+.mapday .mdh b{font-size:15px;color:var(--accent);letter-spacing:.1em;
+  font-family:ui-monospace,Consolas,monospace}
+.mapday .mdh span{font-size:12.5px;color:var(--text);line-height:1.4}
+.mapday .mdm{margin-top:9px;font-size:11.5px;color:var(--faint);
+  font-family:ui-monospace,Consolas,monospace;letter-spacing:.04em}
+.mapday .mdm b{color:var(--muted);font-weight:500}
+.mapday .mds{margin-top:4px}
+.mapday .mdcity{display:flex;align-items:center;gap:8px;margin:11px 0 7px;font-size:12.5px;
+  color:var(--text);font-weight:600}
+.mapday .mdcity i{width:6px;height:6px;flex:0 0 auto;background:var(--accent);
+  box-shadow:0 0 8px rgba(255,70,31,.7)}
+.mapday .mdlist{display:flex;flex-wrap:wrap;gap:6px;padding-left:14px}
+.mapday .mdlist span{font-size:11.5px;color:var(--muted);padding:3px 9px;
+  background:var(--tag-bg);border:1px solid var(--border);border-radius:20px}
+.mapday .mdnone{font-size:11.5px;color:var(--faint);margin-top:11px}
+/* ---- 选中某天：当天那一段单独描亮，其余整体压暗 ---- */
+#routeMap .rte.hi{stroke:#ffd0c2;stroke-width:4.4;
+  filter:drop-shadow(0 0 7px rgba(255,70,31,.9))}
+#routeMap.on-day .glow,#routeMap.on-day .rte:not(.hi),#routeMap.on-day .dash{opacity:.16}
+#routeMap.on-day .stop,#routeMap.on-day .sday,#routeMap.on-day .lbl,
+#routeMap.on-day .startring,#routeMap.on-day .endring{opacity:.26;transition:opacity .25s}
+#routeMap.on-day .stop.on,#routeMap.on-day .sday.on,#routeMap.on-day .lbl.on,
+#routeMap.on-day .startring.on,#routeMap.on-day .endring.on{opacity:1}
+#routeMap .stop.on{stroke:#fff;stroke-width:2.2}
+#routeMap .stop.stay.on{fill:#ff6a40}
+#routeMap .lbl.on{fill:#fff}
 .tgr{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px}
 .tmetric{background:var(--card);border:1px solid var(--border);padding:14px 16px;
   clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,0 100%)}
@@ -344,6 +404,10 @@ img{display:block}
   #tourStage #tourDetail{padding:18px 14px 48px}
   .tgr{grid-template-columns:repeat(2,1fr)}
   .ts3{padding:8px 13px;font-size:12px}
+  /* 窄屏：当日详情卡改为贴底弹层，按钮列保持右侧但不压到顶栏读数 */
+  .tmapbox .mapday{left:8px;right:8px;width:auto;top:auto;bottom:8px;transform:none;max-height:48%}
+  .tmapbox .mapdays{right:9px;gap:5px}
+  .mapdays button{padding:5px 9px;font-size:10px}
 }
 .doc-card{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;box-shadow:var(--shadow);transition:transform .22s,box-shadow .22s,border-color .22s;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);position:relative}
 .doc-card:hover{transform:translateY(-4px);box-shadow:0 14px 40px rgba(0,0,0,.45),var(--glow);border-color:rgba(255,70,31,.35)}
@@ -765,13 +829,20 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
             <i class="mgrid-tl"></i><i class="mgrid-br"></i>
             <div class="mtag">GEO / CN-PROV</div>
             <div class="mread" id="mapRead"></div>
+            <!-- 右侧逐日按钮：点开看当天行程，再点一次收起 -->
+            <div class="mapdays" id="mapDays"></div>
+            <!-- 当天详情：路线 + 住宿 + 途经城市与景点 -->
+            <div class="mapday" id="mapDayBox" hidden></div>
             <svg id="routeMap" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 620"></svg>
           </div>
           <div class="tleg">
-            <span><span class="sw f"></span>住宿点（D1/D2…）</span>
-            <span><span class="sw"></span>途经点</span>
-            <span><span class="sw dia"></span>起点</span>
-            <span><span class="sw ring"></span>终点</span>
+            <span><i class="lg stay"></i>住宿点（点内为第几天）</span>
+            <span><i class="lg stop"></i>途经点</span>
+            <span><i class="lg start"></i>起点</span>
+            <span><i class="lg end"></i>终点</span>
+            <span><i class="lg route"></i>行程路线</span>
+            <span><i class="lg flow"></i>行进方向</span>
+            <span><i class="lg prov"></i>途经省份</span>
             <span class="dim">连线为行程示意，非实际道路</span>
           </div>
         </div>
@@ -874,7 +945,7 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
   </div>
 </div>
 
-<script src="docs.js?v=20260918t"></script>
-<script src="app.js?v=20260918t"></script>
+<script src="docs.js?v=20260918u"></script>
+<script src="app.js?v=20260918u"></script>
 </body>
 </html>
