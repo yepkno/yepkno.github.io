@@ -152,129 +152,216 @@ function initSiteInfo() {
 }
 
 // ===== 页面初始化 =====
-// ===== 右下角悬浮播放器（自绘 UI + APlayer 引擎 + 可拖动）=====
+// ===== 右下角悬浮播放器（自绘 UI + 自管 Audio 引擎 + 可拖动）=====
+// 2026-09-18 换皮 + 修 4 个 bug：
+//  ① 上/下一首图标方向修正（旧 next 图标的三角实际朝左 → 与 prev 混淆）；
+//  ② 弃用 APlayer：其 list.switch() 是「先 trigger('listswitch') 再更新 this.index」，
+//     事件回调里读 ap.list.index 拿到旧值 → 歌名不刷新、要点两次。改为自管 <audio>，彻底可控；
+//  ③ 播放顺序改成「顺序 / 列表循环 / 单曲循环」三态，**当前态永远高亮 + 文字标注**（不再出现"默认不亮"）；
+//  ④ 进站自动播放 Bones：先尝试直接播放，被浏览器拦截则监听首次交互（点击/按键）后再播。
 function initPlayer() {
-  if (typeof APlayer === "undefined") return;
-  var list = (window.MUSIC && window.MUSIC.list) || [];
+  var raw = (window.MUSIC && window.MUSIC.list) || [];
   var fix = document.getElementById("playerFix");
-  if (!list.length || !fix) return;
+  if (!raw.length || !fix) return;
 
-  // 音频地址以编码形式存于歌单（站点/仓库中不出现音频源域名），播放前在此解码
-  function decodeSrc(it) {
-    return { name: it.name, artist: it.artist, cover: it.cover,
-             url: atob(it.src).split("").reverse().join("") };
-  }
-
-  var ap = new APlayer({
-    container: fix.querySelector("#aplayer"),
-    fixed: false,
-    mini: false,
-    autoplay: false,
-    loop: "one",
-    order: "list",
-    volume: 0.5,
-    theme: "#ff461f",
-    audio: list.map(decodeSrc)
+  // 音频地址以 base64(反转(url)) 存储 —— 站点/仓库中不出现音频源域名，播放前在此解码
+  var list = raw.map(function (it) {
+    var url = "";
+    try { url = atob(it.src).split("").reverse().join(""); } catch (e) { url = ""; }
+    return { name: it.name, artist: it.artist, cover: it.cover || "assets/music-cover.jpg", url: url };
   });
 
-  // 播放器区域：仅在线收听设计——禁右键/拖拽，避免被当成交互入口获取音频地址
-  fix.addEventListener("contextmenu", function (e) { e.preventDefault(); });
-  fix.addEventListener("dragstart", function (e) { e.preventDefault(); });
+  var DEFAULT_INDEX = 0;            // 进站默认曲目：Bones
+  var VOLUME = 0.5;
+  var REPEAT_LABEL = ["顺序", "列表", "单曲"];
 
-  var idx = 0;              // 当前曲目下标
-  var loopMode = 0;         // 0=list 1=all 2=one
-  var $ = function (s) { return fix.querySelector(s); };
+  var audio = new Audio();
+  audio.preload = "metadata";
+  audio.volume = VOLUME;
 
-  // ---- 歌单渲染 ----
-  function renderList() {
-    var box = $(".plist");
-    box.innerHTML = "";
-    list.forEach(function (s, i) {
-      var it = document.createElement("div");
-      it.className = "pl-item" + (i === idx ? " cur" : "");
-      it.innerHTML = '<span class="pl-idx">' + (i + 1) + '</span><span>' + s.name + '</span>';
-      it.addEventListener("click", function () { idx = i; ap.list.switch(i); ap.play(); renderList(); });
-      box.appendChild(it);
-    });
+  var idx = DEFAULT_INDEX;
+  var repeat = 1;                   // 0=顺序播放（末曲即停） 1=列表循环（默认） 2=单曲循环
+  var shuffle = false;
+  var muted = false, lastVol = VOLUME, fav = false;
+  var durations = [];
+
+  function $(s) { return fix.querySelector(s); }
+  // 判断某次点击是否来自播放器内部。必须用 composedPath()：
+  // 点歌单条目会触发 renderList() 重建列表，被点的节点在 click 冒泡到 document 时
+  // 已经脱离文档，此时 fix.contains(e.target) 会误判为 false（→ 面板被误收起）。
+  function inPlayer(e) {
+    var path = (e.composedPath && e.composedPath()) || [];
+    return path.indexOf(fix) !== -1 || fix.contains(e.target);
   }
-
-  // ---- 时间格式化 ----
   function fmt(s) {
-    if (!s || isNaN(s)) return "00:00";
+    if (!s || isNaN(s) || !isFinite(s)) return "00:00";
     s = Math.floor(s);
     var m = Math.floor(s / 60), r = s % 60;
     return (m < 10 ? "0" : "") + m + ":" + (r < 10 ? "0" : "") + r;
   }
 
-  // ---- 更新元信息 + 进度 ----
-  function updateMeta() {
+  // ---------------- 渲染 ----------------
+  function renderNow() {
     var cur = list[idx] || {};
-    $(".ptitle").textContent = cur.name || "—";
-    $(".partist").textContent = cur.artist || "—";
-    $(".pdisc img").src = cur.cover || "assets/music-cover.jpg";
-    $(".pdisc-big img").src = cur.cover || "assets/music-cover.jpg";
+    $("#pTitle").textContent = cur.name || "—";
+    $("#pArtist").textContent = cur.artist || "—";
+    if ($("#pCover").getAttribute("src") !== cur.cover) $("#pCover").setAttribute("src", cur.cover);
+    if ($("#pCoverMini").getAttribute("src") !== cur.cover) $("#pCoverMini").setAttribute("src", cur.cover);
   }
-  function updateBar() {
-    var t = ap.audio ? ap.audio.currentTime : 0;
-    var d = ap.audio ? (ap.audio.duration || 0) : 0;
+  function renderList() {
+    var box = $("#pListBox");
+    box.innerHTML = "";
+    list.forEach(function (s, i) {
+      var it = document.createElement("div");
+      it.className = "pl-item" + (i === idx ? " cur" : "");
+      it.innerHTML =
+        '<span class="pl-mark">' + (i === idx ? "▶" : "") + "</span>" +
+        '<span class="pl-thumb"><img src="' + escapeHtml(s.cover) + '" alt=""></span>' +
+        '<span class="pl-meta"><b>' + escapeHtml(s.name) + "</b><em>" + escapeHtml(s.artist || "") + "</em></span>" +
+        '<span class="pl-dur">' + (durations[i] || "--:--") + "</span>";
+      it.addEventListener("click", function () { load(i, true); });
+      box.appendChild(it);
+    });
+    $("#pListN").textContent = "(" + list.length + ")";
+  }
+  function renderBar() {
+    var t = audio.currentTime || 0, d = audio.duration || 0;
     $("#pCur").textContent = fmt(t);
     $("#pDur").textContent = fmt(d);
     var pct = d ? (t / d * 100) : 0;
     $("#pBarFill").style.width = pct + "%";
+    $("#pBarDot").style.left = pct + "%";
   }
-
-  // ---- 播放状态 ----
-  function setPlaying(on) {
+  function renderState() {
+    var on = !audio.paused && !audio.ended;
     fix.classList.toggle("playing", on);
-    var pl = $(".pb-play");
-    pl.setAttribute("title", on ? "暂停" : "播放");
+    $("#pMiniIcon").textContent = on ? "❚❚" : "▶";
+    // ③ 当前播放顺序永远可见：文字写明 + 图标高亮（不再有"默认不亮"的歧义）
+    $("#pRepeatT").textContent = REPEAT_LABEL[repeat];
+    $("#pRepeat").classList.add("on");
+    $("#pRepeat").setAttribute("title", "播放顺序：" + REPEAT_LABEL[repeat] + "（点击切换 顺序 / 列表 / 单曲）");
+    $("#pShuffle").classList.toggle("on", shuffle);
+    $("#pMute").classList.toggle("on", muted);
+    var mute = $("#pMute");
+    mute.querySelector("svg").style.display = muted ? "none" : "block";
+    mute.querySelector("svg.st").style.display = muted ? "block" : "none";
+    mute.setAttribute("title", muted ? "取消静音" : "静音");
+    var m2 = $("#pMute2");
+    if (m2) m2.textContent = muted ? "🔇 取消静音" : "🔊 静音";
   }
 
-  // ---- 按钮事件 ----
-  $(".pb-play").addEventListener("click", function () { ap.toggle(); });
-  $("[data-act=prev]").addEventListener("click", function () {
-    idx = (idx - 1 + list.length) % list.length; ap.list.switch(idx); ap.play(); updateMeta(); renderList();
-  });
-  $("[data-act=next]").addEventListener("click", function () {
-    idx = (idx + 1) % list.length; ap.list.switch(idx); ap.play(); updateMeta(); renderList();
-  });
-  $("[data-act=loop]").addEventListener("click", function () {
-    loopMode = (loopMode + 1) % 3;
-    ap.list.audios.forEach(function (a) { a.loop = (loopMode === 2); });
-    $("#pLoop").classList.toggle("on", loopMode !== 0);
-    $("#pLoop").setAttribute("title", ["循环：列表循环", "循环：顺序播放", "循环：单曲循环"][loopMode]);
-    var lt = document.getElementById("pLoopT");
-    if (lt) lt.textContent = ["列表", "顺序", "单曲"][loopMode];
-  });
-  $("[data-act=list]").addEventListener("click", function () {
-    $(".plist").classList.toggle("show");
-  });
-
-  // ---- 进度条点击跳转 ----
-  $(".pbar").addEventListener("click", function (e) {
-    if (!ap.audio || !ap.audio.duration) return;
-    var r = this.getBoundingClientRect();
-    var ratio = (e.clientX - r.left) / r.width;
-    ap.audio.currentTime = ratio * ap.audio.duration;
-    updateBar();
-  });
-
-  // ---- APlayer 事件 ----
-  ap.on("play", function () { setPlaying(true); });
-  ap.on("pause", function () { setPlaying(false); });
-  ap.on("ended", function () { setPlaying(false); });
-  ap.on("timeupdate", function () { updateBar(); });
-  ap.on("loadedmetadata", function () { updateBar(); });
-  ap.on("listswitch", function () {
-    // 以 APlayer 的当前下标为准（旧写法用歌名反查会失败并重置为 0，导致封面歌名永远不更新）
-    if (window.MUSIC && ap.list && typeof ap.list.index === "number") {
-      idx = ap.list.index;
+  // ---------------- 播放 ----------------
+  function load(i, autoplay) {
+    idx = ((i % list.length) + list.length) % list.length;
+    audio.src = list[idx].url;
+    try { audio.load(); } catch (e) {}
+    renderNow(); renderList(); renderBar();
+    if (autoplay) tryPlay();
+  }
+  function tryPlay() {
+    var p = audio.play();
+    if (p && p.catch) p.catch(function () { armPlayOnGesture(); });
+  }
+  function togglePlay() { if (audio.paused) tryPlay(); else audio.pause(); }
+  function step(dir, isAuto) {
+    if (shuffle && list.length > 1 && dir > 0) {
+      var n;
+      do { n = Math.floor(Math.random() * list.length); } while (n === idx);
+      load(n, true); return;
     }
-    updateMeta(); renderList();
+    if (isAuto && repeat === 0 && idx === list.length - 1) { renderState(); return; }  // 顺序播放：末曲停
+    load(idx + dir, true);
+  }
+  function updateDuration() {
+    if (audio.duration && isFinite(audio.duration)) {
+      durations[idx] = fmt(audio.duration);
+      renderList();
+    }
+  }
+
+  // ④ 进站自动播放被拦截时：等首次交互再播（一次性）
+  var armed = false;
+  function armPlayOnGesture() {
+    if (armed) return;
+    armed = true;
+    function go() {
+      document.removeEventListener("pointerdown", go, true);
+      document.removeEventListener("keydown", go, true);
+      armed = false;
+      tryPlay();
+    }
+    document.addEventListener("pointerdown", go, true);
+    document.addEventListener("keydown", go, true);
+  }
+
+  // ---------------- 事件 ----------------
+  audio.addEventListener("timeupdate", renderBar);
+  audio.addEventListener("loadedmetadata", function () { updateDuration(); renderBar(); });
+  audio.addEventListener("durationchange", function () { updateDuration(); renderBar(); });
+  audio.addEventListener("play", renderState);
+  audio.addEventListener("pause", renderState);
+  audio.addEventListener("ended", function () {
+    if (repeat === 2) { audio.currentTime = 0; tryPlay(); return; }   // 单曲循环
+    step(1, true);
   });
 
-  // ---- 吸附 / 展开 / 收起（含自动缩小）----
-  // 把播放器贴到最近的左右两边（12px 边距），垂直保持在屏幕内，并记忆位置
+  $("#pPlay").addEventListener("click", togglePlay);
+  $("#pMiniPlay").addEventListener("click", function (e) { e.stopPropagation(); togglePlay(); });
+  $("#pPrev").addEventListener("click", function () {
+    if (audio.currentTime > 3) { audio.currentTime = 0; renderBar(); return; }  // 播放超 3 秒：先回本曲开头
+    step(-1, false);
+  });
+  $("#pNext").addEventListener("click", function () { step(1, false); });
+  $("#pShuffle").addEventListener("click", function () { shuffle = !shuffle; renderState(); });
+  $("#pRepeat").addEventListener("click", function () { repeat = (repeat + 1) % 3; renderState(); });
+
+  // 更多菜单
+  var menu = $("#pMenu");
+  $("#pMore").addEventListener("click", function (e) {
+    e.stopPropagation();
+    menu.hidden = !menu.hidden;
+  });
+  document.addEventListener("click", function (e) {
+    if (!menu.hidden && !menu.contains(e.target) && !$("#pMore").contains(e.target)) menu.hidden = true;
+  });
+  $("#pFav").addEventListener("click", function () {
+    fav = !fav;
+    this.textContent = (fav ? "♥" : "♡") + " 收藏";
+    this.classList.toggle("on", fav);
+  });
+  $("#pMute2").addEventListener("click", function () { setMute(!muted); });
+
+  // 音量 / 静音
+  function setMute(on) {
+    muted = on;
+    if (on) { lastVol = audio.volume || VOLUME; audio.volume = 0; }
+    else { audio.volume = lastVol || VOLUME; }
+    $("#pVol").value = audio.volume;
+    renderState();
+  }
+  $("#pMute").addEventListener("click", function () { setMute(!muted); });
+  $("#pVol").addEventListener("input", function () {
+    audio.volume = Number(this.value);
+    muted = audio.volume === 0;
+    if (!muted) lastVol = audio.volume;
+    renderState();
+  });
+
+  // 进度条点击跳转
+  $("#pBar").addEventListener("click", function (e) {
+    if (!audio.duration) return;
+    var r = this.getBoundingClientRect();
+    var ratio = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+    audio.currentTime = ratio * audio.duration;
+    renderBar();
+  });
+
+  // 播放列表展开 / 收起
+  $("#pListHead").addEventListener("click", function () {
+    $("#pListWrap").classList.toggle("open");
+  });
+
+  // 收起 / 展开
   function snapToEdge() {
     var w = fix.offsetWidth, h = fix.offsetHeight;
     var r = fix.getBoundingClientRect();
@@ -286,76 +373,69 @@ function initPlayer() {
   }
   function collapse() { fix.classList.add("collapsed"); snapToEdge(); }
   function expand() { fix.classList.remove("collapsed"); snapToEdge(); }
+  $("#pCollapse").addEventListener("click", function () { collapse(); });
 
-  // 自动缩小：鼠标离开面板 5 秒后收起；点击页面其他区域立即收起；双击唱片收起
+  // 防抓链：禁右键 / 禁拖拽素材
+  fix.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+  fix.addEventListener("dragstart", function (e) { e.preventDefault(); });
+
+  // ---------------- 拖动 / 贴边吸附 / 位置记忆 ----------------
+  var dragging = false, moved = false, downInDisc = false, sx = 0, sy = 0, ox = 0, oy = 0;
+  fix.addEventListener("pointerdown", function (e) {
+    // 记下"这次按下是否落在收起态圆盘的主体上"（排除圆盘上的播放小按钮）
+    downInDisc = !!(e.target.closest && e.target.closest("#pDisc")) &&
+                 !(e.target.closest && e.target.closest(".pdisc-play"));
+    if (e.target.closest("button,input,.plist,.pbar,.pmenu")) return;   // 交互控件不参与拖动
+    dragging = true; moved = false;
+    var r = fix.getBoundingClientRect();
+    sx = e.clientX; sy = e.clientY; ox = r.left; oy = r.top;
+    fix.classList.add("dragging");
+    try { fix.setPointerCapture(e.pointerId); } catch (err) {}
+  });
+  fix.addEventListener("pointermove", function (e) {
+    if (!dragging) return;
+    var dx = e.clientX - sx, dy = e.clientY - sy;
+    if (Math.abs(dx) + Math.abs(dy) > 3) moved = true;
+    fix.style.left = (ox + dx) + "px";
+    fix.style.top = (oy + dy) + "px";
+    fix.style.right = "auto"; fix.style.bottom = "auto";
+  });
+  function endDrag() {
+    if (!dragging) { downInDisc = false; return; }
+    dragging = false;
+    fix.classList.remove("dragging");
+    snapToEdge();
+    // 收起态：在圆盘上「按下 → 松开且没拖动」= 点击 → 展开。
+    // 不能依赖 click 事件：上面的 setPointerCapture() 会把 click 的 target 改到捕获元素上，
+    // 圆盘自身的 click 处理器根本不会执行（2026-09-18 由 playwright 实测抓到）。
+    if (downInDisc && !moved) expand();
+    downInDisc = false;
+  }
+  fix.addEventListener("pointerup", endDrag);
+  fix.addEventListener("pointercancel", endDrag);
+
+  // 自动收起：鼠标离开面板 5 秒 / 点击播放器外部
   var hideTimer = null;
-  function startHide() {
-    stopHide();
-    hideTimer = setTimeout(collapse, 5000);
-  }
-  function stopHide() {
-    if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
-  }
+  function startHide() { stopHide(); hideTimer = setTimeout(collapse, 5000); }
+  function stopHide() { if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; } }
   fix.addEventListener("mouseenter", stopHide);
   fix.addEventListener("mouseleave", function () {
     if (!fix.classList.contains("collapsed")) startHide();
   });
-  document.addEventListener("click", function (e) {
-    if (!fix.contains(e.target)) collapse();
-  });
-  $(".pdisc-big").addEventListener("dblclick", function () { collapse(); });
+  document.addEventListener("click", function (e) { if (!inPlayer(e)) collapse(); });
 
-  // ---- 拖动位置（面板任意处 / 收起圆盘按住拖动；松手自动吸附左右两边；位置记忆）----
+  // 恢复上次位置（并按当前收起/展开宽度重新贴边）
   var saved = null;
   try { saved = JSON.parse(localStorage.getItem("playerPos2") || "null"); } catch (e) { saved = null; }
   if (saved && saved.x != null && saved.y != null) {
     fix.style.left = saved.x + "px"; fix.style.top = saved.y + "px";
     fix.style.right = "auto"; fix.style.bottom = "auto";
-    snapToEdge(); // 恢复后按当前收起/展开宽度重新贴边，兼容旧坐标
-  }
-  var dragging = false, moved = false, sx = 0, sy = 0, ox = 0, oy = 0, dragFrom = null;
-  function startDrag(e, from) {
-    // 按钮 / 进度条 / 歌单不触发拖动
-    if (e.target.closest && e.target.closest(".pb, .pbar, .plist")) return;
-    dragging = true; moved = false; dragFrom = from;
-    sx = e.clientX; sy = e.clientY;
-    var r = fix.getBoundingClientRect(); ox = r.left; oy = r.top;
-    e.preventDefault();
-  }
-  // 展开面板整体可拖（把手 .pdrag / 大唱片 / 空白处均可），收起圆盘可拖
-  $(".ppanel").addEventListener("mousedown", function (e) { startDrag(e, "panel"); });
-  $(".pdisc").addEventListener("mousedown", function (e) { startDrag(e, "disc"); });
-  // 防止面板里的图片触发浏览器原生图片拖拽
-  fix.addEventListener("dragstart", function (e) { e.preventDefault(); });
-  window.addEventListener("mousemove", function (e) {
-    if (!dragging) return;
-    var dx = e.clientX - sx, dy = e.clientY - sy;
-    if (!moved && Math.abs(dx) + Math.abs(dy) > 6) { moved = true; fix.classList.add("dragging"); }
-    if (!moved) return;
-    // 关键：按当前状态的实际宽度钳制（收起 56px / 展开 280px），左右两边都能贴满
-    var maxX = Math.max(0, window.innerWidth - fix.offsetWidth);
-    var nx = Math.max(0, Math.min(ox + dx, maxX));
-    var ny = Math.max(0, Math.min(oy + dy, window.innerHeight - fix.offsetHeight));
-    fix.style.left = nx + "px"; fix.style.top = ny + "px";
-    fix.style.right = "auto"; fix.style.bottom = "auto";
-  });
-  window.addEventListener("mouseup", function () {
-    if (!dragging) return;
-    dragging = false;
-    fix.classList.remove("dragging");
-    if (!moved) {
-      // 圆盘单击（没有拖动）= 展开
-      if (dragFrom === "disc") expand();
-      return;
-    }
     snapToEdge();
-  });
+  }
 
-  // 初始
-  updateMeta();
-  renderList();
-  updateBar();
-  setPlaying(false);
+  // ---------------- 初始化 ----------------
+  renderNow(); renderList(); renderBar(); renderState();
+  load(DEFAULT_INDEX, true);   // ④ 进站自动播放 Bones（被拦截则等首次交互）
 }
 
 document.addEventListener("DOMContentLoaded", function () {

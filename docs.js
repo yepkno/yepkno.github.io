@@ -26,16 +26,16 @@ window.TAG_IMAGES = {
 // 加歌：本地生成新的编码 src 后在此加一行（操作步骤记录在本地工作日志，勿写入本文件）。
 window.MUSIC = {
   list: [
-    { name: "Bones", artist: "Low Roar / Jofridur Akadottir", src: "Y2FsZi5zZW5vQjAyJS0wMiVyaXR0b2Rha0EwMiVydWRpcmZvSkMyJXJhb1IwMiV3b0wvcHBhLnlmaWx0ZW4uY2lzdW0tb25rcGV5Ly86c3B0dGg=", cover: "assets/music-cover.jpg" },
-    { name: "Merry Christmas Mr. Lawrence", artist: "坂本龍一", src: "M3BtLikxKDA4JThCJTRFJUQ4JUVCJTlFJUNBJUM5JTZFJTI4JUQ5JTVFJS0pMDklOUIlNEUlQkElRkIlNUUlRTklRkElOEUlM0ElQzklNUUlRjklNDklN0UlODglNTglNUUlRkElNjklNkUlNkElQ0IlNEUlM0IlQTglNUUlKDAyJWVjbmVyd2FMLnJNMDIlc2FtdHNpcmhDMDIleXJyZU0vcHBhLnlmaWx0ZW4uY2lzdW0tb25rcGV5Ly86c3B0dGg=", cover: "assets/music-cover.jpg" },
-    { name: "起风了", artist: "买辣椒也用券", src: "M3BtLjk4JUNCJUZFJUFBJTQ4JTVFJUI4JTlBJTZFJTg5JUJBJTlFJUIyJXJldm9DODglQ0IlRkUlNjglQUIlNEUlRTglM0ElOUUlN0IlNUIlOEUlQjIlLUIyJThCJTg4JTVFJThBJTQ5JTdFJUY5JTlCJTRFJTI5JTRBJTZFJTNBJUVCJThFJTBCJTlCJTRFJS9wcGEueWZpbHRlbi5jaXN1bS1vbmtwZXkvLzpzcHR0aA==", cover: "assets/music-cover.jpg" },
-    { name: "如果爱忘了", artist: "蓝心羽", src: "M3BtLkRCJUVCJTdFJTM4JUZCJTVFJUQ5JTM5JThFJS02OCVBQiU0RSU4OSVGQiU1RSUxQiU4OCU3RSVDOSVFOSU2RSUyOCU2QSU1RSUvcHBhLnlmaWx0ZW4uY2lzdW0tb25rcGV5Ly86c3B0dGg=", cover: "assets/music-cover.jpg" },
-    { name: "画心", artist: "张靓颖", src: "M3BtLjM4JUZCJTVFJUJCJTQ5JTdFJUIyJS1CMiU2OSUyQSU5RSUzOSVEOSU5RSUwQSVDQiU1RSUvcHBhLnlmaWx0ZW4uY2lzdW0tb25rcGV5Ly86c3B0dGg=", cover: "assets/music-cover.jpg" },
-    { name: "匆匆那年", artist: "王菲", src: "M3BtLjRCJTlCJTVFJTNBJTI4JTlFJTY4JUM4JTVFJTY4JUM4JTVFJUIyJS1CMiUyQiVGOCU4RSVCOCVFOCU3RSUvcHBhLnlmaWx0ZW4uY2lzdW0tb25rcGV5Ly86c3B0dGg=", cover: "assets/music-cover.jpg" },
-    { name: "白鸽", artist: "你的上好佳", src: "M3BtLjNCJURCJTRFJURCJTVBJTVFJUE4JThCJTRFJTQ4JUE5JTdFJTBBJURCJTRFJS1EQiU4QiU5RSVEQiU5OSU3RSUvcHBhLnlmaWx0ZW4uY2lzdW0tb25rcGV5Ly86c3B0dGg=", cover: "assets/music-cover.jpg" },
-    { name: "茶花开了，该回家了", artist: "王睿卓 / 加木", src: "M3BtLjhBJUM5JTZFJTBBJUE4JTVFJTYyJTM5JUQ4JTVFJUZCJUQ5JTdFJUI4JUU4JTdFJS02OCVBQiU0RSU2QiVFQSU1RSVFOSVCOSU1RSU1QSVGQSU4RSVDOCVDQiVGRSU2OCVBQiU0RSUwOCVDQiU1RSUxQiVBOCU4RSU2QiVDOCU4RSUvcHBhLnlmaWx0ZW4uY2lzdW0tb25rcGV5Ly86c3B0dGg=", cover: "assets/music-cover.jpg" },
-    { name: "童话镇", artist: "陈一发", src: "M3BtLjc4JTU5JTlFJUQ5JUZBJThFJTVBJUJBJTdFJS0xOSVGOCU1RSUwOCU4QiU0RSU4OCU5OSU5RSUvcHBhLnlmaWx0ZW4uY2lzdW0tb25rcGV5Ly86c3B0dGg=", cover: "assets/music-cover.jpg" },
-    { name: "富士山下", artist: "陈奕迅", src: "M3BtLkI4JThCJTRFJTFCJTFCJTVFJUJBJTNBJTVFJUM4JUZBJTVFJUIyJS1CMiU1OCVGQiU4RSU1OSU1QSU1RSU4OCU5OSU5RSUvcHBhLnlmaWx0ZW4uY2lzdW0tb25rcGV5Ly86c3B0dGg=", cover: "assets/music-cover.jpg" }
+    { name: "Bones", artist: "Low Roar / Jofridur Akadottir", src: "Y2FsZi5zZW5vQjAyJS0wMiVyaXR0b2Rha0EwMiVydWRpcmZvSkMyJXJhb1IwMiV3b0wvcHBhLnlmaWx0ZW4uY2lzdW0tb25rcGV5Ly86c3B0dGg=", cover: "assets/album/01-bones.jpg" },
+    { name: "Merry Christmas Mr. Lawrence", artist: "坂本龍一", src: "M3BtLikxKDA4JThCJTRFJUQ4JUVCJTlFJUNBJUM5JTZFJTI4JUQ5JTVFJS0pMDklOUIlNEUlQkElRkIlNUUlRTklRkElOEUlM0ElQzklNUUlRjklNDklN0UlODglNTglNUUlRkElNjklNkUlNkElQ0IlNEUlM0IlQTglNUUlKDAyJWVjbmVyd2FMLnJNMDIlc2FtdHNpcmhDMDIleXJyZU0vcHBhLnlmaWx0ZW4uY2lzdW0tb25rcGV5Ly86c3B0dGg=", cover: "assets/album/02-lawrence.jpg" },
+    { name: "起风了", artist: "买辣椒也用券", src: "M3BtLjk4JUNCJUZFJUFBJTQ4JTVFJUI4JTlBJTZFJTg5JUJBJTlFJUIyJXJldm9DODglQ0IlRkUlNjglQUIlNEUlRTglM0ElOUUlN0IlNUIlOEUlQjIlLUIyJThCJTg4JTVFJThBJTQ5JTdFJUY5JTlCJTRFJTI5JTRBJTZFJTNBJUVCJThFJTBCJTlCJTRFJS9wcGEueWZpbHRlbi5jaXN1bS1vbmtwZXkvLzpzcHR0aA==", cover: "assets/album/03-qifengle.jpg" },
+    { name: "如果爱忘了", artist: "蓝心羽", src: "M3BtLkRCJUVCJTdFJTM4JUZCJTVFJUQ5JTM5JThFJS02OCVBQiU0RSU4OSVGQiU1RSUxQiU4OCU3RSVDOSVFOSU2RSUyOCU2QSU1RSUvcHBhLnlmaWx0ZW4uY2lzdW0tb25rcGV5Ly86c3B0dGg=", cover: "assets/album/04-aiwangle.jpg" },
+    { name: "画心", artist: "张靓颖", src: "M3BtLjM4JUZCJTVFJUJCJTQ5JTdFJUIyJS1CMiU2OSUyQSU5RSUzOSVEOSU5RSUwQSVDQiU1RSUvcHBhLnlmaWx0ZW4uY2lzdW0tb25rcGV5Ly86c3B0dGg=", cover: "assets/album/05-huaxin.jpg" },
+    { name: "匆匆那年", artist: "王菲", src: "M3BtLjRCJTlCJTVFJTNBJTI4JTlFJTY4JUM4JTVFJTY4JUM4JTVFJUIyJS1CMiUyQiVGOCU4RSVCOCVFOCU3RSUvcHBhLnlmaWx0ZW4uY2lzdW0tb25rcGV5Ly86c3B0dGg=", cover: "assets/album/06-congcong.jpg" },
+    { name: "白鸽", artist: "你的上好佳", src: "M3BtLjNCJURCJTRFJURCJTVBJTVFJUE4JThCJTRFJTQ4JUE5JTdFJTBBJURCJTRFJS1EQiU4QiU5RSVEQiU5OSU3RSUvcHBhLnlmaWx0ZW4uY2lzdW0tb25rcGV5Ly86c3B0dGg=", cover: "assets/album/07-baige.jpg" },
+    { name: "茶花开了，该回家了", artist: "王睿卓 / 加木", src: "M3BtLjhBJUM5JTZFJTBBJUE4JTVFJTYyJTM5JUQ4JTVFJUZCJUQ5JTdFJUI4JUU4JTdFJS02OCVBQiU0RSU2QiVFQSU1RSVFOSVCOSU1RSU1QSVGQSU4RSVDOCVDQiVGRSU2OCVBQiU0RSUwOCVDQiU1RSUxQiVBOCU4RSU2QiVDOCU4RSUvcHBhLnlmaWx0ZW4uY2lzdW0tb25rcGV5Ly86c3B0dGg=", cover: "assets/album/08-chahua.jpg" },
+    { name: "童话镇", artist: "陈一发", src: "M3BtLjc4JTU5JTlFJUQ5JUZBJThFJTVBJUJBJTdFJS0xOSVGOCU1RSUwOCU4QiU0RSU4OCU5OSU5RSUvcHBhLnlmaWx0ZW4uY2lzdW0tb25rcGV5Ly86c3B0dGg=", cover: "assets/album/09-tonghua.jpg" },
+    { name: "富士山下", artist: "陈奕迅", src: "M3BtLkI4JThCJTRFJTFCJTFCJTVFJUJBJTNBJTVFJUM4JUZBJTVFJUIyJS1CMiU1OCVGQiU4RSU1OSU1QSU1RSU4OCU5OSU5RSUvcHBhLnlmaWx0ZW4uY2lzdW0tb25rcGV5Ly86c3B0dGg=", cover: "assets/album/10-fuji.jpg" }
   ]
 };
 
