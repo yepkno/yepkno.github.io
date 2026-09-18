@@ -5,7 +5,7 @@ var PASSWORD_HASH = "78e49ff8d5e7c92fc230fc30a01f274c5d9a83ce50f122c4d79e9c25e82
 
 // 栏目密码墙：每个受限栏目各有独立密码、独立解锁状态；解锁后本会话内自由浏览该栏目（只存哈希，明文不落任何文件）
 var WALL_HASHES = {
-  "知识文档": "e0f895872d65b2528feec97350a3a212b3d4ab88748e25d022a34641d338216b",
+  "知识文档": "0c87ed818fb90f3f88faa6b362cf1e99025f3c1248f8fe513cdb38d03d9dce65",
   "旅游攻略": "cd50fc998e7e535b8908c8efc8233cfc25ffa79ed9067abf1ebd32c52ffc87df",
   "游戏资源": "3f1f29444c093e2890d2163174cce5d5db40386b84168e015ec9da46cff1a6f9"
 };
@@ -831,16 +831,21 @@ function bindTourDrag(el, doc, home) {
   });
 
   el.addEventListener("pointermove", function (e) {
-    // 倾斜基准用"未变换时的卡片中心"（缓存容器 rect）——
-    // 若读 getBoundingClientRect()，倾斜本身会改变 rect，形成越倾越大的反馈
-    if (!hr) hr = home.getBoundingClientRect();
-    var cx = hr.left + (+el.dataset.x) + el.offsetWidth / 2;
-    var cy = hr.top + (+el.dataset.y) + el.offsetHeight / 2;
-    var dx = e.clientX - cx, dy = e.clientY - cy;
-    el.style.setProperty("--ry", twClamp(dx / 12, -25, 25).toFixed(2) + "deg");
-    el.style.setProperty("--rx", twClamp(-dy / 12, -25, 25).toFixed(2) + "deg");
-    el.style.setProperty("--glare", Math.min(0.22, Math.abs(dx) / 1400).toFixed(3));
-    el.style.setProperty("--sc", "1.02");
+    // ⑧ 触摸端**不做 3D 倾斜**：倾斜的前提是"指针在卡片内的相对位置"，
+    // 而手指按下就是要拖动 —— 边拖边倾会让卡片一直在晃，且松手后停在某个歪角。
+    // 触摸端只保留拖动 + 惯性；鼠标/触控板照旧倾斜。
+    if (e.pointerType !== "touch") {
+      // 倾斜基准用"未变换时的卡片中心"（缓存容器 rect）——
+      // 若读 getBoundingClientRect()，倾斜本身会改变 rect，形成越倾越大的反馈
+      if (!hr) hr = home.getBoundingClientRect();
+      var cx = hr.left + (+el.dataset.x) + el.offsetWidth / 2;
+      var cy = hr.top + (+el.dataset.y) + el.offsetHeight / 2;
+      var dx = e.clientX - cx, dy = e.clientY - cy;
+      el.style.setProperty("--ry", twClamp(dx / 12, -25, 25).toFixed(2) + "deg");
+      el.style.setProperty("--rx", twClamp(-dy / 12, -25, 25).toFixed(2) + "deg");
+      el.style.setProperty("--glare", Math.min(0.22, Math.abs(dx) / 1400).toFixed(3));
+      el.style.setProperty("--sc", "1.02");
+    }
 
     if (!drag) return;
     var b = twBounds(el, home);
@@ -1237,6 +1242,8 @@ function provBBox(segs) {
 // 挪不掉的途径点标签照样糊成一团 —— 这正是"放大也没用"的原因。
 var _mapVB = null;          // 基准视野 {x,y,w,h}（viewBox 单位）
 var _mapZoom = 1, _mapPanX = 0, _mapPanY = 0;
+// 触摸端点按显名：记住当前弹出的是哪个点（再点同一个 → 收起）
+var _mapTapI = null;
 var _mapDragged = false;    // 拖动过就不算点击（免得拖完把弹框关掉）
 var _mapZoomBound = false;
 
@@ -1331,8 +1338,12 @@ function applyLabelLOD() {
   var svg = document.getElementById("routeMap");
   if (!svg) return;
   var z = _mapZoom || 1;
+  // 窄屏（≤600）：屏幕上摆不下几个名字 → **途经点标签一律降级**，放大到 2.6× 才露出；
+  // 住宿点（data-pri=1）仍常显。复用已有 LOD 机制，只调这一档阈值，不另起一套。
+  var narrow = window.matchMedia("(max-width:600px)").matches;
   [].forEach.call(svg.querySelectorAll(".lbl"), function (t) {
     var mz = +t.getAttribute("data-mz") || 1;
+    if (narrow && t.getAttribute("data-pri") !== "1") mz = Math.max(mz, 2.6);
     t.style.display = (z + 0.001 >= mz) ? "" : "none";
   });
 }
@@ -1418,8 +1429,11 @@ function bindMapZoom() {
 
   // 放大后可拖动平移
   var dragging = false, lastX = 0, lastY = 0;
+  var tapStop = null, tapX = 0, tapY = 0;   // ⑦ 点按显名用
   svg.addEventListener("pointerdown", function (e) {
     if (e.button !== 0) return;          // 只认鼠标左键
+    tapStop = (e.target && e.target.closest) ? e.target.closest(".stop") : null;
+    tapX = e.clientX; tapY = e.clientY;
     // 关键：拦掉默认行为，否则按住左键一拖，浏览器会认为你在"选择文字" ——
     // 整页文字被拉出一片高亮，有时还会弹出复制菜单。
     e.preventDefault();
@@ -1447,37 +1461,113 @@ function bindMapZoom() {
     clampPan();
     applyMapZoom();
   });
-  function endDrag() {
+  function endDrag(e) {
+    var was = dragging;
     dragging = false;
     svg.classList.remove("grabbing");
     document.body.classList.remove("map-dragging");
+    // ⑦ 点按显名：**触摸端没有 hover**，原来鼠标悬停那套在手机上完全失效。
+    // 判据与卡片墙一致：位移不超过阈值才算"点按"（拖过地图就不算）。
+    if (was && !_mapDragged) {
+      if (tapStop) {
+        var i = +tapStop.getAttribute("data-i");
+        if (_mapTapI === i) { hideMapTip(); _mapTapI = null; }   // 再点同一个 → 收起
+        else { _mapTapI = i; showMapTip(i, tapX, tapY); }
+      } else {
+        hideMapTip(); _mapTapI = null;                            // 点空白 → 收起
+      }
+    }
+    tapStop = null;
   }
   svg.addEventListener("pointerup", endDrag);
   svg.addEventListener("pointercancel", endDrag);
-  svg.addEventListener("pointerleave", function () { endDrag(); hideMapTip(); });
+  svg.addEventListener("pointerleave", function (e) {
+    endDrag(e);
+    // ⚠️ 触摸端松开手指后浏览器会**紧接着发 pointerleave** —— 若在这里无脑隐藏浮层，
+    // 刚点出来的地名会瞬间被清掉（表现为"点按没反应"）。故触摸指针直接返回。
+    if (e && e.pointerType === "touch") return;
+    hideMapTip(); _mapTapI = null;
+  });
+
+  // ⑥ 双指捏合缩放（触摸端）———————————————————————————————
+  // 单指平移走 pointer 事件（已支持）；捏合走 touch 事件（PC 不触发）。
+  // 关键：**以两指中点为锚** —— 中点下方的那个点要尽量不动，否则一捏画面就飞走。
+  // 推导：屏幕 x = rect.left + k·(c.x + panX + s·(p.x − c.x))，k = rect.width / viewBox 宽。
+  // 令 A = mx/k − c.x，则 panX' = A − (s'/s)·(A − panX)。
+  var pinch = null;
+  function _tDist(ts) {
+    var dx = ts[0].clientX - ts[1].clientX, dy = ts[0].clientY - ts[1].clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+  function _tMidLocal(ts, rect) {
+    return { x: (ts[0].clientX + ts[1].clientX) / 2 - rect.left,
+             y: (ts[0].clientY + ts[1].clientY) / 2 - rect.top };
+  }
+  svg.addEventListener("touchstart", function (e) {
+    if (e.touches.length !== 2) return;
+    e.preventDefault();
+    tapStop = null;                       // 捏合不是点按，别误弹浮层
+    endDrag();
+    hideMapTip(); _mapTapI = null;
+    var rect = svg.getBoundingClientRect();
+    pinch = { d0: _tDist(e.touches), z0: _mapZoom, rect: rect };
+  }, { passive: false });
+
+  svg.addEventListener("touchmove", function (e) {
+    if (!pinch || e.touches.length !== 2) return;
+    e.preventDefault();
+    var d = _tDist(e.touches);
+    if (pinch.d0 < 8 || !pinch.rect.width || !_mapVB) return;
+    var s0 = pinch.z0, s1 = Math.max(MAP_ZMIN, Math.min(MAP_ZMAX, s0 * (d / pinch.d0)));
+    var k = pinch.rect.width / _mapVB.w;
+    var cx = _mapVB.x + _mapVB.w / 2, cy = _mapVB.y + _mapVB.h / 2;
+    var m = _tMidLocal(e.touches, pinch.rect);
+    var Ax = m.x / k - cx, Ay = m.y / k - cy;
+    var ratio = s1 / (_mapZoom || 1);
+    _mapZoom = s1;
+    _mapPanX = Ax - ratio * (Ax - _mapPanX);
+    _mapPanY = Ay - ratio * (Ay - _mapPanY);
+    if (_mapZoom <= MAP_ZMIN + 0.001) { _mapPanX = 0; _mapPanY = 0; }
+    clampPan();
+    applyMapZoom();
+    applyLabelLOD();
+  }, { passive: false });
+
+  svg.addEventListener("touchend", function (e) {
+    if (e.touches.length < 2) pinch = null;
+  });
+  svg.addEventListener("touchcancel", function () { pinch = null; });
 
   // 悬停某个点 → 浮层写清"这是什么地方"，并让它自己的标签一起点亮。
   // 为什么要有：文字标签之间要互相避让，被推远的那些看着就像"只有点、没有名字"，
   // 鼠标放上去才是确凿无误的对应关系。
   svg.addEventListener("pointermove", function (e) {
+    if (e.pointerType === "touch") return;   // 触摸端交给"点按显名"
     if (dragging) { hideMapTip(); return; }
     var c = e.target && e.target.closest ? e.target.closest(".stop") : null;
     if (!c) { hideMapTip(); return; }
-    var i = +c.getAttribute("data-i");
-    var pt = _tourPts[i];
-    if (!pt || !pt.p) { hideMapTip(); return; }
-    var p = pt.p;
-    var tip = document.getElementById("mapTip");
-    var host = svg.parentElement.getBoundingClientRect();
-    tip.innerHTML = "<b>" + escapeHtml(p.n || "\u2014") + "</b>" +
-      "<em>" + (p.stay ? "住宿 \u00b7 第 " + p.d + " 天" : "途经 \u00b7 第 " + p.d + " 天") +
-      "</em>" + (p.alt ? "<span>海拔 " + (+p.alt).toLocaleString() + " m</span>" : "");
-    tip.style.left = (e.clientX - host.left) + "px";
-    tip.style.top = (e.clientY - host.top - 6) + "px";
-    tip.hidden = false;
-    svg.querySelectorAll('.lbl[data-i="' + i + '"]').forEach(function (t) {
-      t.classList.add("hov");
-    });
+    showMapTip(+c.getAttribute("data-i"), e.clientX, e.clientY);
+  });
+}
+
+// ⑦ 显名浮层：鼠标悬停与触摸点按共用同一套渲染
+function showMapTip(i, cx, cy) {
+  var svg = document.getElementById("routeMap");
+  var pt = _tourPts[i];
+  if (!svg || pt === undefined || !pt || !pt.p) { hideMapTip(); return; }
+  var p = pt.p;
+  var tip = document.getElementById("mapTip");
+  if (!tip) return;
+  var host = svg.parentElement.getBoundingClientRect();
+  tip.innerHTML = "<b>" + escapeHtml(p.n || "\u2014") + "</b>" +
+    "<em>" + (p.stay ? "住宿 \u00b7 第 " + p.d + " 天" : "途经 \u00b7 第 " + p.d + " 天") +
+    "</em>" + (p.alt ? "<span>海拔 " + (+p.alt).toLocaleString() + " m</span>" : "");
+  tip.style.left = (cx - host.left) + "px";
+  tip.style.top = (cy - host.top - 6) + "px";
+  tip.hidden = false;
+  svg.querySelectorAll(".hov").forEach(function (t) { t.classList.remove("hov"); });
+  svg.querySelectorAll('.lbl[data-i="' + i + '"]').forEach(function (t) {
+    t.classList.add("hov");
   });
 }
 
@@ -2150,8 +2240,11 @@ function buildToc(bodyId, tocId) {
   var body = document.getElementById(bodyId);
   if (!box || !body) return;
   var heads = [].slice.call(body.querySelectorAll("h2, h3"));
+  var _wrap = box.parentNode, _fab = _wrap ? _wrap.querySelector(".toc-fab") : null;
   if (heads.length < 3) {          // 章节太少就不摆目录了
     box.hidden = true; box.innerHTML = "";
+    box.classList.remove("open");
+    if (_fab) _fab.hidden = true;
     if (_tocBody === body) { _tocHeads = []; _tocLinks = []; _tocBody = null; }
     return;
   }
@@ -2163,12 +2256,45 @@ function buildToc(bodyId, tocId) {
   });
   box.innerHTML = html;
   box.hidden = false;
+  box.classList.remove("open");
+
+  // ── 窄屏「目录」开关（2026-09-19 手机端适配 L1）──────────────────
+  // 只做开关与显隐，不建浮层：浮层要跟 .layout{z-index:1} 和播放器{80}
+  // 抢堆叠上下文（MEMORY 里记过两次的坑），sticky + 就地展开最稳。
+  if (!_fab && _wrap) {
+    _fab = document.createElement("button");
+    _fab.type = "button";
+    _fab.className = "toc-fab";
+    _fab.setAttribute("aria-label", "展开目录");
+    _fab.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+      '<path d="M4 6h16M4 12h16M4 18h10"/></svg><span>目录</span>' +
+      '<i class="toc-fab-n"></i>';
+    _wrap.insertBefore(_fab, _wrap.firstChild);
+  }
+  if (_fab) {
+    _fab.hidden = false;
+    var _n = _fab.querySelector(".toc-fab-n");
+    if (_n) _n.textContent = heads.length + " 节";
+    // 每次重建都换新引用，避免闭包里握着上一次的 box
+    _fab.onclick = function () {
+      var open = box.classList.toggle("open");
+      _fab.setAttribute("aria-label", open ? "收起目录" : "展开目录");
+      if (open) box.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    };
+  }
+
   _tocLinks = [].slice.call(box.querySelectorAll("a"));
   _tocHeads = heads;
   _tocBody = body;
   _tocLinks.forEach(function (a) {
     a.addEventListener("click", function (e) {
       e.preventDefault();
+      // 窄屏是"就地折叠"：选完条目自动收起，把版面还给正文
+      if (box.classList.contains("open") &&
+          window.matchMedia("(max-width:1200px)").matches) {
+        box.classList.remove("open");
+        _fabBar(box).forEach(function (f) { f.setAttribute("aria-label", "展开目录"); });
+      }
       // 先乐观高亮，别等滚动结束 —— 否则点了半天高亮还停在上一条
       _tocLinks.forEach(function (x) { x.classList.remove("on"); });
       a.classList.add("on");
@@ -2185,6 +2311,12 @@ function buildToc(bodyId, tocId) {
     sc.addEventListener("scroll", syncToc, { passive: true });
   }
   syncToc();
+}
+
+// 目录容器所在的 .doc-wrap 里的开关按钮（可能一个都没有）
+function _fabBar(box) {
+  var w = box && box.parentNode;
+  return w ? [].slice.call(w.querySelectorAll(".toc-fab")) : [];
 }
 
 // 高亮"正在读的那一节"：取最后一个已经越过顶部的标题

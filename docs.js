@@ -1686,7 +1686,7 @@ which gcc               # 查看 gcc 所在位置</code></pre>
       <h2>十四、下载原件</h2>
       <p>本教程的完整 PDF 原件（含全部操作截图与配套文件说明）打包供个人学习使用：</p>
       <p>
-        <a href="downloads/knowledge/opencode-tutorial.zip" download style="display:inline-block;padding:10px 22px;background:var(--accent);color:#fff;border-radius:8px;margin:4px 0;text-decoration:none">下载《OpenCode 使用教程》原件（PDF · 约 8.4 MB）</a>
+        <a href="downloads/kbx/opencode-tutorial.zip" download style="display:inline-block;padding:10px 22px;background:var(--accent);color:#fff;border-radius:8px;margin:4px 0;text-decoration:none">下载《OpenCode 使用教程》原件（PDF · 约 8.4 MB）</a>
       </p>
       <p><strong>解压说明</strong>：原件为普通压缩包，未设密码，下载后用 Windows 资源管理器或解压软件直接解压即可。</p>
     `

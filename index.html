@@ -442,7 +442,7 @@ body.map-dragging{-webkit-user-select:none;user-select:none;cursor:grabbing}
 #tdP3 .cleg .cswline{stroke:#ffd0c2;stroke-width:2.2;stroke-linecap:round}
 .tempty{padding:22px 0;color:var(--faint);font-size:12.5px;text-align:center}
 
-@media (max-width:720px){
+@media (max-width:600px){
   #tourStage .ttop{padding:0 16px;gap:12px}
   #tourStage .stats{display:none}
   #tourStage #tourDetail{padding:18px 14px 48px}
@@ -450,8 +450,45 @@ body.map-dragging{-webkit-user-select:none;user-select:none;cursor:grabbing}
   .ts3{padding:8px 13px;font-size:12px}
   /* 窄屏：当日详情卡改为贴底弹层，按钮列保持右侧但不压到顶栏读数 */
   .tmapbox .mapday{left:8px;right:8px;width:auto;top:auto;bottom:8px;transform:none;max-height:48%}
-  .tmapbox .mapdays{right:9px;gap:5px}
-  .mapdays button{padding:5px 9px;font-size:10px}
+  /* ⑨ DAY 按钮**移出地图**：窄屏按钮列竖排会盖住地图右侧约 1/5。
+     改成地图**下方的横向滚动条** —— .tmapbox 转 flex 列 + order 重排（不动 DOM），
+     按钮大而好点、可横滑，地图本体完整可见。 */
+  .tmapbox{display:flex;flex-direction:column}
+  .tmapbox>svg#routeMap{order:1}
+  .tmapbox .mapdays{position:static;order:2;transform:none;right:auto;top:auto;
+    flex-direction:row;flex-wrap:nowrap;gap:6px;overflow-x:auto;margin:10px 12px 2px;
+    padding:2px 0 6px;-webkit-overflow-scrolling:touch}
+  /* 触摸靶点 ≥44px（原 padding 5px 9px + 10px 字 ≈ 24px，远小于移动端标准） */
+  .mapdays button{padding:0 12px;font-size:11px;min-height:44px;min-width:52px;flex:0 0 auto;
+    display:inline-flex;align-items:center;justify-content:center}
+  /* 四卡切换按钮同样抬到 44px */
+  .ts3{min-height:44px;display:inline-flex;align-items:center;padding:0 14px}
+  /* 密码门按钮 */
+  .doc-wall button{min-height:44px}
+  .gate-box button{min-height:46px}
+  /* 播放器：窄屏整体小型化，减少遮挡（原为桌面尺寸 352px / 封面 132px） */
+  #playerFix{right:12px;bottom:12px}
+  #playerFix:not(.collapsed){width:min(304px,calc(100vw - 24px))}
+  #playerFix .psong{gap:14px;padding:2px 14px 12px;min-height:126px}
+  #playerFix .pcoverwrap,#playerFix .pcover{width:94px;height:94px;flex-basis:94px}
+  #playerFix .pvinyl{left:38px;width:86px;height:86px}
+  #playerFix .ptitle{font-size:15px}
+  #playerFix .partist{font-size:11.5px}
+  #playerFix .pbtns{gap:10px;padding:4px 12px 10px}
+  #playerFix .pb{min-width:44px;min-height:44px}
+  #playerFix .pb-play{width:48px;height:48px}
+  #playerFix .pico{min-width:40px;min-height:40px}
+  #playerFix .pbar,#playerFix .ptime{margin-left:14px;margin-right:14px}
+  #playerFix .plist{max-height:150px}
+  /* 收起态圆盘收小，少挡内容 */
+  #playerFix .pdisc{width:62px;height:62px}
+  #playerFix .pdisc-cover{width:28px;height:28px;margin:-14px 0 0 -14px}
+  #playerFix .pdisc-play{right:5px;bottom:5px;width:22px;height:22px}
+  /* 主题按钮抬到 44px 高 */
+  .theme-btn{height:44px;top:14px;right:14px}
+  /* 密码门内的输入框 */
+  .gate-box input{min-height:46px}
+  .doc-wall input{min-height:44px}
 }
 .doc-card{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;box-shadow:var(--shadow);transition:transform .22s,box-shadow .22s,border-color .22s;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);position:relative}
 .doc-card:hover{transform:translateY(-4px);box-shadow:0 14px 40px rgba(0,0,0,.45),var(--glow);border-color:rgba(255,70,31,.35)}
@@ -514,7 +551,7 @@ body.map-dragging{-webkit-user-select:none;user-select:none;cursor:grabbing}
 .content-body .gal[data-n="2"]{grid-template-columns:repeat(2,1fr)}
 .content-body .gal[data-n="3"]{grid-template-columns:repeat(3,1fr)}
 .content-body .gal[data-n="4"]{grid-template-columns:repeat(2,1fr)}
-@media (max-width:820px){.content-body .gal[data-n]{grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}}
+@media (max-width:900px){.content-body .gal[data-n]{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}}
 .content-body .gal figure{margin:0;border:1px solid var(--border);border-radius:10px;
   overflow:hidden;background:rgba(255,255,255,.025)}
 .content-body .gal img{display:block;width:100%;height:152px;object-fit:cover;
@@ -606,10 +643,51 @@ body.map-dragging{-webkit-user-select:none;user-select:none;cursor:grabbing}
 
 /* 阅读时让出宽度给正文 + 目录（标签云在阅读态没有用处） */
 body.reading .rightbar{display:none}
-@media (max-width:1180px){
-  .doc-wrap{grid-template-columns:minmax(0,1fr)}
-  .doc-toc{display:none}
+/* ===== 窄屏（≤1200）：正文目录改「就地折叠」，不再是直接隐藏 =====
+   2026-09-19 手机端适配 L1 —— 原来这一档是 .doc-toc{display:none}，
+   等于手机上根本没有目录（用户专门要过的功能）。现在保留目录，改成
+   标题下方一个「目录」开关，点开在原位展开（不做浮层遮罩 —— 浮层要跟
+   .layout{z-index:1} 与播放器{80} 抢堆叠上下文，是踩过的坑）。 */
+@media (max-width:1200px){
+  /* 用 grid（不是 flex、更不是 block）来重排「开关 → 目录 → 正文」：
+     · block：目录面板在 DOM 里位于正文**之后**，会摊到几千像素长的文章末尾，点开关看不到列表；
+     · flex：交叉轴 min-width:auto 会让 .content-body 按内容最小宽撑开，页面又被撑到 800+；
+     · grid + minmax(0,1fr)：轨道可压缩到 0，宽表格/长代码块**撑不破版面**（桌面版正是靠这个）。
+     order 可直接重排，无需改 DOM。 */
+  .doc-wrap{display:grid;grid-template-columns:minmax(0,1fr)}
+  .doc-wrap>.toc-fab{order:1}
+  .doc-wrap>.doc-toc{order:2}
+  .doc-wrap>.content-body{order:3}
+  .doc-toc{display:none;position:static;max-height:none;overflow:visible;
+    margin-top:12px;padding:14px 16px;border-radius:12px;
+    background:var(--card);border:1px solid var(--border);
+    backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+  .doc-toc.open{display:block}
+  /* 目录条目加大到可触摸（原 12.5px 行高 + 6px 内边距 ≈ 30px） */
+  .doc-toc a{padding:11px 0 11px 14px;font-size:13.5px}
+  .doc-toc a[data-lv="3"]{font-size:13px;padding-left:24px}
+  /* ⚠️ 用 .doc-wrap 提权：基础规则 .toc-fab{display:none} 写在本 media 块**之后**，
+     同权重下后者胜出 —— 不加前缀会导致开关永远不显示（2026-09-19 实测踩到）。 */
+  .doc-wrap .toc-fab{display:inline-flex}
+  /* 窄屏标签云也加大触摸靶点 */
+  .tagcloud .tc{min-height:44px;display:inline-flex;align-items:center}
 }
+/* 「目录」开关（仅窄屏显示）—— 用 sticky 而非 fixed：
+   sticky 不脱离文档流，不受 .layout / #tourDetail 的堆叠上下文限制。 */
+.toc-fab{display:none;position:sticky;top:10px;z-index:20;
+  align-items:center;gap:7px;min-height:44px;padding:0 16px;margin:0 0 12px;
+  font-family:inherit;font-size:13px;font-weight:600;letter-spacing:.04em;
+  color:var(--accent);background:var(--card);border:1px solid rgba(255,70,31,.32);
+  border-radius:22px;cursor:pointer;box-shadow:var(--shadow);
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  transition:color .18s,background .18s,border-color .18s}
+.toc-fab:hover{color:#fff;background:var(--accent);border-color:var(--accent)}
+.toc-fab svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;
+  stroke-linecap:round;stroke-linejoin:round}
+.toc-fab .toc-fab-n{font-size:11px;font-weight:500;color:var(--faint)}
+.toc-fab:hover .toc-fab-n{color:rgba(255,255,255,.82)}
+/* 旅游攻略是全屏层内部滚动、顶部还有 60px 工具条 —— 粘性按钮要让开 */
+#tourDetail .toc-fab{top:66px}
 
 /* ===== 右侧标签云（胶囊风格）===== */
 .panel{background:transparent;border:none;box-shadow:none;padding:0}
@@ -804,16 +882,30 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 .profile,.doc-card,.panel,.reader,.gate-box,.theme-btn{backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
 
 /* ===== 移动端适配 ===== */
-@media (max-width:960px){
-  .layout{flex-direction:column}
+@media (max-width:900px){
+  /* ⚠️ align-items 必须显式改成 stretch —— 2026-09-19 手机端适配实测抓到的**既有真 bug**：
+     基础规则 .layout{align-items:flex-start} 是给桌面「两栏顶对齐」用的；
+     窄屏改成 flex-direction:column 后，flex-start 会让 .main 的**宽度退化成内容最大宽度**
+     （不再拉伸）。正文里的长代码块/宽表格一撑，阅读页在 390px 手机上会宽到 825px ——
+     浏览器于是整页缩小以适配（innerWidth 从 390 变 849），看起来就是"手机端很糊很挤"。
+     判据用 scrollWidth-innerWidth 会**假通过**（缩放后两者相等），必须直接比视口宽。 */
+  .layout{flex-direction:column;align-items:stretch}
+  .main{width:100%;min-width:0}
+  /* 窄屏表格改为"块级横向滚动"，避免宽表把版面撑破（桌面不受影响） */
+  .content-body table{display:block;overflow-x:auto;white-space:normal}
+  .content-body pre{max-width:100%}
   .sidebar{width:100%;position:static}
   .profile{display:flex;align-items:center;text-align:left;gap:14px;padding:16px 18px}
   .avatar{width:56px;height:56px;margin:0;flex-shrink:0}
   .profile .desc{margin-top:2px}
   .profile .info{flex:1}
   .search{margin-top:12px}
-  .nav{flex-direction:row;margin-top:10px}
-  .nav a{flex:1;justify-content:center}
+  /* ⚠️ 这里原先是 .nav{flex-direction:row} + .nav a{flex:1}：
+     侧栏 342px 平分 8 项 → 每项只剩约 38px，四项中文被**逐字折成竖排单字柱**，
+     这就是"手机端显示效果很差"的主因（2026-09-19 实测截图）。
+     改成"宽度按内容 + 自动换行"，自然折成 2 行，且触摸高度 ≥44px。 */
+  .nav{flex-direction:row;flex-wrap:wrap;gap:7px;margin-top:10px}
+  .nav a{flex:0 0 auto;gap:7px;min-height:44px;padding:10px 11px;white-space:nowrap}
   .rightbar{width:100%;position:static;order:3}
   .main{order:2}
   .reader{padding:22px 18px}
@@ -1129,7 +1221,7 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
   </div>
 </div>
 
-<script src="docs.js?v=20260918zj"></script>
-<script src="app.js?v=20260918zj"></script>
+<script src="docs.js?v=20260919d"></script>
+<script src="app.js?v=20260919d"></script>
 </body>
 </html>
