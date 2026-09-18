@@ -187,6 +187,21 @@ img{display:block}
 #tourStage #tourDetail{position:absolute;inset:60px 0 0;overflow-y:auto;z-index:320;
   padding:24px max(22px,calc((100vw - 980px)/2)) 60px;
   background:linear-gradient(180deg,rgba(5,8,14,.95),rgba(5,8,14,.995))}
+/* 地图缩放控件（左下角；右上角被读数占用） */
+.mzoom{position:absolute;left:14px;bottom:14px;z-index:4;display:flex;align-items:center;
+  gap:2px;padding:3px;border-radius:9px;background:rgba(10,16,26,.74);
+  border:1px solid rgba(255,255,255,.13);backdrop-filter:blur(8px)}
+.mzoom button{width:24px;height:24px;border:0;border-radius:6px;cursor:pointer;
+  background:transparent;color:var(--muted);font-size:14px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  font-family:ui-monospace,Consolas,monospace;transition:.15s}
+.mzoom button:hover{background:rgba(255,70,31,.20);color:var(--accent)}
+.mzoom span{font-size:10.5px;color:var(--faint);min-width:32px;text-align:center;
+  font-family:ui-monospace,Consolas,monospace}
+.mzoom.at-min button[data-z="out"],.mzoom.at-max button[data-z="in"]{
+  opacity:.28;pointer-events:none}
+#routeMap{cursor:default}
+#routeMap.grabbing{cursor:grabbing}
 #tourStage #tourDetail::-webkit-scrollbar{width:8px}
 #tourStage #tourDetail::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18);border-radius:8px}
 
@@ -499,16 +514,76 @@ img{display:block}
 /* ---- 正文右侧粘性目录 ---- */
 .doc-wrap{display:grid;grid-template-columns:minmax(0,1fr) 206px;gap:28px;align-items:start}
 .doc-toc{position:sticky;top:84px;max-height:calc(100vh - 128px);overflow:auto;
-  padding:4px 2px 14px 15px;border-left:1px solid var(--border)}
+  padding:4px 10px 14px 15px;border-left:1px solid var(--border);
+  /* 细滚动条：原来用系统默认样式，在深色玻璃面板上很扎眼 */
+  scrollbar-width:thin;scrollbar-color:rgba(255,70,31,.42) transparent}
+.doc-toc::-webkit-scrollbar{width:6px}
+.doc-toc::-webkit-scrollbar-track{background:rgba(255,255,255,.035);border-radius:6px}
+.doc-toc::-webkit-scrollbar-thumb{background:rgba(255,70,31,.40);border-radius:6px;
+  border:1px solid rgba(255,255,255,.06)}
+.doc-toc::-webkit-scrollbar-thumb:hover{background:rgba(255,70,31,.72)}
 .doc-toc[hidden]{display:none}
 .doc-toc .tch{font-size:10.5px;letter-spacing:.16em;color:var(--faint);margin-bottom:9px;
   font-family:ui-monospace,Consolas,monospace}
-.doc-toc a{display:block;font-size:12.5px;line-height:1.5;color:var(--muted);text-decoration:none;
-  padding:4px 0 4px 10px;border-left:2px solid transparent;margin-left:-16px;transition:.18s}
+.doc-toc a{position:relative;display:block;font-size:12.5px;line-height:1.5;
+  color:var(--muted);text-decoration:none;padding:4px 0 4px 12px;margin-left:-16px;
+  transition:color .18s}
+/* 当前章节的指示条：从 0 长到满格 + 朱红辉光（原来是 2px 死边框，太生硬） */
+.doc-toc a::before{content:"";position:absolute;left:0;top:50%;width:2px;height:0;
+  transform:translateY(-50%);border-radius:2px;background:var(--accent);
+  transition:height .26s cubic-bezier(.4,0,.2,1),background .2s,box-shadow .26s}
 .doc-toc a[data-lv="3"]{font-size:12px;padding-left:22px;color:var(--faint)}
-.doc-toc a:hover{color:var(--text);border-left-color:rgba(255,70,31,.45)}
-.doc-toc a.on{color:var(--accent);border-left-color:var(--accent);font-weight:600}
+.doc-toc a:hover{color:var(--text)}
+.doc-toc a:hover::before{height:48%;background:rgba(255,70,31,.42)}
+.doc-toc a.on{color:var(--accent);font-weight:600}
+.doc-toc a.on::before{height:100%;
+  box-shadow:0 0 10px rgba(255,70,31,.75),0 0 3px rgba(255,70,31,.95)}
 .content-body h2,.content-body h3{scroll-margin-top:124px}
+/* ---- 04 景点路书 ---- */
+#guideBody .gintro{padding:12px 15px;border-radius:10px;background:var(--accent-soft);
+  border-left:3px solid var(--accent);font-size:13.5px;line-height:1.8;margin:0 0 6px}
+#guideBody h2{margin:32px 0 10px;font-size:19px;color:var(--text);padding-left:12px;
+  border-left:3px solid var(--accent);line-height:1.4}
+#guideBody h2:first-of-type{margin-top:14px}
+#guideBody .gnote{margin:0 0 6px;font-size:13px;color:var(--faint);line-height:1.75}
+#guideBody h3{margin:20px 0 7px;font-size:15.5px;color:var(--accent);line-height:1.45}
+#guideBody .gmeta{display:flex;flex-wrap:wrap;gap:6px 18px;margin:0 0 9px;
+  font-size:12px;color:var(--faint)}
+#guideBody .gmeta b{color:var(--text);font-weight:600}
+#guideBody .gmeta .gfee b{color:var(--accent)}
+#guideBody .gtip{margin:0;padding:0;list-style:none}
+#guideBody .gtip li{position:relative;padding-left:16px;margin:0 0 5px;
+  font-size:13.5px;line-height:1.78;color:var(--muted)}
+#guideBody .gtip li::before{content:"";position:absolute;left:2px;top:.66em;width:5px;
+  height:5px;border-radius:50%;background:var(--accent);opacity:.7}
+#guideBody .gtip strong{color:var(--text);font-weight:600}
+#guideBody .gtip .warn{color:var(--accent)}
+
+/* 路线图：步骤条 */
+.groute{margin:14px 0 4px;padding:12px 14px 13px;border-radius:11px;
+  background:rgba(255,255,255,.032);border:1px solid var(--border)}
+.groute .grh{font-size:11px;letter-spacing:.12em;color:var(--accent);margin-bottom:6px;
+  font-family:ui-monospace,Consolas,monospace}
+.grline{display:flex;overflow-x:auto;padding:2px 0 4px;
+  scrollbar-width:thin;scrollbar-color:rgba(255,70,31,.35) transparent}
+.grline::-webkit-scrollbar{height:5px}
+.grline::-webkit-scrollbar-thumb{background:rgba(255,70,31,.35);border-radius:5px}
+.grstop{position:relative;flex:1 0 116px;padding:32px 9px 2px;text-align:center}
+.grstop::before{content:"";position:absolute;left:0;right:0;top:13px;height:2px;
+  background:linear-gradient(90deg,rgba(255,70,31,.62),rgba(255,70,31,.22))}
+.grstop:first-child::before{left:50%}
+.grstop:last-child::before{right:50%}
+.grstop i{position:absolute;top:0;left:50%;transform:translateX(-50%);z-index:1;
+  display:flex;width:27px;height:27px;align-items:center;justify-content:center;
+  border-radius:50%;background:#12161f;border:1.5px solid var(--accent);
+  color:var(--accent);font-size:11.5px;font-style:normal;font-weight:600;
+  font-family:ui-monospace,Consolas,monospace}
+.grstop b{display:block;font-size:12.5px;color:var(--text);line-height:1.4}
+.grstop em{display:block;font-style:normal;font-size:10.5px;color:var(--accent);
+  font-family:ui-monospace,Consolas,monospace;margin-top:2px;letter-spacing:.03em}
+.grstop span{display:block;margin-top:4px;font-size:11px;color:var(--faint);line-height:1.5}
+
+
 /* 阅读时让出宽度给正文 + 目录（标签云在阅读态没有用处） */
 body.reading .rightbar{display:none}
 @media (max-width:1180px){
@@ -889,6 +964,7 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
           <button class="ts3 on" data-p="1" type="button"><i>01</i>正文</button>
           <button class="ts3" data-p="2" type="button"><i>02</i>行程地图</button>
           <button class="ts3" data-p="3" type="button"><i>03</i>数据报表</button>
+          <button class="ts3" data-p="4" type="button"><i>04</i>景点路书</button>
         </div>
         <div id="tdP1" class="tpane">
           <div class="doc-wrap">
@@ -896,11 +972,24 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
             <aside class="doc-toc" id="tourToc" hidden></aside>
           </div>
         </div>
+        <div id="tdP4" class="tpane" style="display:none">
+          <div class="doc-wrap">
+            <div class="content-body" id="guideBody"></div>
+            <aside class="doc-toc" id="guideToc" hidden></aside>
+          </div>
+        </div>
         <div id="tdP2" class="tpane" style="display:none">
           <div class="tmapbox">
             <i class="mgrid-tl"></i><i class="mgrid-br"></i>
             <div class="mtag">GEO / CN-PROV</div>
             <div class="mread" id="mapRead"></div>
+            <!-- 缩放控件：放大后途径点标签会自然分开 -->
+            <div class="mzoom" id="mapZoomBox">
+              <button type="button" data-z="out" title="缩小">&minus;</button>
+              <span id="mapZoomLv">1.0&times;</span>
+              <button type="button" data-z="in" title="放大">+</button>
+              <button type="button" data-z="reset" title="重置视野">&#x27f2;</button>
+            </div>
             <!-- 右侧逐日按钮：点开看当天行程，再点一次收起 -->
             <div class="mapdays" id="mapDays"></div>
             <!-- 当天详情：路线 + 住宿 + 途经城市与景点 -->
@@ -1018,7 +1107,7 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
   </div>
 </div>
 
-<script src="docs.js?v=20260918za"></script>
-<script src="app.js?v=20260918za"></script>
+<script src="docs.js?v=20260918zc"></script>
+<script src="app.js?v=20260918zc"></script>
 </body>
 </html>

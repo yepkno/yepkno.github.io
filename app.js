@@ -913,7 +913,7 @@ function openTour(d) {
 }
 
 function showTourPane(p) {
-  ["1", "2", "3"].forEach(function (k) {
+  ["1", "2", "3", "4"].forEach(function (k) {
     var el = document.getElementById("tdP" + k);
     if (el) el.style.display = (k === p) ? "" : "none";
   });
@@ -925,6 +925,56 @@ function showTourPane(p) {
   if (!d) return;
   if (p === "2") ensureMapData(function () { drawTourRoute(d); });
   if (p === "3") animateTourBars();
+  if (p === "4") renderTourGuide(d);
+}
+
+// ===== 04 景点路书 =====
+// 按地区分章节（h2），每个景点一个 h3 —— 这样右侧目录能直接跳到任意景点。
+function renderTourGuide(d) {
+  var el = document.getElementById("guideBody");
+  if (!el) return;
+  var gs = d.guides || [];
+  if (!gs.length) {
+    el.innerHTML = "<p>本篇暂无景点路书。</p>";
+    buildToc("guideBody", "guideToc");
+    return;
+  }
+  var CN = ["\u2460", "\u2461", "\u2462", "\u2463", "\u2464",
+            "\u2465", "\u2466", "\u2467", "\u2468"];
+  var html = '<div class="gintro">按地区拆开每个景点：<strong>门票 · 避坑点 · 详细走法</strong>。' +
+             '带路线图的可以照着走 —— 顺序、时间、到站做什么都写好了。</div>';
+  gs.forEach(function (g, gi) {
+    html += '<h2 id="gd-' + gi + '">' + (CN[gi] || (gi + 1)) + ' ' +
+            escapeHtml(g.area) + '</h2>';
+    if (g.note) html += '<p class="gnote">' + g.note + '</p>';
+    (g.items || []).forEach(function (it, ii) {
+      html += '<h3 id="gd-' + gi + '-' + ii + '">' + escapeHtml(it.n) + '</h3>';
+      html += '<div class="gmeta"><span class="gfee">门票 <b>' + escapeHtml(it.fee) +
+              '</b></span>' + (it.time ? '<span>建议 <b>' + escapeHtml(it.time) +
+              '</b></span>' : '') + '</div>';
+      if (it.tips && it.tips.length) {
+        html += '<ul class="gtip">' + it.tips.map(function (x) {
+          return '<li>' + x + '</li>'; }).join('') + '</ul>';
+      }
+      if (it.route) html += renderGuideRoute(it.route);
+    });
+  });
+  el.innerHTML = html;
+  buildToc("guideBody", "guideToc");
+}
+
+// 路线图：数据驱动的「步骤条」—— 序号节点 + 朱红连线，横向排列、过宽可左右滚。
+// 为什么不用 AI 生成图：AI 出图里的中文地名必然乱码，网上下载的又多是受版权保护的实景图；
+// 用矢量步骤条能保证地名一个字不错，和站点同一套视觉，改行程也只需改数据。
+function renderGuideRoute(r) {
+  var h = '<div class="groute"><div class="grh">' +
+          escapeHtml(r.title || "推荐走法") + '</div><div class="grline">';
+  (r.stops || []).forEach(function (s, i) {
+    h += '<div class="grstop"><i>' + (i + 1) + '</i><b>' + escapeHtml(s.n) + '</b>' +
+         (s.t ? '<em>' + escapeHtml(s.t) + '</em>' : '') +
+         (s.d ? '<span>' + escapeHtml(s.d) + '</span>' : '') + '</div>';
+  });
+  return h + '</div></div>';
 }
 
 // ---- 报表：配色与两个图表 ----
@@ -1180,6 +1230,117 @@ function provBBox(segs) {
   return r;
 }
 
+// ===== 地图缩放 =====
+// 思路：对 <g id="mapZoomG"> 做 transform，同时把文字 / 记号的尺寸按 1/s 反向缩放
+//      → 屏幕上它们的大小恒定，放大只是把地图"拉开"。
+// 为什么不用改 viewBox：那样会把文字一起放大，拥挤程度不变，
+// 挪不掉的途径点标签照样糊成一团 —— 这正是"放大也没用"的原因。
+var _mapVB = null;          // 基准视野 {x,y,w,h}（viewBox 单位）
+var _mapZoom = 1, _mapPanX = 0, _mapPanY = 0;
+var _mapDragged = false;    // 拖动过就不算点击（免得拖完把弹框关掉）
+var _mapZoomBound = false;
+
+var MAP_ZMIN = 1, MAP_ZMAX = 4;
+
+function applyMapZoom() {
+  var svg = document.getElementById("routeMap");
+  var g = document.getElementById("mapZoomG");
+  if (!svg || !g || !_mapVB) return;
+  var s = _mapZoom;
+  var cx = _mapVB.x + _mapVB.w / 2, cy = _mapVB.y + _mapVB.h / 2;
+  g.setAttribute("transform", "translate(" + (cx + _mapPanX).toFixed(1) + " " +
+    (cy + _mapPanY).toFixed(1) + ") scale(" + s.toFixed(3) + ") translate(" +
+    (-cx).toFixed(1) + " " + (-cy).toFixed(1) + ")");
+  // 文字：字号与描边一起反缩放，屏幕观感不变
+  svg.querySelectorAll("[data-fs]").forEach(function (t) {
+    var f0 = +t.getAttribute("data-fs");
+    t.style.fontSize = (f0 / s).toFixed(2) + "px";
+    if (t.classList.contains("lbl"))
+      t.style.strokeWidth = (f0 / s * 0.30).toFixed(2) + "px";
+  });
+  // 记号半径同理
+  svg.querySelectorAll("[data-r]").forEach(function (c) {
+    c.setAttribute("r", (+c.getAttribute("data-r") / s).toFixed(2));
+  });
+  var box = document.getElementById("mapZoomBox");
+  if (box) {
+    box.classList.toggle("at-min", s <= MAP_ZMIN + 0.001);
+    box.classList.toggle("at-max", s >= MAP_ZMAX - 0.001);
+  }
+  var lv = document.getElementById("mapZoomLv");
+  if (lv) lv.textContent = s.toFixed(1) + "\u00d7";
+}
+
+// 缩放时把平移量钳在"不跑出基准视野"的范围内
+function clampPan() {
+  if (!_mapVB) return;
+  var mx = _mapVB.w * (_mapZoom - 1) / 2, my = _mapVB.h * (_mapZoom - 1) / 2;
+  _mapPanX = Math.max(-mx, Math.min(mx, _mapPanX));
+  _mapPanY = Math.max(-my, Math.min(my, _mapPanY));
+}
+
+function zoomMap(s) {
+  _mapZoom = Math.max(MAP_ZMIN, Math.min(MAP_ZMAX, s));
+  if (_mapZoom <= MAP_ZMIN + 0.001) { _mapPanX = 0; _mapPanY = 0; }
+  clampPan();
+  applyMapZoom();
+}
+
+function bindMapZoom() {
+  var svg = document.getElementById("routeMap");
+  var box = document.getElementById("mapZoomBox");
+  if (!svg || _mapZoomBound) return;
+  _mapZoomBound = true;
+
+  if (box) {
+    box.addEventListener("click", function (e) {
+      var b = e.target.closest("button");
+      if (!b) return;
+      var z = b.getAttribute("data-z");
+      if (z === "in") zoomMap(_mapZoom * 1.5);
+      else if (z === "out") zoomMap(_mapZoom / 1.5);
+      else zoomMap(1);
+    });
+  }
+
+  // 滚轮缩放：阻止冒泡，别把外层内容也滚了
+  svg.addEventListener("wheel", function (e) {
+    e.preventDefault();
+    zoomMap(_mapZoom * (e.deltaY < 0 ? 1.18 : 1 / 1.18));
+  }, { passive: false });
+
+  // 放大后可拖动平移
+  var dragging = false, lastX = 0, lastY = 0;
+  svg.addEventListener("pointerdown", function (e) {
+    if (_mapZoom <= MAP_ZMIN + 0.001) return;
+    dragging = true;
+    _mapDragged = false;
+    lastX = e.clientX; lastY = e.clientY;
+    try { svg.setPointerCapture(e.pointerId); } catch (err) {}
+    svg.classList.add("grabbing");
+  });
+  svg.addEventListener("pointermove", function (e) {
+    if (!dragging) return;
+    var dx = e.clientX - lastX, dy = e.clientY - lastY;
+    if (Math.abs(dx) + Math.abs(dy) > 2) _mapDragged = true;
+    lastX = e.clientX; lastY = e.clientY;
+    var rect = svg.getBoundingClientRect();
+    if (!rect.width) return;
+    var k = (_mapVB.w / _mapZoom) / rect.width;     // 1 屏幕像素 = 多少 viewBox 单位
+    _mapPanX += dx * k;
+    _mapPanY += dy * k;
+    clampPan();
+    applyMapZoom();
+  });
+  function endDrag() {
+    dragging = false;
+    svg.classList.remove("grabbing");
+  }
+  svg.addEventListener("pointerup", endDrag);
+  svg.addEventListener("pointercancel", endDrag);
+  svg.addEventListener("pointerleave", endDrag);
+}
+
 function drawTourRoute(d) {
   var svg = document.getElementById("routeMap");
   if (!svg || !window.CN_MAP || !d.pts || !d.pts.length) return;
@@ -1223,6 +1384,9 @@ function drawTourRoute(d) {
   else { var nh = vw / ratio; y0 -= (nh - vh) / 2; vh = nh; }
   svg.setAttribute("viewBox", x0.toFixed(0) + " " + y0.toFixed(0) + " " +
                               vw.toFixed(0) + " " + vh.toFixed(0));
+  // 缩放基准：每次重绘都回到 1×
+  _mapVB = { x: x0, y: y0, w: vw, h: vh };
+  _mapZoom = 1; _mapPanX = 0; _mapPanY = 0;
 
   // ---- 渐变定义：用渐变代替死板的平涂，色块才有"厚度" ----
   var defs = '<defs>' +
@@ -1286,9 +1450,9 @@ function drawTourRoute(d) {
         }
         if (hit) continue;
         nplaced.push({ x: cx, y: cy, w: wn });
-        names += '<text class="pnm' + (on[a] ? ' on' : '') + '" style="font-size:' +
-                 nfs.toFixed(2) + 'px" x="' + cx.toFixed(1) + '" y="' + cy.toFixed(1) + '">' +
-                 ADNAME[a] + '</text>';
+        names += '<text class="pnm' + (on[a] ? ' on' : '') + '" data-fs="' + nfs.toFixed(2) +
+                 '" style="font-size:' + nfs.toFixed(2) + 'px" x="' + cx.toFixed(1) +
+                 '" y="' + cy.toFixed(1) + '">' + ADNAME[a] + '</text>';
         break;
       }
     });
@@ -1318,22 +1482,24 @@ function drawTourRoute(d) {
     var isStay = !!a.p.stay;
     var rr = isStay ? u * 1.42 : u * 0.72;
     marks += '<circle class="stop' + (isStay ? ' stay' : '') + '" data-i="' + i +
-             '" cx="' + a.x.toFixed(1) +
+             '" data-r="' + rr.toFixed(2) + '" cx="' + a.x.toFixed(1) +
              '" cy="' + a.y.toFixed(1) + '" r="' + rr.toFixed(2) + '"/>';
 
     // 住宿点：把"第几天"写进圆点里 —— 标签就不用再带 "D? · " 前缀，宽度少一半
     if (isStay && a.p.d) {
-      marks += '<text class="sday" data-i="' + i + '" style="font-size:' +
-               (u * 1.32).toFixed(2) + 'px" x="' +
+      marks += '<text class="sday" data-i="' + i + '" data-fs="' + (u * 1.32).toFixed(2) +
+               '" style="font-size:' + (u * 1.32).toFixed(2) + 'px" x="' +
                a.x.toFixed(1) + '" y="' + (a.y + u * 0.47).toFixed(1) + '">' +
                escapeHtml(String(a.p.d)) + '</text>';
     }
     // 起 / 终点：只加一圈外环，不再拿菱形盖住圆点
     if (i === 0)
-      marks += '<circle class="startring" data-i="' + i + '" cx="' + a.x.toFixed(1) +
+      marks += '<circle class="startring" data-i="' + i + '" data-r="' +
+               (rr + u * 0.95).toFixed(2) + '" cx="' + a.x.toFixed(1) +
                '" cy="' + a.y.toFixed(1) + '" r="' + (rr + u * 0.95).toFixed(2) + '"/>';
     if (i === pts.length - 1 && pts.length > 1)
-      marks += '<circle class="endring" data-i="' + i + '" cx="' + a.x.toFixed(1) +
+      marks += '<circle class="endring" data-i="' + i + '" data-r="' +
+               (rr + u * 0.95).toFixed(2) + '" cx="' + a.x.toFixed(1) +
                '" cy="' + a.y.toFixed(1) + '" r="' + (rr + u * 0.95).toFixed(2) + '"/>';
 
     if (!seen[a.p.n]) {
@@ -1380,14 +1546,18 @@ function drawTourRoute(d) {
       }
       li++;
       // 地名用"描边文字"（halo）而不是方框 —— 点一密集，方框就把路线全盖住了
-      labels += '<text class="lbl" data-i="' + i + '" style="font-size:' + fs.toFixed(2) +
-                'px;stroke-width:' +
+      labels += '<text class="lbl" data-i="' + i + '" data-fs="' + fs.toFixed(2) +
+                '" style="font-size:' + fs.toFixed(2) + 'px;stroke-width:' +
                 (fs * 0.30).toFixed(2) + 'px" x="' + (lx + fs * 0.55).toFixed(1) + '" y="' +
                 (ly + fs * 0.35).toFixed(1) + '">' + escapeHtml(a.p.n) + '</text>';
     }
   });
 
-  svg.innerHTML = defs + base + hi + names +
+  // 内容整体包进 <g id="mapZoomG">：缩放对它做 transform，并把文字 / 记号的尺寸
+  // **反向缩放** —— 屏幕上大小不变，放大只是把地图"拉开"，
+  // 原本挤在一起的途径点标签因此自然分开（这才是"放大就能看清"的关键）。
+  svg.innerHTML = defs +
+    '<g id="mapZoomG">' + base + hi + names +
     '<path class="glow" id="routeGlow" d="' + dpath + '"/>' +
     '<path class="rte" id="routePath" d="' + dpath + '"/>' +
     '<path class="dash" id="routeDash" d="' + dpath + '"/>' +
@@ -1395,13 +1565,15 @@ function drawTourRoute(d) {
     (dback ? '<path class="rte back" id="routeBack" d="' + dback + '"/>' : '') +
     // 逐日高亮层：默认空 d（不显示），点右侧 DAY 时只填当天那几段
     '<path class="rte hi" id="routeHi" d=""/>' +
-    marks + labels;
+    marks + labels + '</g>';
 
   // 逐日查看：先清掉上一天的选中态，再重建 DAY 按钮
   _tourPts = pts;
   _tourDoc = d;
   clearDay();
   renderMapDays(d);
+  bindMapZoom();
+  applyMapZoom();
 
   // 右上角读数
   var rd = document.getElementById("mapRead");
@@ -1586,8 +1758,21 @@ function clearDay() {
   });
 }
 
+// 点地图/页面其他任意位置都能收起当天弹框（原来只能再点同一个 DAY 按钮）
+// 注意：DAY 按钮本身、弹框内部不算"外部"；拖动地图也不算点击。
+function bindDayOutsideClose() {
+  document.addEventListener("click", function (e) {
+    if (!_dayIdx) return;
+    if (_mapDragged) { _mapDragged = false; return; }
+    if (e.target.closest && (e.target.closest("#mapDays") ||
+        e.target.closest("#mapDayBox"))) return;
+    clearDay();
+  });
+}
+
 // 三卡按钮绑定（DOM 已就绪：app.js 在 body 末尾加载）
 (function bindTourUI() {
+  bindDayOutsideClose();
   var back = document.getElementById("tourBack");
   if (back) back.addEventListener("click", showList);
   document.querySelectorAll("#tourDetail .ts3").forEach(function (b) {
