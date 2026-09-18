@@ -209,6 +209,9 @@ img{display:block}
   clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px))}
 .tbox h4{margin:0 0 10px;font-size:12px;color:var(--accent);
   font-family:ui-monospace,Consolas,monospace;letter-spacing:.12em}
+/* 标题里的中文副名：英文在前、中文在后，中间留一口气 */
+.tbox h4 em{font-style:normal;margin-left:10px;color:var(--muted);letter-spacing:.04em;
+  font-family:var(--sans)}
 .tbox p{font-size:14px;line-height:1.95;color:var(--muted);margin:0 0 12px}
 .tbox p:last-child{margin-bottom:0}
 .tmapbox{position:relative;background-color:var(--card);border:1px solid var(--border);
@@ -271,6 +274,9 @@ img{display:block}
 .tmetric b{display:block;margin-top:7px;font-size:23px;font-weight:500;color:var(--text);
   font-family:ui-monospace,Consolas,monospace}
 .tmetric b em{font-size:12px;font-style:normal;color:var(--faint);margin-left:3px}
+/* 英文标签后面跟中文对照：英文负责"科技感"，中文负责"看得懂" */
+.tmetric span i{font-style:normal;margin-left:8px;letter-spacing:.04em;color:var(--muted);
+  opacity:.9;font-family:var(--sans);font-size:11px}
 .tbar{display:flex;align-items:center;gap:12px;margin-bottom:9px;font-size:12px}
 .tbar i{flex:0 0 50px;font-style:normal;color:var(--muted)}
 .tbar .t{flex:1;height:8px;background:rgba(255,255,255,.08)}
@@ -281,6 +287,8 @@ img{display:block}
 #tourDetail th,#tourDetail td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--border)}
 #tourDetail th{color:var(--faint);font-weight:400;font-size:10.5px;letter-spacing:.08em;
   font-family:ui-monospace,Consolas,monospace}
+#tourDetail th em{font-style:normal;margin-left:7px;letter-spacing:.04em;color:var(--muted);
+  font-family:var(--sans);font-size:11px}
 #tourDetail td{color:var(--muted)}
 #tourDetail td.m{font-family:ui-monospace,Consolas,monospace;color:var(--accent)}
 /* ---- 报表：图表区 ---- */
@@ -292,6 +300,7 @@ img{display:block}
   font-family:ui-monospace,"SFMono-Regular",Consolas,monospace}
 #tdP3 .dcap{fill:var(--faint);font-size:9px;letter-spacing:.2em;text-anchor:middle;
   font-family:ui-monospace,"SFMono-Regular",Consolas,monospace}
+#tdP3 .dcap-cn{fill:var(--muted);font-size:10px;letter-spacing:.08em;font-family:var(--sans)}
 .tclist{flex:1;min-width:260px}
 /* 一行搞定：色点 | 名称 | 占比条 | 金额 | 占比 */
 .tcrow{display:grid;grid-template-columns:10px 58px 1fr 76px 42px;align-items:center;gap:12px;
@@ -859,7 +868,7 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
   </div>
 </div>
 
-<script src="docs.js?v=20260918r"></script>
-<script src="app.js?v=20260918r"></script>
+<script src="docs.js?v=20260918s"></script>
+<script src="app.js?v=20260918s"></script>
 </body>
 </html>

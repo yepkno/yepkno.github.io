@@ -949,7 +949,8 @@ function donutChart(keys, cost, total) {
   });
   return '<div class="tdonut"><svg viewBox="0 0 172 172">' + segs +
     '<text class="dsum" x="' + cx + '" y="' + (cy - 3) + '">' + fmtMoney(total) + '</text>' +
-    '<text class="dcap" x="' + cx + '" y="' + (cy + 16) + '">TOTAL</text>' +
+    '<text class="dcap" x="' + cx + '" y="' + (cy + 15) + '">TOTAL</text>' +
+    '<text class="dcap dcap-cn" x="' + cx + '" y="' + (cy + 29) + '">总费用</text>' +
     '</svg></div>';
 }
 
@@ -1005,7 +1006,7 @@ function distCombo(rows) {
             '" width="' + bw.toFixed(1) + '" height="' + Math.max(h, 0.6).toFixed(1) +
             '" rx="3" data-final="' + (pt + ph - h).toFixed(1) + '">' +
             '<title>' + escapeHtml(r[0] || "") + '  ' + escapeHtml(r[1] || "") + '  ' +
-            vals[k].toLocaleString() + ' KM</title></rect>';
+            vals[k].toLocaleString() + ' KM（公里）</title></rect>';
     var ly = pt + ph - cum[k] / maxC * ph * 0.92;
     pts.push({ x: x, y: ly });
     xl += '<text class="cx" x="' + x.toFixed(1) + '" y="' + (H - 16) + '">' +
@@ -1061,11 +1062,11 @@ function renderTourReport(d) {
 
   document.getElementById("tdP3").innerHTML =
     '<div class="tgr">' +
-      '<div class="tmetric"><span>TOTAL COST</span><b>' + fmtMoney(total) + '</b></div>' +
-      '<div class="tmetric"><span>PER PERSON</span><b>' + fmtMoney(paid) + '</b></div>' +
-      '<div class="tmetric"><span>PER DAY</span><b>' + fmtMoney(perDay) + '</b></div>' +
-      '<div class="tmetric"><span>DAYS</span><b>' + days + '<em>D</em></b></div>' +
-      '<div class="tmetric"><span>DISTANCE</span><b>' + km.toLocaleString() + '<em>KM</em></b></div>' +
+      '<div class="tmetric"><span>TOTAL COST<i>总费用</i></span><b>' + fmtMoney(total) + '</b></div>' +
+      '<div class="tmetric"><span>PER PERSON<i>人均</i></span><b>' + fmtMoney(paid) + '</b></div>' +
+      '<div class="tmetric"><span>PER DAY<i>日均</i></span><b>' + fmtMoney(perDay) + '</b></div>' +
+      '<div class="tmetric"><span>DAYS<i>天数</i></span><b>' + days + '<em>D</em></b></div>' +
+      '<div class="tmetric"><span>DISTANCE<i>里程</i></span><b>' + km.toLocaleString() + '<em>KM</em></b></div>' +
     '</div>' +
     '<div class="tbox"><h4>COST BY CATEGORY<em>费用分类构成</em></h4>' +
       '<div class="tcostflex">' + donutChart(keys, cost, total) + costList(keys, cost, total) + '</div>' +
@@ -1073,8 +1074,9 @@ function renderTourReport(d) {
     '<div class="tbox"><h4>DISTANCE &amp; CUMULATIVE<em>分段里程 / 累计里程</em></h4>' +
       distCombo(rows) +
     '</div>' +
-    '<div class="tbox"><h4>PLAN<em>逐日行程</em></h4><table><tr><th>DAY</th><th>ROUTE</th>' +
-      '<th>STAY</th><th>KM</th></tr>' + plan + '</table></div>';
+    '<div class="tbox"><h4>PLAN<em>逐日行程</em></h4><table><tr><th>DAY<em>天</em></th>' +
+      '<th>ROUTE<em>路线</em></th><th>STAY<em>住宿</em></th><th>KM<em>里程</em></th></tr>' +
+      plan + '</table></div>';
 }
 
 // 图表入场动画：环形图扫出、柱子升起、折线描绘、面积淡入
@@ -1372,15 +1374,22 @@ function drawTourRoute(d) {
       var v = +r[3];
       if (isFinite(v)) km += v;
     });
-    rd.textContent = "STOPS " + pts.length + (km ? " / " + km.toLocaleString() + " KM" : "");
+    rd.textContent = "STOPS " + pts.length + " · 停留点" +
+                     (km ? " ／ " + km.toLocaleString() + " KM 全程" : "");
   }
 
   // 路线逐段生长（主线 + 发光底一起长，流动虚线最后淡入）
+  // ⚠️ CSS 给这两条线加了 vector-effect:non-scaling-stroke —— 这时 stroke-dasharray
+  //    的单位是「屏幕像素」，而 getTotalLength() 返回的是「用户单位」，两者差一个
+  //    viewBox→屏幕的缩放比。直接拿长度当 dash 初值，长线中段就会空出一大截，
+  //    看起来就像"路线断了"。所以必须乘上缩放比。
   var el = document.getElementById("routePath"), gl = document.getElementById("routeGlow");
   var len = el.getTotalLength();
+  var fit = (svg.clientWidth || svg.getBoundingClientRect().width || 0) / (vw || 1);
+  var dashLen = Math.max(1, len * (fit > 0 ? fit : 1));
   [el, gl].forEach(function (x) {
-    x.style.strokeDasharray = len;
-    x.style.strokeDashoffset = len;
+    x.style.strokeDasharray = dashLen;
+    x.style.strokeDashoffset = dashLen;
     x.style.transition = "none";
   });
   var dash = document.getElementById("routeDash");
@@ -1394,6 +1403,15 @@ function drawTourRoute(d) {
       if (dash) { dash.style.transition = "opacity .55s ease 1.5s"; dash.style.opacity = "1"; }
     });
   });
+  // 生长结束后撤掉 dash：静止态永远是完整的一条线，不再依赖任何长度估算
+  // （窗口缩放、投影变化都不会再让线"断开"）
+  setTimeout(function () {
+    [el, gl].forEach(function (x) {
+      x.style.transition = "none";
+      x.style.strokeDasharray = "";
+      x.style.strokeDashoffset = "";
+    });
+  }, 2450);
 }
 
 // 三卡按钮绑定（DOM 已就绪：app.js 在 body 末尾加载）
