@@ -63,20 +63,56 @@ img{display:block}
    旅游攻略 · 新版（首页 3D 环 → 点开三卡「正文 / 行程地图 / 数据报表」）
    科技感语言：切角 / HUD 角标 / 等宽字 / 数据化 —— 仅用于本分类
    =================================================================== */
-#tourWall{position:relative;height:470px;margin:0 0 24px;overflow:hidden;border-radius:14px;
-  perspective:2600px;
+/* ============ 旅游攻略 · 全屏入口（全屏密码门 + 全屏卡片舞台）============
+   为什么全屏：这是一套"自由拖动 + 甩动 + 倾斜"的交互，嵌在内容区里舞台太小、
+   还会被导航/标签云/页脚抢视觉 —— 全屏才是它的正确场地。 */
+#tourGate{position:fixed;inset:0;z-index:120;display:flex;align-items:center;justify-content:center;
+  padding:20px;background:var(--gate-veil);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+#tourGate[hidden]{display:none}
+#tourGate .gate-box{max-width:420px;border-color:rgba(255,70,31,.30)}
+#tourGate .icon{background:rgba(255,70,31,.14)}
+#tourGate .tk{display:flex;gap:22px;justify-content:center;margin-top:16px;font-size:10.5px;
+  color:var(--faint);letter-spacing:.12em;
+  font-family:ui-monospace,"SFMono-Regular",Consolas,monospace}
+#tourGate .tk b{color:var(--accent)}
+
+#tourStage{position:fixed;inset:0;z-index:110;overflow:hidden;
   background:
-    radial-gradient(ellipse 62% 52% at 50% 42%,rgba(255,70,31,.14) 0%,rgba(0,0,0,0) 70%),
-    radial-gradient(ellipse 90% 34% at 50% 92%,rgba(96,146,224,.12) 0%,rgba(0,0,0,0) 74%),
-    linear-gradient(180deg,rgba(4,8,14,.70),rgba(4,8,14,.54))}
-/* 地面网格（承接空间感，避免容器显得空） */
-#tourWall .tfloor{position:absolute;left:-8%;right:-8%;bottom:0;height:44%;pointer-events:none;
+    radial-gradient(ellipse 58% 48% at 50% 36%,rgba(255,70,31,.13) 0%,rgba(0,0,0,0) 70%),
+    radial-gradient(ellipse 92% 34% at 50% 94%,rgba(96,146,224,.13) 0%,rgba(0,0,0,0) 74%),
+    linear-gradient(180deg,#05080e,#080d16)}
+#tourStage[hidden]{display:none}
+/* 地面网格 */
+#tourStage .tfloor{position:absolute;left:-6%;right:-6%;bottom:0;height:46%;pointer-events:none;
   background-image:linear-gradient(rgba(255,255,255,.075) 1px,transparent 1px),
                    linear-gradient(90deg,rgba(255,255,255,.058) 1px,transparent 1px);
-  background-size:100% 27px,54px 100%;
-  -webkit-mask-image:linear-gradient(180deg,rgba(0,0,0,0) 0%,#000 76%);
-  mask-image:linear-gradient(180deg,rgba(0,0,0,0) 0%,#000 76%)}
+  background-size:100% 32px,64px 100%;
+  -webkit-mask-image:linear-gradient(180deg,rgba(0,0,0,0) 0%,#000 78%);
+  mask-image:linear-gradient(180deg,rgba(0,0,0,0) 0%,#000 78%)}
 #tourWallStage{position:absolute;inset:0;transform-style:preserve-3d}
+/* 顶栏 */
+#tourStage .ttop{position:absolute;top:0;left:0;right:0;height:60px;display:flex;align-items:center;
+  gap:20px;padding:0 26px;z-index:300;pointer-events:none}
+#tourStage .ttop::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.15),transparent)}
+#tourStage .brand{font-size:12px;letter-spacing:.18em;color:var(--text);
+  font-family:ui-monospace,"SFMono-Regular",Consolas,monospace}
+#tourStage .brand b{color:var(--accent)}
+#tourStage .stats{display:flex;gap:20px;margin-left:auto;font-size:11px;letter-spacing:.12em;
+  color:var(--faint);font-family:ui-monospace,"SFMono-Regular",Consolas,monospace}
+#tourStage .stats b{color:var(--accent)}
+#tourStage .texit{pointer-events:auto;padding:8px 17px;font-size:12px;font-family:inherit;
+  cursor:pointer;color:var(--muted);background:rgba(255,255,255,.05);border:1px solid var(--border);
+  transition:.22s;clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%)}
+#tourStage .texit:hover{color:#fff;border-color:var(--accent);background:rgba(255,70,31,.18)}
+#tourStage .thint{position:absolute;left:0;right:0;bottom:18px;text-align:center;font-size:11.5px;
+  color:var(--faint);letter-spacing:.06em;z-index:300;pointer-events:none}
+#tourStage .tcor{position:absolute;width:20px;height:20px;border-color:var(--accent);opacity:.55;
+  pointer-events:none;z-index:300}
+#tourStage .tcor.tl{left:16px;top:74px;border-left:2px solid;border-top:2px solid}
+#tourStage .tcor.tr{right:16px;top:74px;border-right:2px solid;border-top:2px solid}
+#tourStage .tcor.bl{left:16px;bottom:16px;border-left:2px solid;border-bottom:2px solid}
+#tourStage .tcor.br{right:16px;bottom:16px;border-right:2px solid;border-bottom:2px solid}
 /* 可自由拖动的卡片 */
 .tcard{position:absolute;left:0;top:0;cursor:grab;touch-action:none;
   transform:translate3d(var(--x,0px),var(--y,0px),0) rotate(var(--r,0deg))
@@ -85,40 +121,28 @@ img{display:block}
   will-change:transform}
 .tcard.drag{cursor:grabbing;transition:none}
 .tcard .fc{position:absolute;inset:0;overflow:hidden;background:#0d1420;
-  border:1px solid rgba(255,255,255,.30);box-shadow:0 16px 42px rgba(0,0,0,.52);
-  clip-path:polygon(0 0,calc(100% - 13px) 0,100% 13px,100% 100%,13px 100%,0 calc(100% - 13px))}
-.tcard:hover .fc{border-color:var(--accent);box-shadow:0 24px 62px rgba(255,70,31,.34)}
+  border:1px solid rgba(255,255,255,.30);box-shadow:0 18px 48px rgba(0,0,0,.55);
+  clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px))}
+.tcard:hover .fc{border-color:var(--accent);box-shadow:0 26px 68px rgba(255,70,31,.36)}
 .tcard img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
-.tcard .sc{position:absolute;left:0;right:0;bottom:0;height:78px;pointer-events:none;
+.tcard .sc{position:absolute;left:0;right:0;bottom:0;height:82px;pointer-events:none;
   background:linear-gradient(180deg,rgba(6,11,19,0),rgba(6,11,19,.9))}
 .tcard .glare{position:absolute;inset:0;background:#fff;opacity:var(--glare,0);pointer-events:none}
-.tcard .no{position:absolute;left:8px;top:7px;padding:2px 7px;font-size:10.5px;letter-spacing:.1em;
+.tcard .no{position:absolute;left:9px;top:8px;padding:2px 7px;font-size:10.5px;letter-spacing:.1em;
   color:#fff;background:rgba(255,70,31,.92);font-family:ui-monospace,Consolas,monospace;
   clip-path:polygon(0 0,calc(100% - 5px) 0,100% 5px,100% 100%,0 100%)}
-.tcard .rg{position:absolute;right:9px;top:10px;font-size:11px;letter-spacing:.06em;
+.tcard .rg{position:absolute;right:10px;top:11px;font-size:11.5px;letter-spacing:.06em;
   color:#fff;opacity:.94;text-shadow:0 1px 4px #000}
-.tcard .nm{position:absolute;left:10px;right:10px;bottom:9px;font-size:13px;font-weight:600;
+.tcard .nm{position:absolute;left:12px;right:12px;bottom:11px;font-size:14.5px;font-weight:600;
   color:#fff;line-height:1.35;text-shadow:0 1px 5px #000;overflow:hidden;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
-/* HUD（浮在卡片之上，但不吃指针事件） */
-#tourWall .thud{position:absolute;inset:0;pointer-events:none;z-index:300}
-#tourWall .thud .c{position:absolute;width:18px;height:18px;border-color:var(--accent);opacity:.75}
-#tourWall .thud .lt{left:14px;top:14px;border-left:2px solid;border-top:2px solid}
-#tourWall .thud .rt{right:14px;top:14px;border-right:2px solid;border-top:2px solid}
-#tourWall .thud .lb{left:14px;bottom:16px;border-left:2px solid;border-bottom:2px solid}
-#tourWall .thud .rb{right:14px;bottom:16px;border-right:2px solid;border-bottom:2px solid}
-#tourWall .thd{position:absolute;font-size:10.5px;letter-spacing:.16em;color:var(--muted);
-  font-family:ui-monospace,"SFMono-Regular",Consolas,monospace}
-#tourWall .thd.lt{left:42px;top:15px}
-#tourWall .thd.rt{right:42px;top:15px}
-#tourWall .thd b{color:var(--accent)}
-#tourWall .tstats{position:absolute;left:42px;bottom:15px;display:flex;gap:16px;
-  font-size:10.5px;letter-spacing:.12em;color:var(--faint);
-  font-family:ui-monospace,Consolas,monospace}
-#tourWall .tstats b{color:var(--accent)}
-#tourWall .tfoot{position:absolute;right:42px;bottom:13px;font-size:11px;color:var(--faint);
-  padding:5px 12px;border:1px solid var(--border);background:rgba(8,13,20,.72);
-  clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%)}
+/* 全屏内的三卡详情（可滚动） */
+#tourDetail{position:relative}
+#tourStage #tourDetail{position:absolute;inset:60px 0 0;overflow-y:auto;z-index:320;
+  padding:24px max(22px,calc((100vw - 980px)/2)) 60px;
+  background:linear-gradient(180deg,rgba(5,8,14,.95),rgba(5,8,14,.995))}
+#tourStage #tourDetail::-webkit-scrollbar{width:8px}
+#tourStage #tourDetail::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18);border-radius:8px}
 
 #tourDetail{padding-bottom:30px}
 .tdbar{display:flex;align-items:center;gap:14px;padding-bottom:12px;border-bottom:1px solid var(--border);
@@ -205,7 +229,9 @@ img{display:block}
 #tourDetail td{color:var(--muted)}
 #tourDetail td.m{font-family:ui-monospace,Consolas,monospace;color:var(--accent)}
 @media (max-width:720px){
-  #tourWall{height:400px}
+  #tourStage .ttop{padding:0 16px;gap:12px}
+  #tourStage .stats{display:none}
+  #tourStage #tourDetail{padding:18px 14px 48px}
   .tgr{grid-template-columns:repeat(2,1fr)}
   .ts3{padding:8px 13px;font-size:12px}
 }
@@ -496,6 +522,7 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
     <div class="hint">密码由文档库管理员提供</div>
     <div class="legal">本站<strong>不制作、不修改、不存储</strong>任何软件文件，软件资源均以第三方网盘分享链接提供；站内内容收集自互联网，仅供个人学习交流使用，请勿用于商业用途，请于下载后 24 小时内删除。如本站内容侵犯了您的合法权益，请联系站长删除（微信：<b>Y18725560542</b>），我们将在收到通知后第一时间处理。详见 <a href="legal.html#disclaimer" style="color:var(--muted);text-decoration:underline">免责声明</a>与<a href="legal.html#complaint" style="color:var(--muted);text-decoration:underline">侵权投诉指引</a>。</div>
   </div>
+
 </div>
 
 <!-- 主题切换（白天 / 夜间） -->
@@ -567,51 +594,6 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
   <main class="main">
     <div class="cards" id="docList"></div>
 
-    <!-- 旅游攻略专用：3D 环（分类=旅游攻略 时显示） -->
-    <div id="tourWall" style="display:none">
-      <div class="tfloor"></div>
-      <div id="tourWallStage"></div>
-      <div class="thud">
-        <i class="c lt"></i><i class="c rt"></i><i class="c lb"></i><i class="c rb"></i>
-        <div class="thd lt">TOUR-DB <b>//</b> 旅游攻略</div>
-        <div class="thd rt" id="trHudR">SYS <b>&#9679;</b> ONLINE</div>
-        <div class="tstats" id="trStats"></div>
-      </div>
-      <div class="tfoot" id="trFoot">拖动可自由摆放 &#183; 点卡片进入攻略</div>
-    </div>
-
-    <!-- 旅游攻略专用：三卡详情 -->
-    <div id="tourDetail" style="display:none">
-      <div class="tdbar">
-        <button class="tback" id="tourBack" type="button">&#8592; 返回</button>
-        <span class="tdtitle" id="tdTitle"></span>
-        <span class="tdmeta mono" id="tdMeta"></span>
-        <span style="flex:1"></span>
-        <span class="tdmeta mono" id="tdRegion"></span>
-      </div>
-      <div class="tseg">
-        <button class="ts3 on" data-p="1" type="button"><i>01</i>正文</button>
-        <button class="ts3" data-p="2" type="button"><i>02</i>行程地图</button>
-        <button class="ts3" data-p="3" type="button"><i>03</i>数据报表</button>
-      </div>
-      <div id="tdP1" class="tpane"></div>
-      <div id="tdP2" class="tpane" style="display:none">
-        <div class="tmapbox">
-          <i class="mgrid-tl"></i><i class="mgrid-br"></i>
-          <div class="mtag">GEO / CN-PROV</div>
-          <div class="mread" id="mapRead"></div>
-          <svg id="routeMap" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 620"></svg>
-        </div>
-        <div class="tleg">
-          <span><span class="sw f"></span>住宿点（D1/D2…）</span>
-          <span><span class="sw"></span>途经点</span>
-          <span><span class="sw dia"></span>起点</span>
-          <span><span class="sw ring"></span>终点</span>
-          <span class="dim">连线为行程示意，非实际道路</span>
-        </div>
-      </div>
-      <div id="tdP3" class="tpane" style="display:none"></div>
-    </div>
     <div class="reader" id="reader">
       <span class="back" id="backBtn">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5m7-7-7 7 7 7"/></svg>
@@ -622,6 +604,10 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
       <div class="content-body" id="readerBody"></div>
     </div>
   </main>
+
+
+
+
 
   <!-- 右侧标签云 -->
   <aside class="rightbar">
@@ -635,6 +621,68 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
   </aside>
 
 </div>
+
+
+    <!-- 旅游攻略 · 全屏舞台（点导航进入；未解锁先过全屏密码门） -->
+    <div id="tourStage" hidden>
+      <div class="tfloor"></div>
+      <div id="tourWallStage"></div>
+      <i class="tcor tl"></i><i class="tcor tr"></i><i class="tcor bl"></i><i class="tcor br"></i>
+      <div class="ttop">
+        <span class="brand">TOUR-DB <b>//</b> 旅游攻略</span>
+        <span class="stats" id="trStats"></span>
+        <button class="texit" id="tourExit" type="button">返回站点</button>
+      </div>
+      <div class="thint">拖动可自由摆放 &#183; 点卡片进入攻略</div>
+
+      <div id="tourDetail" style="display:none">
+        <div class="tdbar">
+          <button class="tback" id="tourBack" type="button">&#8592; 返回</button>
+          <span class="tdtitle" id="tdTitle"></span>
+          <span class="tdmeta mono" id="tdMeta"></span>
+          <span style="flex:1"></span>
+          <span class="tdmeta mono" id="tdRegion"></span>
+        </div>
+        <div class="tseg">
+          <button class="ts3 on" data-p="1" type="button"><i>01</i>正文</button>
+          <button class="ts3" data-p="2" type="button"><i>02</i>行程地图</button>
+          <button class="ts3" data-p="3" type="button"><i>03</i>数据报表</button>
+        </div>
+        <div id="tdP1" class="tpane"></div>
+        <div id="tdP2" class="tpane" style="display:none">
+          <div class="tmapbox">
+            <i class="mgrid-tl"></i><i class="mgrid-br"></i>
+            <div class="mtag">GEO / CN-PROV</div>
+            <div class="mread" id="mapRead"></div>
+            <svg id="routeMap" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 620"></svg>
+          </div>
+          <div class="tleg">
+            <span><span class="sw f"></span>住宿点（D1/D2…）</span>
+            <span><span class="sw"></span>途经点</span>
+            <span><span class="sw dia"></span>起点</span>
+            <span><span class="sw ring"></span>终点</span>
+            <span class="dim">连线为行程示意，非实际道路</span>
+          </div>
+        </div>
+        <div id="tdP3" class="tpane" style="display:none"></div>
+      </div>
+    </div>
+
+  <!-- 旅游攻略 · 全屏密码门（点导航「旅游攻略」时弹出，通过后进全屏舞台） -->
+  <div id="tourGate" hidden>
+    <div class="gate-box">
+      <div class="icon">
+        <svg viewBox="0 0 24 24"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 12l9 4 9-4"/><path d="M3 17l9 4 9-4"/></svg>
+      </div>
+      <h2>&#12300;旅游攻略&#12301;栏目</h2>
+      <p>本栏目受密码保护，请输入访问密码进入全屏浏览。</p>
+      <input type="password" id="tourGatePwd" placeholder="请输入访问密码" autocomplete="off">
+      <button id="tourGateBtn" type="button">进入旅游攻略</button>
+      <div class="err" id="tourGateErr"></div>
+      <div class="hint">该密码仅对本栏目有效，其他受限栏目仍需各自密码</div>
+      <div class="tk"><span>ENTRIES <b id="tgEntries">—</b></span><span>SYS <b>&#9679;</b> READY</span></div>
+    </div>
+  </div>
 
 <footer>叶の个人数据库 · 内容受密码保护 · 仅供学习交流
   <div class="ft-links">
@@ -715,7 +763,7 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
   </div>
 </div>
 
-<script src="docs.js?v=20260918i"></script>
-<script src="app.js?v=20260918i"></script>
+<script src="docs.js?v=20260918k"></script>
+<script src="app.js?v=20260918k"></script>
 </body>
 </html>

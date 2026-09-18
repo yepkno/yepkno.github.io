@@ -475,6 +475,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!item) return;
     var cat = item.getAttribute("data-cat");
     if (isWallCategory(cat) && !isDocWallUnlocked(cat)) {
+      if (cat === "旅游攻略") { showTourGate(); return; }   // 旅游攻略走全屏密码门
       renderCatWall(cat, item);
       return;
     }
@@ -496,6 +497,8 @@ function switchCategory(cat, item) {
   renderTagCloud();
   renderCards();
   showList();
+  if (cat === "旅游攻略" && !activeTag) openTourStage();
+  else closeTourStage();
 }
 
 // 分类密码墙：点击受保护导航时整页出现密码框，解锁后进入该分类
@@ -547,12 +550,14 @@ function showList() {
   document.getElementById("reader").classList.remove("active");
   var tdet = document.getElementById("tourDetail");
   if (tdet) tdet.style.display = "none";
-  if (activeCategory === "旅游攻略" && !activeTag) {
-    var wall = document.getElementById("tourWall");
-    if (wall) wall.style.display = "";
-  } else {
-    document.getElementById("docList").style.display = "";
+  var st = document.getElementById("tourStage");
+  if (st && !st.hidden) {
+    // 全屏内：返回 = 回到卡片墙
+    var ws = document.getElementById("tourWallStage");
+    if (ws) ws.style.display = "";
+    return;
   }
+  document.getElementById("docList").style.display = "";
   window.scrollTo(0, 0);
 }
 
@@ -595,6 +600,87 @@ function ensureMapData(cb) {
   document.head.appendChild(s);
 }
 
+// ---------------- 旅游攻略 · 全屏入口 ----------------
+function showTourGate() {
+  var g = document.getElementById("tourGate");
+  if (!g) return;
+  var en = document.getElementById("tgEntries");
+  if (en) {
+    var n = (window.DOCS || []).filter(function (d) { return d.category === "旅游攻略"; }).length;
+    en.textContent = String(n).padStart(3, "0");
+  }
+  var err = document.getElementById("tourGateErr");
+  if (err) err.textContent = "";
+  var inp = document.getElementById("tourGatePwd");
+  if (inp) inp.value = "";
+  g.hidden = false;
+  document.body.style.overflow = "hidden";
+  setTimeout(function () { if (inp) inp.focus(); }, 60);
+}
+
+function tryTourUnlock() {
+  var inp = document.getElementById("tourGatePwd");
+  var err = document.getElementById("tourGateErr");
+  var pwd = inp ? inp.value.trim() : "";
+  pwd = pwd.replace(/[\uFF01-\uFF5E]/g, function (ch) {
+    return String.fromCharCode(ch.charCodeAt(0) - 0xFEE0);
+  });
+  if (!pwd) { if (err) err.textContent = "请输入密码"; return; }
+  if (sha256(pwd) === WALL_HASHES["旅游攻略"]) {
+    setDocWallUnlocked("旅游攻略");
+    document.getElementById("tourGate").hidden = true;
+    document.body.style.overflow = "";
+    switchCategory("旅游攻略", document.querySelector('#mainNav a[data-cat="旅游攻略"]'));
+  } else {
+    if (err) err.textContent = "密码错误，请重试";
+    if (inp) { inp.value = ""; inp.focus(); }
+  }
+}
+
+function openTourStage() {
+  var st = document.getElementById("tourStage");
+  if (!st) return;
+  st.hidden = false;
+  document.body.style.overflow = "hidden";
+  var td = document.getElementById("tourDetail");
+  if (td) td.style.display = "none";
+  var ws = document.getElementById("tourWallStage");
+  if (ws) ws.style.display = "";
+  var dl = document.getElementById("docList");
+  if (dl) dl.style.display = "none";
+  renderTourWall(filteredDocs());
+}
+
+function closeTourStage() {
+  var st = document.getElementById("tourStage");
+  if (st) st.hidden = true;
+  document.body.style.overflow = "";
+}
+
+(function bindTourStage() {
+  var ex = document.getElementById("tourExit");
+  var gb = document.getElementById("tourGateBtn");
+  var gp = document.getElementById("tourGatePwd");
+  if (ex) ex.addEventListener("click", function () {
+    closeTourStage();
+    var home = document.querySelector('#mainNav a[data-cat="主页"]');
+    if (home) home.click();
+  });
+  if (gb) gb.addEventListener("click", tryTourUnlock);
+  if (gp) gp.addEventListener("keydown", function (e) { if (e.key === "Enter") tryTourUnlock(); });
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Escape") return;
+    var g = document.getElementById("tourGate");
+    if (g && !g.hidden) { g.hidden = true; document.body.style.overflow = ""; return; }
+    var st = document.getElementById("tourStage");
+    if (st && !st.hidden) {
+      var td = document.getElementById("tourDetail");
+      if (td && td.style.display !== "none") showList();
+      else if (ex) ex.click();
+    }
+  });
+})();
+
 // ---------------- 可拖动卡片墙 ----------------
 // 交互参考 motion/react 的 DraggableCard，用原生 JS 实现（站点保持零依赖）：
 //   自由拖动 + 鼠标经过时 3D 倾斜 + 光斑 + 松手惯性甩出（越界自然落回）+ 悬停微放大
@@ -609,7 +695,7 @@ function twBounds(el, home) {
   var pad = 12;
   return {
     x0: pad, x1: Math.max(pad, W - w - pad),
-    y0: 46, y1: Math.max(46, H - h - 40)
+    y0: 70, y1: Math.max(70, H - h - 58)
   };
 }
 
@@ -620,10 +706,9 @@ function twApply(el) {
 }
 
 function renderTourWall(docs) {
-  var stage = document.getElementById("tourWallStage");
-  var home = document.getElementById("tourWall");
-  if (!stage || !home) return;
-  stage.innerHTML = "";
+  var home = document.getElementById("tourWallStage");
+  if (!home) return;
+  home.innerHTML = "";
   tourCards = [];
   tourDocs = docs || [];
   var n = tourDocs.length;
@@ -649,8 +734,9 @@ function renderTourWall(docs) {
   }
 
   var W = home.clientWidth, H = home.clientHeight;
+  if (!W || !H) return;      // 容器还没显示（尺寸为 0）时不要布局，否则卡片会挤到角落
   // 卡片宽度随数量自适应：篇数少时卡片大、篇数多时自然靠拢（像散在桌上的一叠照片）
-  var cw = Math.min(200, Math.max(118, Math.round((W - 40) / Math.max(n, 3) - 16)));
+  var cw = Math.min(272, Math.max(132, Math.round((W - 80) / Math.max(n, 3) - 26)));
   var ch = Math.round(cw * 264 / 190);
   var gap = Math.min((W - n * cw) / (n + 1), 42);   // 间隙设上限：篇数少时别散得太开
   var totalW = n * cw + (n - 1) * gap;
@@ -675,7 +761,7 @@ function renderTourWall(docs) {
         '<span class="rg">' + escapeHtml(d.region || "") + '</span>' +
         '<span class="nm">' + escapeHtml(d.title) + '</span>' +
       '</div>';
-    stage.appendChild(el);
+    home.appendChild(el);
     tourCards.push(el);
     bindTourDrag(el, d, home);
   });
@@ -757,14 +843,17 @@ var _twRt = null;
 window.addEventListener("resize", function () {
   if (_twRt) clearTimeout(_twRt);
   _twRt = setTimeout(function () {
-    var home = document.getElementById("tourWall");
-    if (home && home.style.display !== "none" && tourDocs.length) renderTourWall(tourDocs);
+    var ws = document.getElementById("tourWallStage");
+    var st = document.getElementById("tourStage");
+    if (ws && st && !st.hidden && ws.style.display !== "none" && tourDocs.length) {
+      renderTourWall(tourDocs);
+    }
   }, 320);
 });
 
 // ---------------- 三卡详情 ----------------
 function openTour(d) {
-  document.getElementById("tourWall").style.display = "none";
+  document.getElementById("tourWallStage").style.display = "none";
   var td = document.getElementById("tourDetail");
   td.style.display = "";
   td.dataset.idx = String(tourDocs.indexOf(d));
@@ -775,7 +864,7 @@ function openTour(d) {
     '<div class="tbox">' + (d.content || "<p>暂无内容</p>") + "</div>";
   renderTourReport(d);
   showTourPane("1");
-  window.scrollTo(0, 0);
+  td.scrollTop = 0;
 }
 
 function showTourPane(p) {
@@ -1134,13 +1223,11 @@ function renderCards() {
 
   // 旅游攻略：走「可拖动卡片墙」（点卡片 → 三卡详情），不用通栏卡片列表
   var isTour = (activeCategory === "旅游攻略" && !activeTag);
-  var wall = document.getElementById("tourWall"), tdet = document.getElementById("tourDetail");
-  if (wall) wall.style.display = isTour ? "" : "none";
+  var tdet = document.getElementById("tourDetail");
   if (tdet) tdet.style.display = "none";
   if (isTour) {
     list.style.display = "none";
-    renderTourWall(docs);
-    return;
+    return;                       // 卡片墙由全屏舞台负责（openTourStage）
   }
   list.style.display = "";
 
