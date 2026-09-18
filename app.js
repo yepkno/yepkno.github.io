@@ -3,9 +3,15 @@
 // 密码配置：修改 PASSWORD_HASH 即可更换密码（密码本身不在任何文件中明文出现）
 var PASSWORD_HASH = "78e49ff8d5e7c92fc230fc30a01f274c5d9a83ce50f122c4d79e9c25e824fb31";
 
-// 栏目密码墙：下列栏目在导航点击进入时需输密码，解锁后本会话内自由浏览（只存哈希，明文不落任何文件）
-var WALL_CATEGORIES = ["知识文档", "旅游攻略", "游戏资源"];
-var DOC_WALL_HASH = "ea5188299c32e52b6bf919ec64a903c3bcb1fdc639b02fe7d2cab23b1373f78c";
+// 栏目密码墙：每个受限栏目各有独立密码、独立解锁状态；解锁后本会话内自由浏览该栏目（只存哈希，明文不落任何文件）
+var WALL_HASHES = {
+  "知识文档": "e0f895872d65b2528feec97350a3a212b3d4ab88748e25d022a34641d338216b",
+  "旅游攻略": "cd50fc998e7e535b8908c8efc8233cfc25ffa79ed9067abf1ebd32c52ffc87df",
+  "游戏资源": "3f1f29444c093e2890d2163174cce5d5db40386b84168e015ec9da46cff1a6f9"
+};
+function isWallCategory(cat) {
+  return Object.prototype.hasOwnProperty.call(WALL_HASHES, cat);
+}
 
 // 简易 SHA-256（纯前端，无外部依赖）
 function sha256(ascii) {
@@ -104,12 +110,12 @@ function setUnlocked() {
   sessionStorage.setItem("eo_docs_unlocked", "1");
 }
 
-// 栏目密码墙解锁状态（本次会话内有效）
-function isDocWallUnlocked() {
-  return sessionStorage.getItem("eo_docwall_unlocked") === "1";
+// 栏目密码墙解锁状态：按栏目分别记录（本次会话内有效）
+function isDocWallUnlocked(cat) {
+  return sessionStorage.getItem("eo_docwall::" + cat) === "1";
 }
-function setDocWallUnlocked() {
-  sessionStorage.setItem("eo_docwall_unlocked", "1");
+function setDocWallUnlocked(cat) {
+  sessionStorage.setItem("eo_docwall::" + cat, "1");
 }
 
 // 当前过滤状态
@@ -403,7 +409,7 @@ document.addEventListener("DOMContentLoaded", function () {
     var item = e.target.closest("a[data-cat]");
     if (!item) return;
     var cat = item.getAttribute("data-cat");
-    if (WALL_CATEGORIES.indexOf(cat) !== -1 && !isDocWallUnlocked()) {
+    if (isWallCategory(cat) && !isDocWallUnlocked(cat)) {
       renderCatWall(cat, item);
       return;
     }
@@ -438,6 +444,7 @@ function renderCatWall(cat, item) {
     '<div class="wall-lock">\uD83D\uDD12</div>' +
     "<h2>「" + escapeHtml(cat) + "」栏目受密码保护</h2>" +
     "<p>输入访问密码后进入，本次访问期间可自由浏览该栏目全部文档。</p>" +
+    "<p>该密码仅对本栏目有效，其他受限栏目仍需各自密码。</p>" +
     "<p>密码请向站长获取（微信：Y18725560542）。</p>" +
     '<input type="password" id="catWallPwd" placeholder="请输入访问密码" autocomplete="off">' +
     '<button id="catWallBtn" type="button">解锁进入</button>' +
@@ -455,8 +462,8 @@ function renderCatWall(cat, item) {
       err.textContent = "请输入密码";
       return;
     }
-    if (sha256(pwd) === DOC_WALL_HASH) {
-      setDocWallUnlocked();
+    if (sha256(pwd) === WALL_HASHES[cat]) {
+      setDocWallUnlocked(cat);
       switchCategory(cat, item);
     } else {
       err.textContent = "密码错误，请重试";
