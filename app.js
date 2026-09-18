@@ -612,28 +612,50 @@ function renderTourRing(docs) {
   tourCards = [];
   tourDocs = docs || [];
   var n = tourDocs.length;
+
+  // HUD 统计（数据化装饰，同时让规模一眼可见）
+  var st = document.getElementById("trStats");
+  if (st) {
+    var regs = {}, km = 0;
+    tourDocs.forEach(function (d) {
+      if (d.region) regs[d.region] = 1;
+      (d.plan || []).forEach(function (r) {
+        var v = +r[3];
+        if (isFinite(v)) km += v;
+      });
+    });
+    st.innerHTML =
+      "<span>ENTRIES <b>" + String(n).padStart(3, "0") + "</b></span>" +
+      "<span>REGIONS <b>" + String(Object.keys(regs).length).padStart(2, "0") + "</b></span>" +
+      "<span>DIST <b>" + km.toLocaleString() + "</b> KM</span>";
+  }
+
   if (!n) {
-    box.innerHTML = '<div style="position:absolute;left:-140px;top:-10px;width:280px;text-align:center;' +
+    box.innerHTML = '<div style="position:absolute;left:-150px;top:-10px;width:300px;text-align:center;' +
                     'color:var(--faint);font-size:13px">这个分类下还没有攻略</div>';
+    tourTick = false;
     return;
   }
-    // 半径下限 260：卡片数少时（如 3 篇）按"刚好相接"算出来的半径太小，卡片会叠在一起
-    var R = Math.max(210, Math.round(112 / (2 * Math.sin(Math.PI / n))));
-  tourDocs.forEach(function (d, i) {
+
+  for (var i = 0; i < n; i++) {
+    var d = tourDocs[i];
     var el = document.createElement("div");
     el.className = "tpcard";
-    el.style.transitionDelay = (i * 20) + "ms";
+    el.style.transitionDelay = (i * 22) + "ms";
     var inner = '<img src="' + getDocCover(d) + '" alt="">' +
-                '<span class="ov"></span>' +
+                '<span class="ov"></span><span class="sc"></span>' +
+                '<span class="no">' + String(i + 1).padStart(2, "0") + '</span>' +
                 '<span class="rg">' + escapeHtml(d.region || "") + '</span>' +
                 '<span class="nm">' + escapeHtml(d.title) + '</span>';
     el.innerHTML = '<div class="fc fr">' + inner + '</div><div class="fc bk">' + inner + "</div>";
     el.addEventListener("mouseenter", tourHoldOn);
     el.addEventListener("mouseleave", tourHoldOff);
-    el.addEventListener("click", function () { openTour(d); });
+    (function (doc) {
+      el.addEventListener("click", function () { openTour(doc); });
+    })(d);
     box.appendChild(el);
     tourCards.push(el);
-  });
+  }
   layoutTourRing();
   tourTick = true;
 }
@@ -641,11 +663,31 @@ function renderTourRing(docs) {
 function layoutTourRing() {
   var n = tourCards.length;
   if (!n) return;
-    // 半径下限 260：卡片数少时（如 3 篇）按"刚好相接"算出来的半径太小，卡片会叠在一起
-    var R = Math.max(210, Math.round(112 / (2 * Math.sin(Math.PI / n))));
+  // 卡片宽 176、可视区约 760。半径下限 280：让前后卡片在横向也分开（否则前卡会挡住后卡）
+  var R = Math.max(280, Math.round(150 / (2 * Math.sin(Math.PI / n))));
   tourCards.forEach(function (c, i) {
     c.style.transform = "rotateY(" + (i * 360 / n).toFixed(2) + "deg) rotateX(0deg) " +
                         "translate3d(0px,0px," + R + "px) rotateZ(0deg)";
+  });
+  tourRy = 0;
+  tourDry = 0;
+  applyTourDepth();
+}
+
+// 景深：按卡片当前朝向角实时压暗背面卡片（1 = 正对观察者）
+// 只写 CSS 变量、不加 filter —— 在 preserve-3d 子元素上用 filter 会把 3D 压平
+function applyTourDepth() {
+  var n = tourCards.length;
+  if (!n) return;
+  var base = (tourRy + tourDry) * Math.PI / 180;
+  tourCards.forEach(function (c, i) {
+    var d = (Math.cos(i * 2 * Math.PI / n + base) + 1) / 2;
+    var s = (1 - d) * 0.52;      // 上限不宜太高：否则背面卡片几乎全黑，环上只看得到一张
+    var prev = +c.dataset.sh;
+    if (!(Math.abs(s - prev) < 0.012)) {      // 变化够小就不写，省掉无谓的重绘
+      c.dataset.sh = s;
+      c.style.setProperty("--shade", s.toFixed(3));
+    }
   });
 }
 
@@ -655,11 +697,11 @@ function layoutTourRing() {
     if (el) {
       if (!tourDrag && !tourHold) tourRy += 0.16;
       el.style.setProperty("--try", (tourRy + tourDry).toFixed(2) + "deg");
+      applyTourDepth();
     }
   }
   requestAnimationFrame(tourSpin);
 })();
-
 // 拖动旋转
 (function () {
   var home = document.getElementById("tourRing");
@@ -751,6 +793,26 @@ function animateTourBars() {
   });
 }
 
+// 从 path 字符串算包围盒（数据是绝对坐标，数字成对出现：x y）
+var _bbCache = {};
+function pathBBox(dd) {
+  if (_bbCache[dd]) return _bbCache[dd];
+  var ns = dd.match(/-?\d+(?:\.\d+)?/g);
+  var x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  if (ns) {
+    for (var i = 0; i + 1 < ns.length; i += 2) {
+      var x = +ns[i], y = +ns[i + 1];
+      if (x < x0) x0 = x;
+      if (x > x1) x1 = x;
+      if (y < y0) y0 = y;
+      if (y > y1) y1 = y;
+    }
+  }
+  var r = { x0: x0, y0: y0, x1: x1, y1: y1 };
+  _bbCache[dd] = r;
+  return r;
+}
+
 function drawTourRoute(d) {
   var svg = document.getElementById("routeMap");
   if (!svg || !window.CN_MAP || !d.pts || !d.pts.length) return;
@@ -761,56 +823,146 @@ function drawTourRoute(d) {
     return { x: xy[0], y: xy[1], p: p };
   });
 
-  // viewBox 按行程点范围自动算 —— 每篇自动聚焦到自己的活动区域
+  // ---- 视野：以"行程涉及的省份"完整范围为准 ----
+  // 只按行程点范围缩放会把地图缩成一小团、标签糊在一起；按省份范围则主体饱满、还能看到邻省
   var xs = pts.map(function (a) { return a.x; }), ys = pts.map(function (a) { return a.y; });
-  var pad = 90;
-  var x0 = Math.min.apply(null, xs) - pad, x1 = Math.max.apply(null, xs) + pad;
-  var y0 = Math.min.apply(null, ys) - pad, y1 = Math.max.apply(null, ys) + pad;
-  var vw = x1 - x0, vh = y1 - y0, ratio = 1000 / 560;
+  var on = {};
+  pts.forEach(function (a) { if (a.p.pv) on[a.p.pv] = 1; });
+
+  var bx0 = Infinity, by0 = Infinity, bx1 = -Infinity, by1 = -Infinity, hasProv = false;
+  Object.keys(on).forEach(function (a) {
+    (M.provinces[a] || []).forEach(function (dd) {
+      var b = pathBBox(dd);
+      if (!isFinite(b.x0)) return;
+      hasProv = true;
+      if (b.x0 < bx0) bx0 = b.x0;
+      if (b.y0 < by0) by0 = b.y0;
+      if (b.x1 > bx1) bx1 = b.x1;
+      if (b.y1 > by1) by1 = b.y1;
+    });
+  });
+  // 与行程点范围取并集（防止点落在省界之外）
+  bx0 = Math.min(bx0, Math.min.apply(null, xs)); bx1 = Math.max(bx1, Math.max.apply(null, xs));
+  by0 = Math.min(by0, Math.min.apply(null, ys)); by1 = Math.max(by1, Math.max.apply(null, ys));
+  if (!hasProv) {                      // 没有省份信息时退回"点范围 + 固定边距"
+    bx0 = Math.min.apply(null, xs) - 260; bx1 = Math.max.apply(null, xs) + 260;
+    by0 = Math.min.apply(null, ys) - 260; by1 = Math.max.apply(null, ys) + 260;
+  }
+  var mw = (bx1 - bx0) * 0.10, mh = (by1 - by0) * 0.10;   // 留 10% 余量
+  bx0 -= mw; bx1 += mw; by0 -= mh; by1 += mh;
+
+  var x0 = bx0, y0 = by0, vw = bx1 - bx0, vh = by1 - by0, ratio = 1000 / 620;
   if (vw / vh < ratio) { var nw = vh * ratio; x0 -= (nw - vw) / 2; vw = nw; }
   else { var nh = vw / ratio; y0 -= (nh - vh) / 2; vh = nh; }
   svg.setAttribute("viewBox", x0.toFixed(0) + " " + y0.toFixed(0) + " " +
                               vw.toFixed(0) + " " + vh.toFixed(0));
 
-  var h = "";
+  // ---- 高亮行程省份，其余淡显 ----
+  var base = "", hi = "";
   Object.keys(M.provinces).forEach(function (a) {
     if (a === "100000_JD") return;
-    M.provinces[a].forEach(function (dd) { h += '<path class="prov" d="' + dd + '"/>'; });
+    if (on[a]) {
+      M.provinces[a].forEach(function (dd) { hi += '<path class="prov on" d="' + dd + '"/>'; });
+    } else {
+      M.provinces[a].forEach(function (dd) { base += '<path class="prov" d="' + dd + '"/>'; });
+    }
   });
-  // 九段线不画在主图（避免凌乱），但保持数据完整可用
+  // 九段线：数据保持完整（淡显，不喧宾夺主）
   (M.provinces["100000_JD"] || []).forEach(function (dd) {
-    h += '<path class="prov" d="' + dd + '"/>';
+    base += '<path class="prov" d="' + dd + '"/>';
   });
 
   var dpath = "M" + pts.map(function (a) {
     return a.x.toFixed(1) + " " + a.y.toFixed(1);
   }).join(" L");
 
-  var dots = "", labels = "", seen = {}, li = 0;
-  pts.forEach(function (a) {
-    var stay = !!a.p.stay;
-    dots += '<circle class="stop' + (stay ? " stay" : "") + '" cx="' + a.x.toFixed(1) +
-            '" cy="' + a.y.toFixed(1) + '" r="' + (stay ? 6 : 3.5) + '"/>';
+  var marks = "", labels = "", seen = {}, li = 0, placed = [];
+  pts.forEach(function (a, i) {
+    if (a.p.stay)
+      marks += '<circle class="stop stay" cx="' + a.x.toFixed(1) + '" cy="' + a.y.toFixed(1) + '" r="5.5"/>';
+    else
+      marks += '<circle class="stop" cx="' + a.x.toFixed(1) + '" cy="' + a.y.toFixed(1) + '" r="3.2"/>';
+
+    // 起点：菱形
+    if (i === 0)
+      marks += '<rect class="start" x="' + (a.x - 5).toFixed(1) + '" y="' + (a.y - 5).toFixed(1) +
+               '" width="10" height="10" transform="rotate(45 ' + a.x.toFixed(1) + ' ' +
+               a.y.toFixed(1) + ')"/>';
+    // 终点：双环
+    if (i === pts.length - 1 && pts.length > 1)
+      marks += '<circle class="endl" cx="' + a.x.toFixed(1) + '" cy="' + a.y.toFixed(1) + '" r="11"/>' +
+               '<circle class="endl2" cx="' + a.x.toFixed(1) + '" cy="' + a.y.toFixed(1) + '" r="3.4"/>';
+
     if (!seen[a.p.n]) {
       seen[a.p.n] = 1;
-      var dy = (li % 2) ? 21 : -13;      // 相邻标签上下交替，避免叠在一起
-      labels += '<text class="lbl" x="' + (a.x + 14).toFixed(1) + '" y="' +
-                (a.y + dy).toFixed(1) + '">D' + a.p.d + ' &#183; ' + escapeHtml(a.p.n) + "</text>";
+      var txt = "D" + a.p.d + " \u00b7 " + a.p.n;
+      var fs = vw / 54;                                  // 字号随视野缩放，显示尺寸恒定
+      var w = fs * 1.1;
+      for (var k = 0; k < txt.length; k++) w += /[\u4e00-\u9fa5]/.test(txt.charAt(k)) ? fs * 1.02 : fs * 0.62;
+      var box = fs * 1.8, gap = fs * 0.85;
+      // 8 向候选位置 + 碰撞避让：挑第一个不与已放标签重叠、且不越出画面的位置
+      var dxs = [gap, -w - gap], dys = [-fs * 0.5, fs * 1.45, fs * 3.1, -fs * 2.3];
+      var lx = null, ly = null;
+      for (var ci = 0; ci < 8; ci++) {
+        var cx = a.x + dxs[ci % 2], cy = a.y + dys[(ci >> 1)];
+        if (cx < x0 + fs || cx + w > x0 + vw - fs) continue;
+        var r = { x0: cx, y0: cy - box / 2, x1: cx + w, y1: cy + box / 2 }, hit = false;
+        for (var q = 0; q < placed.length; q++) {
+          var p = placed[q];
+          if (!(r.x1 < p.x0 || r.x0 > p.x1 || r.y1 < p.y0 || r.y0 > p.y1)) { hit = true; break; }
+        }
+        if (!hit) { placed.push(r); lx = cx; ly = cy; break; }
+      }
+      if (lx === null) {                                 // 全都挤 -> 退回默认位
+        lx = Math.max(x0 + fs, Math.min(a.x + gap, x0 + vw - w - fs));
+        ly = a.y + (li % 2 ? fs * 1.5 : -fs * 0.55);
+      }
       li++;
+      labels += '<line class="lln" x1="' + a.x.toFixed(1) + '" y1="' + a.y.toFixed(1) +
+                '" x2="' + (lx > a.x ? lx : lx + w).toFixed(1) + '" y2="' + ly.toFixed(1) + '"/>' +
+                '<rect class="lblbg" x="' + lx.toFixed(1) + '" y="' + (ly - box / 2).toFixed(1) +
+                '" width="' + w.toFixed(1) + '" height="' + box.toFixed(1) +
+                '" rx="' + (fs * 0.16).toFixed(1) + '"/>' +
+                '<text class="lbl" style="font-size:' + fs.toFixed(2) + 'px" x="' +
+                (lx + fs * 0.62).toFixed(1) + '" y="' + (ly + fs * 0.34).toFixed(1) +
+                '">' + "D" + a.p.d + " &#183; " + escapeHtml(a.p.n) + "</text>";
     }
   });
 
-  svg.innerHTML = h + '<path class="rte" id="routePath" d="' + dpath + '"/>' + dots + labels;
+  svg.innerHTML = base + hi +
+    '<path class="glow" id="routeGlow" d="' + dpath + '"/>' +
+    '<path class="rte" id="routePath" d="' + dpath + '"/>' +
+    '<path class="dash" id="routeDash" d="' + dpath + '"/>' +
+    marks + labels;
 
-  var el = document.getElementById("routePath");
+  // 右上角读数
+  var rd = document.getElementById("mapRead");
+  if (rd) {
+    var km = 0;
+    (d.plan || []).forEach(function (r) {
+      var v = +r[3];
+      if (isFinite(v)) km += v;
+    });
+    rd.textContent = "STOPS " + pts.length + (km ? " / " + km.toLocaleString() + " KM" : "");
+  }
+
+  // 路线逐段生长（主线 + 发光底一起长，流动虚线最后淡入）
+  var el = document.getElementById("routePath"), gl = document.getElementById("routeGlow");
   var len = el.getTotalLength();
-  el.style.strokeDasharray = len;
-  el.style.strokeDashoffset = len;
-  el.style.transition = "none";
+  [el, gl].forEach(function (x) {
+    x.style.strokeDasharray = len;
+    x.style.strokeDashoffset = len;
+    x.style.transition = "none";
+  });
+  var dash = document.getElementById("routeDash");
+  if (dash) { dash.style.opacity = "0"; dash.style.transition = "none"; }
   requestAnimationFrame(function () {
     requestAnimationFrame(function () {
-      el.style.transition = "stroke-dashoffset 2.2s cubic-bezier(.3,.7,.3,1)";
-      el.style.strokeDashoffset = 0;
+      [el, gl].forEach(function (x) {
+        x.style.transition = "stroke-dashoffset 2.2s cubic-bezier(.3,.7,.3,1)";
+        x.style.strokeDashoffset = 0;
+      });
+      if (dash) { dash.style.transition = "opacity .55s ease 1.5s"; dash.style.opacity = "1"; }
     });
   });
 }
