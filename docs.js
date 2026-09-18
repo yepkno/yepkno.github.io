@@ -62,8 +62,8 @@ window.DOCS = [
   <tr><td class="k">D0</td><td>重庆 → 大理（不计入 5 日旅游，纯赶路）</td></tr>
   <tr><td class="k">D1</td><td>大理古城 → 龙龛码头 → 才村 → 磻溪 S 弯 → 喜洲 → 回大理古城</td></tr>
   <tr><td class="k">D2</td><td>大理 → 黑龙潭 → 丽江古城 → 木府 → 狮子山 → 束河</td></tr>
-  <tr><td class="k">D3</td><td>丽江 → 虎跳峡 → 纳帕海 → 独克宗古城</td></tr>
-  <tr><td class="k">D4</td><td>香格里拉 → 奔子栏 → 金沙江大湾 → 白马雪山沿线 → 德钦 → 雾浓顶 → 飞来寺</td></tr>
+  <tr><td class="k">D3</td><td>丽江 → 虎跳峡 → 纳帕海 → 松赞林寺 → 香格里拉</td></tr>
+  <tr><td class="k">D4</td><td>香格里拉 → 普达措 → 奔子栏 → 金沙江大湾 → 白马雪山沿线 → 德钦 → 雾浓顶 → 飞来寺</td></tr>
   <tr><td class="k">D5</td><td>飞来寺 → 梅里雪山日照金山 → 德钦 → 香格里拉 → 丽江 → 大理</td></tr>
   <tr><td class="k">D6</td><td>大理 → 重庆</td></tr>
 </table>
@@ -182,16 +182,16 @@ window.DOCS = [
 <h3>住宿</h3>
 <p>丽江晓梦庄精品度假酒店｜约 ¥560–900 / 晚（2 间房）· 束河北门附近，自驾出城方便。</p>
 
-<h2 id="tour-d3">D3 · 丽江 → 虎跳峡 → 纳帕海 → 香格里拉</h2>
+<h2 id="tour-d3">D3 · 丽江 → 虎跳峡 → 纳帕海 → 松赞林寺</h2>
 <p>正式进入高原；本日不安排长距离徒步。</p>
 <h3>当日执行表</h3>
 <table>
   <tr><th>时间</th><th>小目的地</th><th>停留</th><th>门票</th><th>自驾 / 看点</th></tr>
   <tr><td class="k">07:30</td><td>丽江出发</td><td>—</td><td>—</td><td>尽量早点，把虎跳峡留出完整时间</td></tr>
-  <tr><td class="k">09:30–12:00</td><td>虎跳峡</td><td>2–2.5h</td><td>¥45 / 人</td><td>上虎跳观景为主，<span class="warn">不走完整徒步线</span></td></tr>
+  <tr><td class="k">09:30–12:00</td><td>虎跳峡（上虎跳）</td><td>2–2.5h</td><td>¥45 / 人</td><td>上虎跳观景为主，<span class="warn">不走完整徒步线</span>；中虎跳 / 下虎跳 2026 年起官方禁止进入。<strong>丽江段与香格里拉段门票不通用</strong>，导航请认准「香格里拉虎跳峡游客中心」</td></tr>
   <tr><td class="k">12:00–13:00</td><td>虎跳峡镇午餐</td><td>1h</td><td>—</td><td>牦牛肉、土鸡、米线 / 面</td></tr>
-  <tr><td class="k">15:00–16:30</td><td>纳帕海 / 依拉草原</td><td>1.5h</td><td>公共观景 ¥0</td><td>环湖公路、草原、湿地</td></tr>
-  <tr><td class="k">17:00–19:00</td><td>独克宗古城</td><td>2h</td><td>免费</td><td>月光广场 → 龟山公园 → 大佛寺 → 转经筒</td></tr>
+  <tr><td class="k">15:00–16:30</td><td>纳帕海 / 依拉草原</td><td>1.5h</td><td>公共观景 ¥0</td><td>环湖公路、草原、湿地。<span class="warn">注意：它是季节性湖泊——6–8 月才是「水漫草原」，10 月–次年 5 月水退为草甸</span>，别按宣传图预期；骑马要砍价，别跟路边拉客走</td></tr>
+  <tr><td class="k">16:30–18:00</td><td>松赞林寺</td><td>1.5h</td><td>约 ¥55–90 / 人（含讲解）</td><td>云南规模最大的藏传佛教格鲁派寺院，「小布达拉宫」；距市区约 5 km，黄昏光线最好</td></tr>
 </table>
 <div class="gal" data-n="3">
     <figure>
@@ -207,37 +207,39 @@ window.DOCS = [
       </figcaption>
     </figure>
     <figure>
-      <img src="assets/travel/dianxibei/shangri-dukezong.jpg" alt="独克宗" loading="lazy">
-      <figcaption><b>独克宗</b>古城与龟山公园一带
-        <span class="cr">祝鱼贵 · <a href="https://creativecommons.org/licenses/by-sa/4.0" target="_blank" rel="noopener">CC BY-SA 4.0</a> · <a href="https://commons.wikimedia.org/wiki/File:20260225_Skyline_of_Dukezong_Ancient_Town_Shangri-La_07.jpg" target="_blank" rel="noopener">Commons</a></span>
+      <img src="assets/travel/dianxibei/shangri-songzanlin.jpg" alt="松赞林寺" loading="lazy">
+      <figcaption><b>松赞林寺</b>云南最大藏传佛寺，「小布达拉宫」
+        <span class="cr">BrokenSphere · <a href="https://creativecommons.org/licenses/by-sa/3.0" target="_blank" rel="noopener">CC BY-SA 3.0</a> · <a href="https://commons.wikimedia.org/wiki/File:Songzanlin_Monastery_front.JPG" target="_blank" rel="noopener">Commons</a></span>
       </figcaption>
     </figure>
 </div>
 <h3>门票预算</h3>
 <ul>
-  <li>虎跳峡 ¥45 / 人 ｜ 纳帕海公共观景 ¥0 ｜ 独克宗 ¥0</li>
-  <li>商业骑马等项目另计，本攻略不纳入预算</li>
+  <li>虎跳峡（上虎跳）¥45 / 人 ｜ 纳帕海公共观景 ¥0 ｜ 松赞林寺 约 ¥55–90 / 人（含讲解）</li>
+  <li>虎跳峡观光电梯、纳帕海骑马等项目为自愿消费，本攻略不纳入预算</li>
 </ul>
 <h3>吃什么</h3>
 <p>午餐：虎跳峡镇简餐，以快、热量够为主，约 ¥120–200 / 4 人。</p>
-<p>晚餐：<strong>瞻巴拉藏餐吧</strong>（独克宗古城区域，可尝牦牛肉、藏式面食、酥油茶），约 ¥200–360 / 4 人。</p>
+<p>晚餐：<strong>瞻巴拉藏餐吧</strong>（香格里拉市区，可尝牦牛肉、藏式面食、酥油茶），约 ¥200–360 / 4 人。</p>
 <h3>住宿</h3>
 <p>麗枫酒店（香格里拉店）｜约 ¥500–800 / 晚（2 间房）· 入住时确认停车、供暖、制氧条件。</p>
 
-<h2 id="tour-d4">D4 · 香格里拉 → 奔子栏 → 德钦 → 飞来寺</h2>
-<p>全程景观驾驶，真正重要的不是打卡数量，而是沿途的山谷、峡谷和雪山。</p>
+<h2 id="tour-d4">D4 · 香格里拉 → 普达措 → 奔子栏 → 飞来寺</h2>
+<p>上午先补上香格里拉最精华的普达措，中午出发走景观公路去飞来寺。真正重要的不是打卡数量，而是沿途的山谷、峡谷和雪山。</p>
 <h3>当日执行表</h3>
 <table>
   <tr><th>时间</th><th>小目的地</th><th>停留</th><th>门票</th><th>自驾 / 看点</th></tr>
-  <tr><td class="k">07:30</td><td>香格里拉出发</td><td>—</td><td>—</td><td>今天不要晚出发，景观全在路上</td></tr>
-  <tr><td class="k">08:30–09:00</td><td>奔子栏</td><td>30min</td><td>免费</td><td>休息、补给、拍照</td></tr>
-  <tr><td class="k">09:30–10:15</td><td>金沙江大湾 / 月亮湾</td><td>30–45min</td><td>梅里套票范围</td><td>按梅里组合票 ¥150 / 人 预算</td></tr>
-  <tr><td class="k">10:30–12:30</td><td>白马雪山沿线</td><td>1–2h</td><td>公共安全观景点免费</td><td>把「路」当景点，<span class="warn">只在正规安全停车点停留</span></td></tr>
-  <tr><td class="k">12:30–13:30</td><td>德钦</td><td>1h</td><td>—</td><td>午餐 + 加油 + 买水 + 检查车辆</td></tr>
-  <tr><td class="k">14:00–15:00</td><td>雾浓顶</td><td>45–60min</td><td>梅里套票范围</td><td>正式进入梅里核心观景区</td></tr>
-  <tr><td class="k">16:00</td><td>飞来寺</td><td>—</td><td>梅里套票范围</td><td>入住 → 观景 → 看夕阳 → 吃饭 → 尽早睡觉</td></tr>
+  <tr><td class="k">07:30–08:00</td><td>出发去普达措</td><td>—</td><td>—</td><td>市区往东约 22 km；早点进园人少</td></tr>
+  <tr><td class="k">08:00–11:00</td><td>普达措国家公园</td><td>3h</td><td>¥138 / 人（含观光车）</td><td>属都湖栈道 + 碧塔海；<strong>10 月正是层林尽染的时候</strong></td></tr>
+  <tr><td class="k">11:00–12:30</td><td>出发去奔子栏</td><td>—</td><td>—</td><td>约 100 km</td></tr>
+  <tr><td class="k">12:30–13:30</td><td>奔子栏午餐</td><td>1h</td><td>免费</td><td>休息、补给、拍照</td></tr>
+  <tr><td class="k">13:45–14:30</td><td>金沙江大湾 / 月亮湾</td><td>30–45min</td><td>梅里套票范围</td><td>观景台单买约 ¥20–60；含在梅里组合票内</td></tr>
+  <tr><td class="k">14:45–16:15</td><td>白马雪山沿线</td><td>1–1.5h</td><td>公共安全观景点免费</td><td>把「路」当景点，<span class="warn">只在正规安全停车点停留</span></td></tr>
+  <tr><td class="k">16:30–17:15</td><td>德钦</td><td>45min</td><td>—</td><td>加油 + 买水 + 检查车辆</td></tr>
+  <tr><td class="k">17:45–18:30</td><td>雾浓顶</td><td>45min</td><td>梅里套票范围</td><td>正式进入梅里核心观景区；若时间紧张可改为路过不停留</td></tr>
+  <tr><td class="k">19:00</td><td>飞来寺</td><td>—</td><td>梅里套票范围</td><td>入住 → 看夕阳 → 吃饭 → 尽早睡觉</td></tr>
 </table>
-<div class="gal" data-n="2">
+<div class="gal" data-n="3">
     <figure>
       <img src="assets/travel/dianxibei/deqin-bend.jpg" alt="金沙江大湾" loading="lazy">
       <figcaption><b>金沙江大湾</b>月亮湾与公路观景位
@@ -250,10 +252,18 @@ window.DOCS = [
         <span class="cr">Kevin Poh · <a href="https://creativecommons.org/licenses/by/2.0" target="_blank" rel="noopener">CC BY 2.0</a> · <a href="https://commons.wikimedia.org/wiki/File:Meili_Snow_Mountain,_Deqin_County,_Yunnan.jpg" target="_blank" rel="noopener">Commons</a></span>
       </figcaption>
     </figure>
+    <figure>
+      <img src="assets/travel/dianxibei/shangri-pudacuo.jpg" alt="普达措" loading="lazy">
+      <figcaption><b>普达措</b>弥里塘牧场；10 月正是层林尽染、草甸金黄的时候
+        <span class="cr">Colin W · <a href="https://creativecommons.org/licenses/by-sa/3.0" target="_blank" rel="noopener">CC BY-SA 3.0</a> · <a href="https://commons.wikimedia.org/wiki/File:Militang_Pasture,_Potatso_(Pudacuo)_National_Park,_Diqing_-_panoramio.jpg" target="_blank" rel="noopener">Commons</a></span>
+      </figcaption>
+    </figure>
 </div>
 <h3>门票预算</h3>
 <ul>
-  <li>梅里雪山组合票：当前口径约 <strong>¥150 / 人</strong>，组合内容为金沙江大湾 + 雾浓顶 + 飞来寺</li>
+  <li>普达措国家公园 <strong>¥138 / 人</strong>（含景区观光车；属都湖游船约 ¥65 自愿）</li>
+  <li>梅里雪山组合票：当前口径约 <strong>¥150 / 人</strong>，组合内容为金沙江大湾 + 雾浓顶 + 飞来寺观景台</li>
+  <li><strong>如果住飞来寺的雪山观景房，其实可以不用买飞来寺观景台门票</strong>——酒店房间和天台就正对卡瓦格博</li>
   <li>旧政府单点定价与当前平台组合票口径并不完全相同，<span class="warn">出发前以正规售票渠道为准</span></li>
 </ul>
 <h3>吃什么</h3>
@@ -271,7 +281,7 @@ window.DOCS = [
   <tr><td class="k">05:30 左右</td><td>起床</td><td>—</td><td>—</td><td>按当天日出调整，目标是日出前 30–60 分钟到位</td></tr>
   <tr><td class="k">06:00–08:00</td><td>梅里雪山 · 日照金山</td><td>1.5–2h</td><td>已计入梅里预算</td><td>不爬山、不去雨崩，只在飞来寺观景区看卡瓦格博</td></tr>
   <tr><td class="k">08:00–08:30</td><td>早餐 + 退房</td><td>30min</td><td>—</td><td>早餐后立即退房，不再加拍摄点</td></tr>
-  <tr><td class="k">08:30–下午</td><td>长途返程</td><td>—</td><td>—</td><td>飞来寺 → 德钦 → 奔子栏 → 香格里拉 → 丽江 → 大理</td></tr>
+  <tr><td class="k">08:30–下午</td><td>长途返程</td><td>—</td><td>—</td><td>飞来寺 → 德钦 → 奔子栏 → 香格里拉 → 丽江 → 大理；<strong>约 490 km，纯驾驶 7–8 小时</strong></td></tr>
   <tr><td class="k">21:00–22:00</td><td>回到大理</td><td>—</td><td>—</td><td>5 日计划在此闭环；到达后直接休息</td></tr>
 </table>
 <div class="gal" data-n="1">
@@ -291,35 +301,57 @@ window.DOCS = [
 
 <h2 id="tour-budget">4 人 1 车 · 全程预算</h2>
 <p>预算口径：4 人、1 台 5 座租车、日均租车约 ¥150、6–7 天租期、通常 2 间双人房；国庆免费时段的高速通行费按 ¥0 计。</p>
-<div class="callout"><strong>合计约 ¥9,990–13,230（4 人总额）</strong>，不含购物、骑马、游船、氧气、防寒服、保险及意外延误住宿。</div>
+<div class="callout"><strong>合计约 ¥12,700–18,700（4 人总额）</strong>，人均约 ¥3,200–4,700。不含购物、骑马、游船、氧气、防寒服、保险及意外延误住宿。<br>其中租车按「5 座 SUV + 提前一周订」的实际行情重算，是相比早期估算变动最大的一项。</div>
 <table>
   <tr><th>项目</th><th>预算</th><th>说明</th></tr>
-  <tr><td class="k">住宿</td><td>¥3,080–5,200</td><td>D0–D5 共 6 晚，通常 2 间房</td></tr>
-  <tr><td class="k">门票</td><td>¥1,140–1,280</td><td>4 人合计，含丽江维护费、木府、虎跳峡、梅里组合票</td></tr>
+  <tr><td class="k">住宿</td><td>¥3,080–5,200</td><td>D0–D5 共 6 晚，通常 2 间房；<span class="warn">国庆旺季普遍上浮 30–50%，建议按上限准备</span></td></tr>
+  <tr><td class="k">门票</td><td>¥1,912–2,192</td><td>4 人合计，含黑龙潭维护费、木府、万古楼、虎跳峡、<strong>普达措</strong>、<strong>松赞林寺</strong>、梅里组合票</td></tr>
   <tr><td class="k">餐饮</td><td>¥2,800–3,600</td><td>4 人普通云南餐饮</td></tr>
-  <tr><td class="k">油费</td><td>¥1,800–2,200</td><td>约 3,300–3,500 公里</td></tr>
-  <tr><td class="k">租车</td><td>¥900–1,050</td><td>约 6–7 天 × ¥150 / 天（属交通，不计入门票）</td></tr>
+  <tr><td class="k">油费</td><td>¥2,000–2,400</td><td>约 3,300–3,500 公里；云南油价约 7.5–8 元 / 升</td></tr>
+  <tr><td class="k">租车</td><td>¥2,700–4,900</td><td>5 座 SUV、<strong>提前一周订</strong>的实际行情 ¥450–700 / 天 × 6–7 天；属交通，不计入门票</td></tr>
   <tr><td class="k">高速</td><td>¥0</td><td>按 2026 国庆免费政策预算</td></tr>
-  <tr><td class="k">停车</td><td>¥150–300</td><td>视景区 / 酒店而变</td></tr>
+  <tr><td class="k">停车</td><td>¥200–400</td><td>视景区 / 酒店而变（虎跳峡停车 5 元 / 次等）</td></tr>
 </table>
 <h3>门票明细</h3>
 <table>
   <tr><th>项目</th><th>预算 / 人</th><th>备注</th></tr>
-  <tr><td class="k">丽江古城维护费</td><td>¥50</td><td>按现行口径预算</td></tr>
-  <tr><td class="k">木府</td><td>约 ¥40</td><td>具体以当天售票为准</td></tr>
-  <tr><td class="k">虎跳峡</td><td>¥45</td><td>不含额外扶梯 / 体验项目</td></tr>
-  <tr><td class="k">梅里雪山</td><td>约 ¥150</td><td>按当前组合票预算</td></tr>
-  <tr><td class="k">万古楼</td><td>可选</td><td>约 ¥30–35</td></tr>
-  <tr><td class="k">合计</td><td><strong>约 ¥285–320</strong></td><td>4 人合计约 ¥1,140–1,280</td></tr>
+  <tr><td class="k">黑龙潭（含古城维护费）</td><td>¥50</td><td><strong>散客进丽江古城本身免费</strong>，只有进黑龙潭需缴维护费（跟团才强制收）</td></tr>
+  <tr><td class="k">木府</td><td>约 ¥40</td><td>含免费官方讲解；夜场票另约 ¥98</td></tr>
+  <tr><td class="k">万古楼</td><td>约 ¥30–35</td><td>狮子山本身免费；可选</td></tr>
+  <tr><td class="k">虎跳峡（上虎跳）</td><td>¥45</td><td>60–69 岁 / 学生半价；观光电梯往返约 ¥80 自愿</td></tr>
+  <tr><td class="k">普达措国家公园</td><td>¥138</td><td>含景区观光车</td></tr>
+  <tr><td class="k">松赞林寺</td><td>约 ¥55–90</td><td>含讲解与往返观光车</td></tr>
+  <tr><td class="k">梅里雪山组合票</td><td>约 ¥150</td><td>含金沙江大湾 + 雾浓顶 + 飞来寺；住观景房可不买飞来寺观景台部分</td></tr>
+  <tr><td class="k">合计</td><td><strong>约 ¥478–548</strong></td><td>4 人合计约 ¥1,912–2,192</td></tr>
 </table>
 <h3>国庆高速免费怎么算</h3>
 <p>2026 年 10 月 1 日 0:00 至 10 月 7 日 24:00，7 座及以下小型客车免收通行费；<strong>是否免费按车辆驶离高速出口收费站的时间判断</strong>。若 D0 为 9 月 30 日下午出发，只要在 10 月 1 日 0:00 后驶离出口、且车辆符合条件，该段即可按 ¥0 预算；反之在 9 月 30 日 23:59 前驶离，则可能正常收费。</p>
+
+<h2 id="tour-rent">租车怎么订最划算</h2>
+<p>这段路要翻白马雪山、走高原山路，租车是整个预算里最容易算错、也最该提前动手的一项。</p>
+<div class="callout"><strong>先说结论：一定要选「不限里程」套餐。</strong>这条线路（重庆往返 + 云南环线）约 3,300–3,500 公里，摊到 6–7 天就是<strong>每天 470–580 公里</strong>；而标准套餐通常限 <strong>200 公里 / 天</strong>，超里程按 <strong>1–2 元 / 公里</strong>另收 —— 算下来可能多花上千元。不限里程套餐一般只贵约 50 元 / 天，很值。</div>
+<table>
+  <tr><th>项目</th><th>行情</th><th>说明</th></tr>
+  <tr><td class="k">车型</td><td>5 座 SUV</td><td>山路 + 高原，轿车通过性差；不必上硬派越野</td></tr>
+  <tr><td class="k">租金（淡季）</td><td>¥200–350 / 天</td><td>SUV 平日价</td></tr>
+  <tr><td class="k">租金（国庆）</td><td><strong>¥450–700 / 天</strong></td><td>节假日热门城市热门车型上涨 50–100%</td></tr>
+  <tr><td class="k">提前多久订</td><td>越早越好</td><td>提前 30 天比节前一周<strong>便宜约一半</strong>；最佳窗口是提前 30–45 天（直营平台 8 月中旬就开放国庆预订）</td></tr>
+  <tr><td class="k">取车时间</td><td>9 月 30 日</td><td><strong>9/30 取车通常比 10/1 便宜 30% 以上</strong>，正好对上 D0 下午出发</td></tr>
+  <tr><td class="k">押金</td><td>¥3,000–5,000</td><td>信用卡预授权，还车后 15–30 天解冻；多数平台支持信用免押</td></tr>
+  <tr><td class="k">超公里费</td><td>¥1–2 / 公里</td><td>选不限里程套餐可完全规避</td></tr>
+  <tr><td class="k">异地还车费</td><td>约 ¥1 / 公里</td><td>本行程同城取还，不涉及</td></tr>
+  <tr><td class="k">保险</td><td>¥50–80 / 天</td><td>不计免赔升级；基础险通常有 1,500 元免赔额，山路建议买</td></tr>
+</table>
+<p><strong>下单前务必确认</strong>：套餐是否限里程、保险覆盖范围、超时收费标准（多数平台超时 1 小时按日租金的 20%–50% 计）。取车时绕车拍完整视频留证，别只认口头承诺。</p>
+<p>另外：<strong>市区门店取车通常比机场 / 高铁站便宜</strong>；很多平台支持免费取消，行程没完全定也可以先下单锁价，之后再改。</p>
 
 <h2 id="tour-tips">自驾出发前最后检查</h2>
 <p>这条线路真正需要重视的不是「能不能打卡」，而是高原山路与第五天长途返程的安全裕度。</p>
 <table>
   <tr><th>重点</th><th>执行建议</th></tr>
   <tr><td class="k">驾驶</td><td>建议两人轮换，D4、D5 尤其避免疲劳驾驶</td></tr>
+  <tr><td class="k">租车</td><td>提前订、选不限里程套餐；取车时拍视频留证</td></tr>
+  <tr><td class="k">门票</td><td>丽江古城散客免费，只有黑龙潭需缴维护费；束河古镇免费</td></tr>
   <tr><td class="k">天气</td><td>出发前和当天早晨都看香格里拉、德钦的道路与天气</td></tr>
   <tr><td class="k">补给</td><td>D4 在德钦完成加油、饮水、食物和车辆检查</td></tr>
   <tr><td class="k">停车</td><td>海西生态廊道等区域不要把社会车辆开入禁止机动车路段</td></tr>
@@ -343,7 +375,8 @@ window.DOCS = [
   <tr><td class="k">束河</td><td>Gisling</td><td>CC BY 3.0</td></tr>
   <tr><td class="k">虎跳峡</td><td>CEphoto, Uwe Aranas</td><td>CC BY-SA 3.0</td></tr>
   <tr><td class="k">纳帕海</td><td>Zhongguotravel</td><td>CC BY-SA 3.0</td></tr>
-  <tr><td class="k">独克宗</td><td>祝鱼贵</td><td>CC BY-SA 4.0</td></tr>
+  <tr><td class="k">松赞林寺</td><td>BrokenSphere</td><td>CC BY-SA 3.0</td></tr>
+  <tr><td class="k">普达措</td><td>Colin W</td><td>CC BY-SA 3.0</td></tr>
   <tr><td class="k">金沙江大湾</td><td>Smwy09</td><td>CC BY-SA 3.0</td></tr>
   <tr><td class="k">梅里雪山</td><td>Kevin Poh</td><td>CC BY 2.0</td></tr>
   <tr><td class="k">卡瓦格博峰</td><td>瑞丽江的河水</td><td>CC BY-SA 4.0</td></tr>
@@ -359,13 +392,13 @@ window.DOCS = [
       { d: 4, n: "飞来寺", lon: 98.88, lat: 28.48, stay: "飞来寺", pv: "530000" },
       { d: 5, n: "大理", lon: 100.23, lat: 25.59, stay: "大理", pv: "530000", back: 1 }
     ],
-    cost: { "住宿": 4140, "门票": 1210, "餐饮": 3200, "油费": 2000, "租车": 975, "停车": 225 },
+    cost: { "住宿": 4140, "门票": 2050, "餐饮": 3200, "油费": 2200, "租车": 3800, "停车": 300 },
     plan: [
       ["D1", "大理 · 海西 + 喜洲 + 古城", "大理", "80"],
       ["D2", "大理 → 丽江", "丽江", "180"],
-      ["D3", "丽江 → 虎跳峡 → 香格里拉", "香格里拉", "220"],
-      ["D4", "香格里拉 → 奔子栏 → 飞来寺", "飞来寺", "180"],
-      ["D5", "飞来寺 → 大理（原路返程）", "大理", "560"]
+      ["D3", "丽江 → 虎跳峡 → 纳帕海 → 松赞林寺", "香格里拉", "220"],
+      ["D4", "香格里拉 → 普达措 → 奔子栏 → 飞来寺", "飞来寺", "225"],
+      ["D5", "飞来寺 → 大理（原路返程）", "大理", "490"]
     ],
     days: [
       { d: 1, spots: [
@@ -375,13 +408,13 @@ window.DOCS = [
         { city: "丽江", list: ["黑龙潭", "丽江古城", "木府", "狮子山", "束河古镇"] }
       ]},
       { d: 3, spots: [
-        { city: "香格里拉", list: ["虎跳峡", "纳帕海 / 依拉草原", "独克宗古城"] }
+        { city: "香格里拉", list: ["虎跳峡", "纳帕海 / 依拉草原", "松赞林寺"] }
       ]},
       { d: 4, spots: [
-        { city: "德钦", list: ["金沙江大湾", "白马雪山沿线", "雾浓顶", "飞来寺"] }
+        { city: "德钦", list: ["普达措国家公园", "金沙江大湾", "白马雪山沿线", "雾浓顶", "飞来寺"] }
       ]},
       { d: 5, spots: [
-        { city: "大理", list: ["梅里雪山日照金山", "长途返程 560 km"] }
+        { city: "大理", list: ["梅里雪山日照金山", "长途返程 490 km"] }
       ]}
     ]
   },
