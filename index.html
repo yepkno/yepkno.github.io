@@ -200,7 +200,12 @@ img{display:block}
   font-family:ui-monospace,Consolas,monospace}
 .mzoom.at-min button[data-z="out"],.mzoom.at-max button[data-z="in"]{
   opacity:.28;pointer-events:none}
+/* 拖动地图别被浏览器当成「选择文字」——否则会选中整页文字、还可能弹出复制菜单。
+   touch-action:none 同时挡掉触摸端的滚动手势。 */
+#routeMap,#routeMap *{-webkit-user-select:none;-moz-user-select:none;user-select:none;
+  -webkit-user-drag:none;touch-action:none}
 #routeMap{cursor:grab}
+body.map-dragging{-webkit-user-select:none;user-select:none;cursor:grabbing}
 #routeMap.grabbing{cursor:grabbing}
 
 /* 悬停某个点时的浮层：文字标签要互相避让，被推远的那些看着像"只有点没有名字"，
@@ -1124,7 +1129,7 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
   </div>
 </div>
 
-<script src="docs.js?v=20260918zi"></script>
-<script src="app.js?v=20260918zi"></script>
+<script src="docs.js?v=20260918zj"></script>
+<script src="app.js?v=20260918zj"></script>
 </body>
 </html>

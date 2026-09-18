@@ -1420,11 +1420,16 @@ function bindMapZoom() {
   var dragging = false, lastX = 0, lastY = 0;
   svg.addEventListener("pointerdown", function (e) {
     if (e.button !== 0) return;          // 只认鼠标左键
+    // 关键：拦掉默认行为，否则按住左键一拖，浏览器会认为你在"选择文字" ——
+    // 整页文字被拉出一片高亮，有时还会弹出复制菜单。
+    e.preventDefault();
+    clearTextSelection();
     dragging = true;
     _mapDragged = false;
     lastX = e.clientX; lastY = e.clientY;
     try { svg.setPointerCapture(e.pointerId); } catch (err) {}
     svg.classList.add("grabbing");
+    document.body.classList.add("map-dragging");
   });
   svg.addEventListener("pointermove", function (e) {
     if (!dragging) return;
@@ -1445,6 +1450,7 @@ function bindMapZoom() {
   function endDrag() {
     dragging = false;
     svg.classList.remove("grabbing");
+    document.body.classList.remove("map-dragging");
   }
   svg.addEventListener("pointerup", endDrag);
   svg.addEventListener("pointercancel", endDrag);
@@ -1473,6 +1479,14 @@ function bindMapZoom() {
       t.classList.add("hov");
     });
   });
+}
+
+// 清掉当前已有的文字选择（拖动开始时调用，避免上一次误选残留）
+function clearTextSelection() {
+  try {
+    var s = window.getSelection();
+    if (s && s.removeAllRanges) s.removeAllRanges();
+  } catch (err) {}
 }
 
 function hideMapTip() {
