@@ -1251,19 +1251,20 @@ function applyMapZoom() {
   g.setAttribute("transform", "translate(" + (cx + _mapPanX).toFixed(1) + " " +
     (cy + _mapPanY).toFixed(1) + ") scale(" + s.toFixed(3) + ") translate(" +
     (-cx).toFixed(1) + " " + (-cy).toFixed(1) + ")");
-  // 文字：字号与描边一起反缩放，屏幕观感不变
+  // 文字：字号 + 描边 + **位置偏移** 一起按 1/s 反缩放，屏幕观感才真正恒定。
+  // 两类文字都走这条路径：
+  //   .lbl  地名 —— 放大后仍贴在点旁边（否则偏移 ×s，名字飘到几百像素外）
+  //   .sday 圆点里的天数 —— 放大后仍落在圆点几何中心（否则那个 u*0.47 的基线偏移被放大，数字偏出圆心）
+  // 只反缩放字号是不够的：字号恒定 ≠ 位置恒定。
   svg.querySelectorAll("[data-fs]").forEach(function (t) {
     var f0 = +t.getAttribute("data-fs");
     t.style.fontSize = (f0 / s).toFixed(2) + "px";
-    if (!t.classList.contains("lbl")) return;
-    t.style.strokeWidth = (f0 / s * 0.30).toFixed(2) + "px";
-    // 地名标签还要把"相对点的偏移"一起反缩放 ——
-    // 这样放大后名字始终贴在点旁边，而不是被拉开到几百像素之外。
+    if (t.classList.contains("lbl"))
+      t.style.strokeWidth = (f0 / s * 0.30).toFixed(2) + "px";
     var px = t.getAttribute("data-px");
     if (px === null) return;
-    var dx = +t.getAttribute("data-dx"), dy = +t.getAttribute("data-dy");
-    t.setAttribute("x", (+px + dx / s + f0 * 0.55 / s).toFixed(1));
-    t.setAttribute("y", (+t.getAttribute("data-py") + dy / s + f0 * 0.35 / s).toFixed(1));
+    t.setAttribute("x", (+px + (+t.getAttribute("data-dx")) / s).toFixed(1));
+    t.setAttribute("y", (+t.getAttribute("data-py") + (+t.getAttribute("data-dy")) / s).toFixed(1));
   });
   // 记号半径同理
   svg.querySelectorAll("[data-r]").forEach(function (c) {
@@ -1531,7 +1532,11 @@ function drawTourRoute(d) {
 
     // 住宿点：把"第几天"写进圆点里 —— 标签就不用再带 "D? · " 前缀，宽度少一半
     if (isStay && a.p.d) {
+      // 圆点里的天数：同样记录"所属点坐标 + 相对偏移"，
+      // 缩放时一起反缩放 —— 否则那个 u*0.47 的基线偏移会被 ×s，数字偏出圆心
       marks += '<text class="sday" data-i="' + i + '" data-fs="' + (u * 1.32).toFixed(2) +
+               '" data-px="' + a.x.toFixed(1) + '" data-py="' + a.y.toFixed(1) +
+               '" data-dx="0" data-dy="' + (u * 0.47).toFixed(2) +
                '" style="font-size:' + (u * 1.32).toFixed(2) + 'px" x="' +
                a.x.toFixed(1) + '" y="' + (a.y + u * 0.47).toFixed(1) + '">' +
                escapeHtml(String(a.p.d)) + '</text>';
@@ -1589,7 +1594,8 @@ function drawTourRoute(d) {
       //    放大后名字飘到几百像素外，看着就像"这个点没名字"。
       labels += '<text class="lbl" data-i="' + i + '" data-fs="' + fs.toFixed(2) +
                 '" data-px="' + a.x.toFixed(1) + '" data-py="' + a.y.toFixed(1) +
-                '" data-dx="' + (lx - a.x).toFixed(2) + '" data-dy="' + (ly - a.y).toFixed(2) +
+                '" data-dx="' + (lx + fs * 0.55 - a.x).toFixed(2) +
+                '" data-dy="' + (ly + fs * 0.35 - a.y).toFixed(2) +
                 '" style="font-size:' + fs.toFixed(2) + 'px;stroke-width:' +
                 (fs * 0.30).toFixed(2) + 'px" x="' + (lx + fs * 0.55).toFixed(1) + '" y="' +
                 (ly + fs * 0.35).toFixed(1) + '">' + escapeHtml(a.p.n) + '</text>';
