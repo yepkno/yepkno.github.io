@@ -1062,9 +1062,18 @@ function renderTourReport(d) {
   // 原来的 total/days 是"全队日均"，紧跟"人均"显示会被读成同一口径。
   var perDay = (days && people) ? Math.round(total / people / days) : 0;
 
+  // 住宿点海拔：按住宿名去 pts 里找 alt（同一地点多天只取一次）。
+  // 3,000 m 以上标朱红 —— 那是高反开始明显的高度。
+  var altOf = {};
+  (d.pts || []).forEach(function (p) {
+    if (p.stay && p.alt) altOf[p.stay] = p.alt;
+  });
   var plan = rows.map(function (r) {
+    var a = altOf[r[2]];
     return "<tr><td class=\"m\">" + escapeHtml(r[0]) + "</td><td>" + escapeHtml(r[1]) +
-           "</td><td>" + escapeHtml(r[2]) + "</td><td class=\"m\">" + escapeHtml(r[3]) + "</td></tr>";
+           "</td><td>" + escapeHtml(r[2]) + "</td><td class=\"m\">" + escapeHtml(r[3]) +
+           "</td><td class=\"m alt" + (a >= 3000 ? " hi" : "") + "\">" +
+           (a ? a.toLocaleString() + " <em>m</em>" : "\u2014") + "</td></tr>";
   }).join("");
 
   document.getElementById("tdP3").innerHTML =
@@ -1082,7 +1091,7 @@ function renderTourReport(d) {
       distCombo(rows) +
     '</div>' +
     '<div class="tbox"><h4>PLAN<em>逐日行程</em></h4><table><tr><th>DAY<em>天</em></th>' +
-      '<th>ROUTE<em>路线</em></th><th>STAY<em>住宿</em></th><th>KM<em>里程</em></th></tr>' +
+      '<th>ROUTE<em>路线</em></th><th>STAY<em>住宿</em></th><th>KM<em>里程</em></th><th>ALT<em>海拔</em></th></tr>' +
       plan + '</table></div>';
 }
 

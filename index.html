@@ -344,6 +344,11 @@ img{display:block}
 .tmetric b{display:block;margin-top:7px;font-size:23px;font-weight:500;color:var(--text);
   font-family:ui-monospace,Consolas,monospace}
 .tmetric b em{font-size:12px;font-style:normal;color:var(--faint);margin-left:3px}
+/* 报表·住宿点海拔列：3,000 m 以上转朱红（高反开始明显的高度） */
+#tdP3 td.alt{color:var(--muted);white-space:nowrap}
+#tdP3 td.alt em{font-style:normal;font-size:10px;color:var(--faint);margin-left:2px}
+#tdP3 td.alt.hi{color:var(--accent);font-weight:600}
+#tdP3 td.alt.hi em{color:var(--accent);opacity:.75}
 /* 英文标签后面跟中文对照：英文负责"科技感"，中文负责"看得懂" */
 .tmetric span i{font-style:normal;margin-left:8px;letter-spacing:.04em;color:var(--muted);
   opacity:.9;font-family:var(--sans);font-size:11px}
@@ -1013,7 +1018,7 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
   </div>
 </div>
 
-<script src="docs.js?v=20260918y"></script>
-<script src="app.js?v=20260918y"></script>
+<script src="docs.js?v=20260918z"></script>
+<script src="app.js?v=20260918z"></script>
 </body>
 </html>
