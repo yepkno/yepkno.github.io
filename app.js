@@ -598,7 +598,7 @@ function ensureMapData(cb) {
 // ---------------- 可拖动卡片墙 ----------------
 // 交互参考 motion/react 的 DraggableCard，用原生 JS 实现（站点保持零依赖）：
 //   自由拖动 + 鼠标经过时 3D 倾斜 + 光斑 + 松手惯性甩出（越界自然落回）+ 悬停微放大
-var tourDocs = [], tourCards = [];
+var tourDocs = [], tourCards = [], tourZTop = 100;
 
 function twClamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
 
@@ -694,7 +694,7 @@ function bindTourDrag(el, doc, home) {
     ox = +el.dataset.x; oy = +el.dataset.y;
     hist = [{ x: e.clientX, y: e.clientY, t: performance.now() }];
     el.classList.add("drag");
-    el.style.zIndex = "200";
+    el.style.zIndex = String(++tourZTop);   // 最近碰过的卡片保持在最上层
     try { el.setPointerCapture(e.pointerId); } catch (err) {}
     e.preventDefault();
   });
@@ -733,7 +733,6 @@ function bindTourDrag(el, doc, home) {
     el.dataset.x = Math.round(twClamp(+el.dataset.x + vx * 260, b.x0, b.x1));
     el.dataset.y = Math.round(twClamp(+el.dataset.y + vy * 260, b.y0, b.y1));
     twApply(el);
-    el.style.zIndex = "10";
     hist = [];
   }
   el.addEventListener("pointerup", twEnd);
