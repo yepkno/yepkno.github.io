@@ -745,8 +745,9 @@ function renderTourWall(docs) {
   if (!W || !H) return;      // 容器还没显示（尺寸为 0）时不要布局，否则卡片会挤到角落
   // 卡片尺寸：参考 demo 的 w-80（320px）等比缩到视口
   var cw = Math.min(334, Math.max(188, Math.round(W * 0.225)));
-  // 卡高 = 照片(cw，正方形) + 卡下信息条(50) —— 与 CSS 里 .ph 的 bottom:50px 对齐
-  var ch = cw + 50;
+  // 卡高 = 白边(10) + 照片(正方形，边长 cw-20) + 留白(10) + 信息条(46) = cw + 46
+  // 必须与 CSS 里 .ph 的 left/right/top/bottom 对齐，否则照片不是正方形
+  var ch = cw + 46;
 
   // 散落位置 —— 对齐参考 demo 的布局语言（"absolute top-x left-y% rotate-z"）：
   // 卡片刻意互相重叠、角度各异，像随手摊在桌上的一叠照片，而不是整齐排开。
