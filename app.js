@@ -474,8 +474,14 @@ document.addEventListener("DOMContentLoaded", function () {
     var item = e.target.closest("a[data-cat]");
     if (!item) return;
     var cat = item.getAttribute("data-cat");
+    if (cat === "旅游攻略") {
+      // 旅游攻略 = 全屏保险库：每次从导航进入都过一遍全屏密码门（不只是本次会话首次）
+      var _st = document.getElementById("tourStage");
+      if (_st && !_st.hidden && activeCategory === "旅游攻略") return;   // 已在库内，不重复问
+      showTourGate();
+      return;
+    }
     if (isWallCategory(cat) && !isDocWallUnlocked(cat)) {
-      if (cat === "旅游攻略") { showTourGate(); return; }   // 旅游攻略走全屏密码门
       renderCatWall(cat, item);
       return;
     }
@@ -692,10 +698,12 @@ function twClamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
 function twBounds(el, home) {
   var w = el.offsetWidth, h = el.offsetHeight;
   var W = home.clientWidth, H = home.clientHeight;
-  var pad = 12;
+  // 参考 demo 的 dragConstraints 是 ±半屏：卡片可以甩到屏幕边缘外一点，手感才"自由"。
+  // 这里要求至少 1/3 卡片留在屏内，避免整张卡被拖丢。
+  var mx = Math.round(w / 3), my = Math.round(h / 3);
   return {
-    x0: pad, x1: Math.max(pad, W - w - pad),
-    y0: 70, y1: Math.max(70, H - h - 58)
+    x0: -w + mx, x1: Math.max(-w + mx, W - mx),
+    y0: 58, y1: Math.max(58, H - my - 20)
   };
 }
 
@@ -728,19 +736,44 @@ function renderTourWall(docs) {
   }
 
   if (!n) {
-    stage.innerHTML = '<div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);' +
+    home.innerHTML = '<div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);' +
                       'color:var(--faint);font-size:13px">这个分类下还没有攻略</div>';
     return;
   }
 
   var W = home.clientWidth, H = home.clientHeight;
   if (!W || !H) return;      // 容器还没显示（尺寸为 0）时不要布局，否则卡片会挤到角落
-  // 卡片宽度随数量自适应：篇数少时卡片大、篇数多时自然靠拢（像散在桌上的一叠照片）
-  var cw = Math.min(272, Math.max(132, Math.round((W - 80) / Math.max(n, 3) - 26)));
-  var ch = Math.round(cw * 264 / 190);
-  var gap = Math.min((W - n * cw) / (n + 1), 42);   // 间隙设上限：篇数少时别散得太开
-  var totalW = n * cw + (n - 1) * gap;
-  var xStart = Math.max(14, (W - totalW) / 2);
+  // 卡片尺寸：参考 demo 的 w-80（320px）等比缩到视口
+  var cw = Math.min(326, Math.max(184, Math.round(W * 0.222)));
+  var ch = Math.round(cw * 1.31);
+
+  // 散落位置 —— 对齐参考 demo 的布局语言（"absolute top-x left-y% rotate-z"）：
+  // 卡片刻意互相重叠、角度各异，像随手摊在桌上的一叠照片，而不是整齐排开。
+  // 数值 = 在"可用区域"里的百分比，用满一圈后按 round 递增做轻微错位。
+  var SLOTS = [
+    { x: .24, y: .04, r: -6 }, { x: .52, y: .26, r: 8 },  { x: .34, y: .46, r: -4 },
+    { x: .68, y: .06, r: 10 }, { x: .10, y: .24, r: -9 }, { x: .60, y: .48, r: 5 },
+    { x: .42, y: .16, r: -3 }, { x: .82, y: .30, r: 7 },  { x: .18, y: .50, r: -7 },
+    { x: .50, y: .02, r: 4 },  { x: .30, y: .30, r: -5 }, { x: .72, y: .44, r: 9 }
+  ];
+  var padX = 22, padT = 86, padB = 62;
+  var ax = Math.max(40, W - cw - padX * 2);
+  var ay = Math.max(40, H - ch - padT - padB);
+  var pos = [], i2;
+  for (i2 = 0; i2 < n; i2++) {
+    var sl = SLOTS[i2 % SLOTS.length], rd = Math.floor(i2 / SLOTS.length);
+    pos.push({ x: padX + sl.x * ax + rd * 15, y: padT + sl.y * ay + rd * 11, r: sl.r });
+  }
+  // 整组居中：否则篇数少时全挤在左上角
+  var mnx = Infinity, mxx = -Infinity, mny = Infinity, mxy = -Infinity;
+  pos.forEach(function (p) {
+    mnx = Math.min(mnx, p.x); mxx = Math.max(mxx, p.x + cw);
+    mny = Math.min(mny, p.y); mxy = Math.max(mxy, p.y + ch);
+  });
+  var dx = (W - (mnx + mxx)) / 2, dy = H * 0.50 - (mny + mxy) / 2;
+  dx = Math.min(Math.max(dx, padX - mnx), (W - padX) - mxx);
+  dy = Math.min(Math.max(dy, padT - mny), (H - padB) - mxy);
+  pos.forEach(function (p) { p.x += dx; p.y += dy; });
 
   tourDocs.forEach(function (d, i) {
     var el = document.createElement("div");
@@ -748,13 +781,13 @@ function renderTourWall(docs) {
     el.style.width = cw + "px";
     el.style.height = ch + "px";
     el.style.zIndex = String(10 + i);
-    el.dataset.x = Math.round(xStart + i * (cw + gap));
-    el.dataset.y = Math.round((H - ch) / 2 + ((i % 2) ? -28 : 24));
-    el.dataset.r = ((i % 2 ? 1 : -1) * (2.6 + (i % 3) * 1.3)).toFixed(2);
+    el.dataset.x = Math.round(pos[i].x);
+    el.dataset.y = Math.round(pos[i].y);
+    el.dataset.r = pos[i].r.toFixed(2);
     twApply(el);
     el.innerHTML =
       '<div class="fc">' +
-        '<img src="' + getDocCover(d) + '" alt="">' +
+        '<img src="' + getDocCover(d) + '" alt="" draggable="false">' +
         '<span class="sc"></span>' +
         '<span class="glare"></span>' +
         '<span class="no">' + String(i + 1).padStart(2, "0") + '</span>' +
@@ -772,6 +805,9 @@ function bindTourDrag(el, doc, home) {
   var drag = false, sx = 0, sy = 0, ox = 0, oy = 0, moved = 0, hr = null, hist = [];
 
   el.addEventListener("pointerenter", function () { hr = home.getBoundingClientRect(); });
+
+  // 双保险：万一某个子元素仍被浏览器当成可拖拽物，直接拦掉原生拖拽
+  el.addEventListener("dragstart", function (e) { e.preventDefault(); });
 
   el.addEventListener("pointerdown", function (e) {
     if (e.button !== 0) return;
@@ -792,8 +828,8 @@ function bindTourDrag(el, doc, home) {
     var cx = hr.left + (+el.dataset.x) + el.offsetWidth / 2;
     var cy = hr.top + (+el.dataset.y) + el.offsetHeight / 2;
     var dx = e.clientX - cx, dy = e.clientY - cy;
-    el.style.setProperty("--ry", twClamp(dx / 13.5, -22, 22).toFixed(2) + "deg");
-    el.style.setProperty("--rx", twClamp(-dy / 13.5, -22, 22).toFixed(2) + "deg");
+    el.style.setProperty("--ry", twClamp(dx / 12, -25, 25).toFixed(2) + "deg");
+    el.style.setProperty("--rx", twClamp(-dy / 12, -25, 25).toFixed(2) + "deg");
     el.style.setProperty("--glare", Math.min(0.22, Math.abs(dx) / 1400).toFixed(3));
     el.style.setProperty("--sc", "1.02");
 
