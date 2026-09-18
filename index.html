@@ -246,6 +246,8 @@ body.map-dragging{-webkit-user-select:none;user-select:none;cursor:grabbing}
 .ts3:not(.on):hover{color:var(--text);background:rgba(255,255,255,.06)}
 .tpane{animation:tfade .42s ease}
 @keyframes tfade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+/* 需要横向滚动的块（窄屏用）：图表与宽表格保持原尺寸、不压缩 */
+.tscroll{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
 .tbox{background:var(--card);border:1px solid var(--border);padding:20px 24px;margin-bottom:16px;
   clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px))}
 .tbox h4{margin:0 0 10px;font-size:12px;color:var(--accent);
@@ -443,6 +445,27 @@ body.map-dragging{-webkit-user-select:none;user-select:none;cursor:grabbing}
 .tempty{padding:22px 0;color:var(--faint);font-size:12.5px;text-align:center}
 
 @media (max-width:600px){
+  /* ===== ⑩ 卡片墙：窄屏改「竖向流式列表」 =====
+     「散落压叠」是给大屏摊照片用的布局语言；在 390px 宽上卡片必然互相遮住，
+     既看不清封面也点不准。窄屏改成可滚动的竖向列表（仍占满整个全屏层）。
+     只覆盖 display/定位/transform —— 卡片内部「白边照片」的外观一字不动。
+     与 JS 的 wallflow 类同阈值（容器宽 ≤600）。 */
+  #tourWallStage.wallflow{display:flex;flex-direction:column;align-items:center;
+    gap:16px;padding:12px 18px 150px;overflow-y:auto;-webkit-overflow-scrolling:touch;
+    transform-style:flat}
+  #tourWallStage.wallflow .tcard{position:relative;left:auto;top:auto;
+    transform:none;cursor:pointer;touch-action:pan-y;transition:none}
+
+  /* ===== ⑪ 报表：窄屏竖排 + 图表/表格改「横向滚动」 =====
+     图表**不能压缩** —— SVG 整体缩放会把 10px 的轴标签缩到读不清，
+     所以保持原尺寸、让容器横滑（与行程表同策）。 */
+  #tourDetail .tbox{padding:16px 13px}
+  .tgr{gap:9px;margin-bottom:12px}
+  .tmetric{padding:11px 12px}
+  .tcostflex{flex-direction:column;align-items:stretch;gap:14px}
+  .tdonut{flex:0 0 auto;width:min(168px,62vw);margin:0 auto}
+  #tdP3 table{min-width:520px}
+  #tdP3 .tcombo{min-width:660px}
   #tourStage .ttop{padding:0 16px;gap:12px}
   #tourStage .stats{display:none}
   #tourStage #tourDetail{padding:18px 14px 48px}
@@ -1221,7 +1244,7 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
   </div>
 </div>
 
-<script src="docs.js?v=20260919d"></script>
-<script src="app.js?v=20260919d"></script>
+<script src="docs.js?v=20260919e"></script>
+<script src="app.js?v=20260919e"></script>
 </body>
 </html>

@@ -695,6 +695,13 @@ var tourDocs = [], tourCards = [], tourZTop = 100;
 
 function twClamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
 
+// ⑩ 卡片墙是否处于「窄屏流式」模式（由 renderTourWall 按容器宽度打上的 class）。
+// 流式列表下禁用拖动/倾斜：一是纵向列表里拖动无意义，二是会与整页滚动抢手势。
+function twIsFlow() {
+  var ws = document.getElementById("tourWallStage");
+  return !!(ws && ws.classList.contains("wallflow"));
+}
+
 // 卡片可活动的范围：上下各让出 HUD 的位置
 function twBounds(el, home) {
   var w = el.offsetWidth, h = el.offsetHeight;
@@ -744,8 +751,17 @@ function renderTourWall(docs) {
 
   var W = home.clientWidth, H = home.clientHeight;
   if (!W || !H) return;      // 容器还没显示（尺寸为 0）时不要布局，否则卡片会挤到角落
-  // 卡片尺寸：参考 demo 的 w-80（320px）等比缩到视口
-  var cw = Math.min(334, Math.max(188, Math.round(W * 0.225)));
+  // ⑩ 窄屏（容器宽 ≤600）→ **竖向流式列表**：散落压叠在手机宽度上会互相糊住。
+  // 流式模式下不写位置、不绑拖动，排列交给 CSS（.wallflow）；阈值与 CSS 媒体查询一致。
+  var flow = W <= 600;
+  home.classList.toggle("wallflow", flow);
+  // 底部提示随模式换文案：流式下**已禁用拖动**，仍写「拖动可自由摆放」就是错的
+  var hint = document.querySelector("#tourStage .thint");
+  if (hint) hint.innerHTML = flow ? "上下滑动浏览 &#183; 点卡片进入攻略"
+                                  : "拖动可自由摆放 &#183; 点卡片进入攻略";
+  // 卡片尺寸：参考 demo 的 w-80（320px）等比缩到视口；流式下占满可用宽度（左右各留 18）
+  var cw = flow ? Math.min(334, W - 36)
+                : Math.min(334, Math.max(188, Math.round(W * 0.225)));
   // 卡高 = 白边(10) + 照片(正方形，边长 cw-20) + 留白(10) + 信息条(46) = cw + 46
   // 必须与 CSS 里 .ph 的 left/right/top/bottom 对齐，否则照片不是正方形
   var ch = cw + 46;
@@ -763,20 +779,27 @@ function renderTourWall(docs) {
   var ax = Math.max(40, W - cw - padX * 2);
   var ay = Math.max(40, H - ch - padT - padB);
   var pos = [], i2;
-  for (i2 = 0; i2 < n; i2++) {
-    var sl = SLOTS[i2 % SLOTS.length], rd = Math.floor(i2 / SLOTS.length);
-    pos.push({ x: padX + sl.x * ax + rd * 15, y: padT + sl.y * ay + rd * 11, r: sl.r });
+  if (flow) {
+    // 流式：位置/角度全部归零，由 CSS 纵向排列（twApply 仍写 0 —— CSS 的 transform:none 会忽略）
+    for (i2 = 0; i2 < n; i2++) pos.push({ x: 0, y: 0, r: 0 });
+  } else {
+    for (i2 = 0; i2 < n; i2++) {
+      var sl = SLOTS[i2 % SLOTS.length], rd = Math.floor(i2 / SLOTS.length);
+      pos.push({ x: padX + sl.x * ax + rd * 15, y: padT + sl.y * ay + rd * 11, r: sl.r });
+    }
   }
-  // 整组居中：否则篇数少时全挤在左上角
-  var mnx = Infinity, mxx = -Infinity, mny = Infinity, mxy = -Infinity;
-  pos.forEach(function (p) {
-    mnx = Math.min(mnx, p.x); mxx = Math.max(mxx, p.x + cw);
-    mny = Math.min(mny, p.y); mxy = Math.max(mxy, p.y + ch);
-  });
-  var dx = (W - (mnx + mxx)) / 2, dy = H * 0.50 - (mny + mxy) / 2;
-  dx = Math.min(Math.max(dx, padX - mnx), (W - padX) - mxx);
-  dy = Math.min(Math.max(dy, padT - mny), (H - padB) - mxy);
-  pos.forEach(function (p) { p.x += dx; p.y += dy; });
+  // 整组居中：否则篇数少时全挤在左上角（流式模式由 CSS 排列，跳过）
+  if (!flow) {
+    var mnx = Infinity, mxx = -Infinity, mny = Infinity, mxy = -Infinity;
+    pos.forEach(function (p) {
+      mnx = Math.min(mnx, p.x); mxx = Math.max(mxx, p.x + cw);
+      mny = Math.min(mny, p.y); mxy = Math.max(mxy, p.y + ch);
+    });
+    var dx = (W - (mnx + mxx)) / 2, dy = H * 0.50 - (mny + mxy) / 2;
+    dx = Math.min(Math.max(dx, padX - mnx), (W - padX) - mxx);
+    dy = Math.min(Math.max(dy, padT - mny), (H - padB) - mxy);
+    pos.forEach(function (p) { p.x += dx; p.y += dy; });
+  }
 
   tourDocs.forEach(function (d, i) {
     var el = document.createElement("div");
@@ -820,6 +843,7 @@ function bindTourDrag(el, doc, home) {
 
   el.addEventListener("pointerdown", function (e) {
     if (e.button !== 0) return;
+    if (twIsFlow()) return;      // ⑩ 流式列表：不拖动，交给纵向滚动
     drag = true; moved = 0;
     sx = e.clientX; sy = e.clientY;
     ox = +el.dataset.x; oy = +el.dataset.y;
@@ -834,7 +858,7 @@ function bindTourDrag(el, doc, home) {
     // ⑧ 触摸端**不做 3D 倾斜**：倾斜的前提是"指针在卡片内的相对位置"，
     // 而手指按下就是要拖动 —— 边拖边倾会让卡片一直在晃，且松手后停在某个歪角。
     // 触摸端只保留拖动 + 惯性；鼠标/触控板照旧倾斜。
-    if (e.pointerType !== "touch") {
+    if (!twIsFlow() && e.pointerType !== "touch") {
       // 倾斜基准用"未变换时的卡片中心"（缓存容器 rect）——
       // 若读 getBoundingClientRect()，倾斜本身会改变 rect，形成越倾越大的反馈
       if (!hr) hr = home.getBoundingClientRect();
@@ -1091,9 +1115,12 @@ function distCombo(rows) {
       '<stop offset="1" stop-color="#ff461f" stop-opacity="0"/></linearGradient>' +
     '</defs>';
 
-  return '<svg class="tcombo" viewBox="0 0 ' + W + ' ' + H + '">' + cdefs + grid + bars +
+  // 窄屏靠 .tscroll 横向滚动而不是压缩（SVG 整体缩小会把 10px 轴标签缩到读不清）
+  return '<div class="tscroll">' +
+    '<svg class="tcombo" viewBox="0 0 ' + W + ' ' + H + '">' + cdefs + grid + bars +
     '<path class="carea" d="' + area + '"/>' +
-    '<path class="cline" id="distLine" d="' + line + '"/>' + dots + xl + lg + '</svg>';
+    '<path class="cline" id="distLine" d="' + line + '"/>' + dots + xl + lg + '</svg>' +
+    '</div>';
 }
 
 function renderTourReport(d) {
@@ -1145,9 +1172,10 @@ function renderTourReport(d) {
     '<div class="tbox"><h4>DISTANCE &amp; CUMULATIVE<em>分段里程 / 累计里程</em></h4>' +
       distCombo(rows) +
     '</div>' +
-    '<div class="tbox"><h4>PLAN<em>逐日行程</em></h4><table><tr><th>DAY<em>天</em></th>' +
+    '<div class="tbox"><h4>PLAN<em>逐日行程</em></h4><div class="tscroll">' +
+      '<table><tr><th>DAY<em>天</em></th>' +
       '<th>ROUTE<em>路线</em></th><th>STAY<em>住宿</em></th><th>KM<em>里程</em></th><th>ALT<em>海拔</em></th></tr>' +
-      plan + '</table></div>';
+      plan + '</table></div></div>';
 }
 
 // 图表入场动画：环形图扫出、柱子升起、折线描绘、面积淡入
