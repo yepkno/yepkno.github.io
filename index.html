@@ -484,8 +484,12 @@ body.map-dragging{-webkit-user-select:none;user-select:none;cursor:grabbing}
   /* 触摸靶点 ≥44px（原 padding 5px 9px + 10px 字 ≈ 24px，远小于移动端标准） */
   .mapdays button{padding:0 12px;font-size:11px;min-height:44px;min-width:52px;flex:0 0 auto;
     display:inline-flex;align-items:center;justify-content:center}
-  /* 四卡切换按钮同样抬到 44px */
-  .ts3{min-height:44px;display:inline-flex;align-items:center;padding:0 14px}
+  /* 四卡切换按钮同样抬到 44px。
+     ⚠️ 必须加 white-space:nowrap —— 否则窄屏把「02 行程地图」折成两行
+     （2026-09-19 推送后自查发现）。放不下时**整组横向滚动**，而不是折行。 */
+  .ts3{min-height:44px;display:inline-flex;align-items:center;justify-content:center;
+    padding:0 10px;white-space:nowrap;flex:0 0 auto}
+  #tourDetail .tseg{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
   /* 密码门按钮 */
   .doc-wall button{min-height:44px}
   .gate-box button{min-height:46px}
@@ -1244,7 +1248,7 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
   </div>
 </div>
 
-<script src="docs.js?v=20260919e"></script>
-<script src="app.js?v=20260919e"></script>
+<script src="docs.js?v=20260919f"></script>
+<script src="app.js?v=20260919f"></script>
 </body>
 </html>
