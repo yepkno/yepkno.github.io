@@ -1045,16 +1045,22 @@ function renderTourReport(d) {
   var cost = d.cost || {};
   var keys = Object.keys(cost);
   var total = keys.reduce(function (a, k) { return a + cost[k]; }, 0);
-  var people = 2;
+  // 费用对应的人数读 docs.js 的 people 字段，缺省 2 人。
+  // 以前这里写死 2 —— 滇西北是 4 人，人均被算成了整整两倍。
+  var people = +d.people > 0 ? +d.people : 2;
   var rows = d.plan || [];
-  var days = rows.length;
+  // 天数不能用 rows.length：plan 允许 "D5-D6" 这种跨天写法
+  // （西北 6 行实为 7 天、云南 5 行实为 9 天）。复用地图 DAY 按钮那套 tourDayCount()。
+  var days = tourDayCount(d) || rows.length;
   var km = 0;
   rows.forEach(function (r) {
     var v = parseInt(String(r[3]).replace(/[^0-9]/g, ""), 10);
     if (!isNaN(v)) km += v;
   });
   var paid = total ? Math.round(total / people) : 0;
-  var perDay = days ? Math.round(total / days) : 0;
+  // 人均每天 —— 与上一张卡同口径（都按人均算）。
+  // 原来的 total/days 是"全队日均"，紧跟"人均"显示会被读成同一口径。
+  var perDay = (days && people) ? Math.round(total / people / days) : 0;
 
   var plan = rows.map(function (r) {
     return "<tr><td class=\"m\">" + escapeHtml(r[0]) + "</td><td>" + escapeHtml(r[1]) +
@@ -1063,9 +1069,9 @@ function renderTourReport(d) {
 
   document.getElementById("tdP3").innerHTML =
     '<div class="tgr">' +
-      '<div class="tmetric"><span>TOTAL COST<i>总费用</i></span><b>' + fmtMoney(total) + '</b></div>' +
+      '<div class="tmetric"><span>TOTAL COST<i>总费用 · ' + people + ' 人</i></span><b>' + fmtMoney(total) + '</b></div>' +
       '<div class="tmetric"><span>PER PERSON<i>人均</i></span><b>' + fmtMoney(paid) + '</b></div>' +
-      '<div class="tmetric"><span>PER DAY<i>日均</i></span><b>' + fmtMoney(perDay) + '</b></div>' +
+      '<div class="tmetric"><span>PER DAY<i>人均 / 天</i></span><b>' + fmtMoney(perDay) + '</b></div>' +
       '<div class="tmetric"><span>DAYS<i>天数</i></span><b>' + days + '<em>D</em></b></div>' +
       '<div class="tmetric"><span>DISTANCE<i>里程</i></span><b>' + km.toLocaleString() + '<em>KM</em></b></div>' +
     '</div>' +
