@@ -180,10 +180,6 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 #playerFix .pico:hover{background:rgba(255,255,255,.12);color:#fff}
 #playerFix .pico svg{width:19px;height:19px;fill:currentColor}
 #playerFix .pico .st{width:19px;height:19px}
-#playerFix .pmenu{position:absolute;top:46px;right:12px;z-index:9;display:flex;flex-direction:column;min-width:118px;padding:6px;border-radius:12px;background:rgba(24,36,54,.98);border:1px solid var(--pp-l);box-shadow:0 12px 30px rgba(0,0,0,.35)}
-#playerFix .pmenu button{border:0;background:transparent;color:var(--pp-b);text-align:left;padding:9px 10px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit}
-#playerFix .pmenu button:hover{background:rgba(255,255,255,.1);color:#fff}
-#playerFix .pmenu button.on{color:var(--accent)}
 
 /* 歌曲区：方形封面 + 右侧露出黑胶 */
 #playerFix .psong{display:flex;align-items:center;gap:22px;padding:2px 22px 16px;min-height:168px}
@@ -429,13 +425,10 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
       <button class="pico" id="pCollapse" type="button" title="收起播放器" aria-label="收起">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
       </button>
-      <button class="pico" id="pMore" type="button" title="更多" aria-label="更多">
-        <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg>
+      <button class="pico" id="pMute" type="button" title="静音" aria-label="静音">
+        <svg viewBox="0 0 24 24"><path d="M4 9h3l4-3.5v13L7 15H4zm10.3-.8a4.5 4.5 0 0 1 0 7.6l-1-1.5a2.8 2.8 0 0 0 0-4.6zm2.2-3.3a8.2 8.2 0 0 1 0 14.2l-1-1.5a6.5 6.5 0 0 0 0-11.2z"/></svg>
+        <svg class="st" viewBox="0 0 24 24" style="display:none"><path d="M4 9h3l4-3.5v13L7 15H4zm10.6 1.3L16.9 12l2.3-2.3 1.4 1.4L18.3 13.4l2.3 2.3-1.4 1.4-2.3-2.3-2.3 2.3-1.4-1.4 2.3-2.3-2.3-2.3z"/></svg>
       </button>
-      <div class="pmenu" id="pMenu" hidden>
-        <button id="pFav" type="button">♡ 收藏</button>
-        <button id="pMute2" type="button">🔊 静音</button>
-      </div>
     </div>
 
     <div class="psong">
@@ -482,10 +475,6 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
     </div>
 
     <div class="pfoot">
-      <button class="pico" id="pMute" type="button" title="静音">
-        <svg viewBox="0 0 24 24"><path d="M4 9h3l4-3.5v13L7 15H4zm10.3-.8a4.5 4.5 0 0 1 0 7.6l-1-1.5a2.8 2.8 0 0 0 0-4.6zm2.2-3.3a8.2 8.2 0 0 1 0 14.2l-1-1.5a6.5 6.5 0 0 0 0-11.2z"/></svg>
-        <svg class="st" viewBox="0 0 24 24" style="display:none"><path d="M4 9h3l4-3.5v13L7 15H4zm10.6 1.3L16.9 12l2.3-2.3 1.4 1.4L18.3 13.4l2.3 2.3-1.4 1.4-2.3-2.3-2.3 2.3-1.4-1.4 2.3-2.3-2.3-2.3z"/></svg>
-      </button>
       <input class="pvol" id="pVol" type="range" min="0" max="1" step="0.01" value="0.5" title="音量">
     </div>
   </div>
@@ -499,6 +488,6 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 </div>
 
 <script src="docs.js?v=20260918c"></script>
-<script src="app.js?v=20260918c"></script>
+<script src="app.js?v=20260918d"></script>
 </body>
 </html>

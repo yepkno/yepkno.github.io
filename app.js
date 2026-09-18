@@ -182,7 +182,7 @@ function initPlayer() {
   var idx = DEFAULT_INDEX;
   var repeat = 1;                   // 0=顺序播放（末曲即停） 1=列表循环（默认） 2=单曲循环
   var shuffle = false;
-  var muted = false, lastVol = VOLUME, fav = false;
+  var muted = false, lastVol = VOLUME;
   var durations = [];
 
   function $(s) { return fix.querySelector(s); }
@@ -246,8 +246,6 @@ function initPlayer() {
     mute.querySelector("svg").style.display = muted ? "none" : "block";
     mute.querySelector("svg.st").style.display = muted ? "block" : "none";
     mute.setAttribute("title", muted ? "取消静音" : "静音");
-    var m2 = $("#pMute2");
-    if (m2) m2.textContent = muted ? "🔇 取消静音" : "🔊 静音";
   }
 
   // ---------------- 播放 ----------------
@@ -315,21 +313,7 @@ function initPlayer() {
   $("#pShuffle").addEventListener("click", function () { shuffle = !shuffle; renderState(); });
   $("#pRepeat").addEventListener("click", function () { repeat = (repeat + 1) % 3; renderState(); });
 
-  // 更多菜单
-  var menu = $("#pMenu");
-  $("#pMore").addEventListener("click", function (e) {
-    e.stopPropagation();
-    menu.hidden = !menu.hidden;
-  });
-  document.addEventListener("click", function (e) {
-    if (!menu.hidden && !menu.contains(e.target) && !$("#pMore").contains(e.target)) menu.hidden = true;
-  });
-  $("#pFav").addEventListener("click", function () {
-    fav = !fav;
-    this.textContent = (fav ? "♥" : "♡") + " 收藏";
-    this.classList.toggle("on", fav);
-  });
-  $("#pMute2").addEventListener("click", function () { setMute(!muted); });
+  // （收藏功能与 ⋯ 更多菜单已移除；静音 = 顶栏一个独立小按钮）
 
   // 音量 / 静音
   function setMute(on) {
