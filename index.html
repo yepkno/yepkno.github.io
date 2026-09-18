@@ -82,6 +82,12 @@ img{display:block}
     radial-gradient(ellipse 92% 34% at 50% 94%,rgba(96,146,224,.13) 0%,rgba(0,0,0,0) 74%),
     linear-gradient(180deg,#05080e,#080d16)}
 #tourStage[hidden]{display:none}
+/* 主页背景：AI 生成的「虚构路书地图」—— 不对应任何真实地理，纯装饰。
+   半透明 + 压暗降饱和：只留一层纸纹与航迹，卡片照旧是主角。
+   父元素背景（两团光晕 + 深色渐变）从它下面透出来，等于自带一层柔光。 */
+#tourStage::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:url("assets/travel/roadbook.jpg") center center/cover no-repeat;
+  opacity:.72;filter:brightness(.95) saturate(.6) contrast(1.05)}
 /* 地面网格 */
 #tourStage .tfloor{position:absolute;left:-6%;right:-6%;bottom:0;height:46%;pointer-events:none;
   background-image:linear-gradient(rgba(255,255,255,.075) 1px,transparent 1px),
@@ -868,7 +874,7 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
   </div>
 </div>
 
-<script src="docs.js?v=20260918s"></script>
-<script src="app.js?v=20260918s"></script>
+<script src="docs.js?v=20260918t"></script>
+<script src="app.js?v=20260918t"></script>
 </body>
 </html>
