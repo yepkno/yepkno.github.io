@@ -231,6 +231,7 @@ function initPlayer() {
     var pct = d ? (t / d * 100) : 0;
     $("#pBarFill").style.width = pct + "%";
     $("#pBarDot").style.left = pct + "%";
+    $("#pDisc").style.setProperty("--pp-rot", pct);   // 收起态圆盘外圈的进度环
   }
   function renderState() {
     var on = !audio.paused && !audio.ended;

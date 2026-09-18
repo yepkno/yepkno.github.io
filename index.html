@@ -174,7 +174,7 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
   box-shadow:0 25px 70px rgba(15,28,50,.32),0 8px 30px rgba(15,28,50,.18)}
 #playerFix:not(.collapsed) .ppanel{display:block}
 
-/* 顶部：收起 ⌄ / 更多 ⋯ */
+/* 顶部：收起 ⌄ / 静音 */
 #playerFix .phead{position:relative;height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 14px}
 #playerFix .pico{width:34px;height:34px;border:0;background:transparent;color:rgba(255,255,255,.72);border-radius:50%;cursor:pointer;font-size:17px;display:flex;align-items:center;justify-content:center;transition:background .2s,color .2s}
 #playerFix .pico:hover{background:rgba(255,255,255,.12);color:#fff}
@@ -246,17 +246,47 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 #playerFix .pvol{flex:1;height:3px;accent-color:var(--accent);cursor:pointer}
 
 /* ---- 收起态：圆盘 ---- */
-#playerFix .pdisc{position:relative;display:none;width:76px;height:76px;cursor:grab;border-radius:50%;background:linear-gradient(145deg,rgba(255,255,255,.96),rgba(211,222,239,.92));box-shadow:0 15px 40px rgba(34,55,84,.24),0 2px 10px rgba(34,55,84,.15);border:1px solid rgba(255,255,255,.9);transition:transform .3s,box-shadow .3s}
+/* ---- 收起态：深色玻璃唱片球（2026-09-18 美化）---- */
+#playerFix .pdisc{position:relative;display:none;width:76px;height:76px;cursor:grab;border-radius:50%;
+  background:linear-gradient(135deg,rgba(48,67,96,.96),rgba(31,45,67,.97));
+  border:1px solid rgba(255,255,255,.16);
+  box-shadow:0 16px 38px rgba(15,28,50,.46),0 4px 12px rgba(15,28,50,.3),inset 0 1px 0 rgba(255,255,255,.14);
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  transition:transform .3s,box-shadow .3s}
 #playerFix.collapsed .pdisc{display:block}
 #playerFix .pdisc:active{cursor:grabbing}
-#playerFix .pdisc:hover{transform:translateY(-3px) scale(1.03);box-shadow:0 20px 48px rgba(34,55,84,.3),0 3px 12px rgba(34,55,84,.18)}
-#playerFix .pdisc-vinyl{position:absolute;inset:7px;border-radius:50%;background:repeating-radial-gradient(circle,#202733 0 2px,#2d3440 3px,#171c24 4px);box-shadow:inset 0 0 8px rgba(255,255,255,.12),0 3px 8px rgba(0,0,0,.25);animation:pdisc-spin 9s linear infinite;animation-play-state:paused}
+/* 播放中：球体外围一层柔和朱红辉光（状态一眼可见） */
+#playerFix.playing .pdisc{box-shadow:0 16px 38px rgba(15,28,50,.46),0 4px 12px rgba(15,28,50,.3),
+  0 0 20px rgba(255,70,31,.2),inset 0 1px 0 rgba(255,255,255,.14)}
+#playerFix .pdisc:hover{transform:translateY(-3px) scale(1.04);
+  box-shadow:0 22px 50px rgba(15,28,50,.55),0 5px 16px rgba(15,28,50,.34),
+             0 0 0 1px rgba(255,70,31,.42),0 0 28px rgba(255,70,31,.3),
+             inset 0 1px 0 rgba(255,255,255,.2)}
+/* 外圈：播放进度环（贴合球体边缘内侧，朱红 = 已播放） */
+#playerFix .pdisc-ring{position:absolute;inset:1px;border-radius:50%;pointer-events:none;z-index:4;
+  background:conic-gradient(from -90deg,var(--accent) calc(var(--pp-rot,0) * 1%),rgba(255,255,255,.16) 0);
+  -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 2px));
+  mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 2px))}
+/* 黑胶：提亮一档 + 外侧 1px 亮边，从玻璃壳上"浮"起来 */
+#playerFix .pdisc-vinyl{position:absolute;inset:7px;border-radius:50%;
+  background:repeating-radial-gradient(circle,#161c26 0 1.5px,#242b37 2.5px,#101419 4px);
+  box-shadow:0 0 0 1px rgba(255,255,255,.14),0 4px 10px rgba(0,0,0,.45),inset 0 0 14px rgba(0,0,0,.7);
+  animation:pdisc-spin 9s linear infinite;animation-play-state:paused}
 #playerFix.playing .pdisc-vinyl{animation-play-state:running}
-#playerFix .pdisc-cover{position:absolute;left:50%;top:50%;width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;overflow:hidden;border:2px solid rgba(255,255,255,.78);z-index:2;background:#8ba4c4}
+/* 中心封面 */
+#playerFix .pdisc-cover{position:absolute;left:50%;top:50%;width:34px;height:34px;margin:-17px 0 0 -17px;
+  border-radius:50%;overflow:hidden;border:1px solid rgba(255,255,255,.45);z-index:2;background:#2a3a52;
+  box-shadow:0 2px 8px rgba(0,0,0,.5)}
 #playerFix .pdisc-cover img{width:100%;height:100%;object-fit:cover;display:block}
-#playerFix .pdisc-cover::after{content:"";position:absolute;left:50%;top:50%;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;background:#fff;opacity:.85}
-#playerFix .pdisc-play{position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:32px;height:32px;border-radius:50%;background:#344c70;border:2px solid rgba(255,255,255,.82);color:#fff;font-size:11px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:5;box-shadow:0 4px 12px rgba(20,30,45,.25);font-family:inherit}
-#playerFix .pdisc-play:hover{background:var(--accent)}
+#playerFix .pdisc-cover::after{content:"";position:absolute;left:50%;top:50%;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;background:rgba(255,255,255,.9)}
+/* 播放 / 暂停：右下角内侧小角标（朱红，收进圆内） */
+#playerFix .pdisc-play{position:absolute;right:8px;bottom:8px;width:23px;height:23px;border-radius:50%;
+  background:var(--accent);border:2px solid rgba(31,45,67,.96);color:#fff;
+  font-size:9px;line-height:1;letter-spacing:-.5px;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:5;
+  box-shadow:0 3px 10px rgba(15,28,50,.55);font-family:inherit;
+  transition:transform .2s,box-shadow .2s}
+#playerFix .pdisc-play:hover{transform:scale(1.12);box-shadow:0 4px 16px rgba(255,70,31,.55)}
 @keyframes pdisc-spin{to{transform:rotate(360deg)}}
 /* 保持旧类名兼容（滚动/焦点） */
 #playerFix.collapsed .ppanel{display:none}
@@ -481,6 +511,7 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 
   <!-- 收起态：圆盘 -->
   <div class="pdisc" id="pDisc" title="打开播放器">
+    <div class="pdisc-ring"></div>
     <div class="pdisc-vinyl"></div>
     <div class="pdisc-cover"><img id="pCoverMini" src="assets/music-cover.jpg" alt=""></div>
     <button class="pdisc-play" id="pMiniPlay" type="button" title="播放 / 暂停"><span id="pMiniIcon">▶</span></button>
@@ -488,6 +519,6 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 </div>
 
 <script src="docs.js?v=20260918c"></script>
-<script src="app.js?v=20260918d"></script>
+<script src="app.js?v=20260918e"></script>
 </body>
 </html>
