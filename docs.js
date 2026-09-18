@@ -57,7 +57,7 @@ window.DOCS = [
     summary: "成都出发四天，翻折多山、进亚丁沟、收在丹巴藏寨。",
     date: "2024-04",
     tags: ["自驾", "高原"],
-    cover: "assets/album/01-bones.jpg",
+    cover: "assets/travel/chuanxi.jpg",
     content: `
       <p>四月的川西，雪线还没退。从成都出发那天正好下雨，出都江堰后云散了，一路到康定都是新绿。</p>
       <p>折多山是第一个关口，海拔 4298 米，风大得站不稳。翻过去之后，山的那边完全是另一种天气——干、亮、蓝得发狠。</p>
@@ -86,7 +86,7 @@ window.DOCS = [
     summary: "西宁出发七天，青海湖、茶卡、大柴旦一路到敦煌。",
     date: "2023-09",
     tags: ["自驾", "戈壁"],
-    cover: "assets/album/05-huaxin.jpg",
+    cover: "assets/travel/xibei.jpg",
     content: `
       <p>九月的西北是最好的季节。西宁出发那天晴，青海湖蓝得不像话。</p>
       <p>茶卡的人比想象中多，真正好看的是往德令哈的路上那一段无人区。</p>
@@ -117,7 +117,7 @@ window.DOCS = [
     summary: "九天慢走昆明、大理、沙溪、丽江，收在泸沽湖。",
     date: "2022-08",
     tags: ["自由行", "古镇"],
-    cover: "assets/album/08-chahua.jpg",
+    cover: "assets/travel/yunnan.jpg",
     content: `
       <p>八月的云南是雨季，一路都在等雨停。</p>
       <p>大理住了三天，什么都不干，就在洱海边骑车。</p>
