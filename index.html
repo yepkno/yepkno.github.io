@@ -63,62 +63,61 @@ img{display:block}
    旅游攻略 · 新版（首页 3D 环 → 点开三卡「正文 / 行程地图 / 数据报表」）
    科技感语言：切角 / HUD 角标 / 等宽字 / 数据化 —— 仅用于本分类
    =================================================================== */
-#tourRing{position:relative;height:490px;margin:0 0 24px;overflow:hidden;border-radius:14px;
+#tourWall{position:relative;height:470px;margin:0 0 24px;overflow:hidden;border-radius:14px;
+  perspective:2600px;
   background:
     radial-gradient(ellipse 62% 52% at 50% 42%,rgba(255,70,31,.14) 0%,rgba(0,0,0,0) 70%),
     radial-gradient(ellipse 90% 34% at 50% 92%,rgba(96,146,224,.12) 0%,rgba(0,0,0,0) 74%),
     linear-gradient(180deg,rgba(4,8,14,.70),rgba(4,8,14,.54))}
-/* 地面网格（承接环的空间感，避免容器显得空） */
-#tourRing .tfloor{position:absolute;left:-8%;right:-8%;bottom:0;height:44%;pointer-events:none;
+/* 地面网格（承接空间感，避免容器显得空） */
+#tourWall .tfloor{position:absolute;left:-8%;right:-8%;bottom:0;height:44%;pointer-events:none;
   background-image:linear-gradient(rgba(255,255,255,.075) 1px,transparent 1px),
                    linear-gradient(90deg,rgba(255,255,255,.058) 1px,transparent 1px);
   background-size:100% 27px,54px 100%;
   -webkit-mask-image:linear-gradient(180deg,rgba(0,0,0,0) 0%,#000 76%);
   mask-image:linear-gradient(180deg,rgba(0,0,0,0) 0%,#000 76%)}
-#tourRing .tstg{position:absolute;left:50%;top:46%;width:0;height:0;perspective:1700px;perspective-origin:50% 50%}
-#tourRing .tring3d{position:absolute;left:0;top:0;width:0;height:0;transform-style:preserve-3d;
-  transform:rotateX(-11deg) rotateY(var(--try,0deg))}
-/* 卡片（切角 + 玻璃） */
-.tpcard{position:absolute;left:0;top:0;width:190px;height:264px;margin:-132px 0 0 -95px;
-  transform-style:preserve-3d;cursor:pointer;
-  transition:transform 1.05s cubic-bezier(.35,.05,.2,1),opacity .5s}
-.tpcard .fc{position:absolute;inset:0;overflow:hidden;background:#0d1420;
-  border:1px solid rgba(255,255,255,.30);
-  backface-visibility:hidden;-webkit-backface-visibility:hidden;
+#tourWallStage{position:absolute;inset:0;transform-style:preserve-3d}
+/* 可自由拖动的卡片 */
+.tcard{position:absolute;left:0;top:0;cursor:grab;touch-action:none;
+  transform:translate3d(var(--x,0px),var(--y,0px),0) rotate(var(--r,0deg))
+            rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg)) scale(var(--sc,1));
+  transition:transform .42s cubic-bezier(.2,.9,.3,1);
+  will-change:transform}
+.tcard.drag{cursor:grabbing;transition:none}
+.tcard .fc{position:absolute;inset:0;overflow:hidden;background:#0d1420;
+  border:1px solid rgba(255,255,255,.30);box-shadow:0 16px 42px rgba(0,0,0,.52);
   clip-path:polygon(0 0,calc(100% - 13px) 0,100% 13px,100% 100%,13px 100%,0 calc(100% - 13px))}
-.tpcard .fc.bk{transform:rotateY(180deg)}
-.tpcard .fc img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
-/* 景深遮罩：JS 按卡片朝向角实时写 --shade（0 = 正对观察者 / 0.9 = 背面） */
-.tpcard .ov{position:absolute;inset:0;background:rgba(6,11,19,.86);opacity:var(--shade,.35);pointer-events:none}
-.tpcard .sc{position:absolute;left:0;right:0;bottom:0;height:82px;pointer-events:none;
+.tcard:hover .fc{border-color:var(--accent);box-shadow:0 24px 62px rgba(255,70,31,.34)}
+.tcard img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.tcard .sc{position:absolute;left:0;right:0;bottom:0;height:78px;pointer-events:none;
   background:linear-gradient(180deg,rgba(6,11,19,0),rgba(6,11,19,.9))}
-.tpcard:hover .fc{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent),0 16px 44px rgba(255,70,31,.3)}
-.tpcard .no{position:absolute;left:9px;top:8px;padding:2px 7px;font-size:10.5px;letter-spacing:.1em;
+.tcard .glare{position:absolute;inset:0;background:#fff;opacity:var(--glare,0);pointer-events:none}
+.tcard .no{position:absolute;left:8px;top:7px;padding:2px 7px;font-size:10.5px;letter-spacing:.1em;
   color:#fff;background:rgba(255,70,31,.92);font-family:ui-monospace,Consolas,monospace;
   clip-path:polygon(0 0,calc(100% - 5px) 0,100% 5px,100% 100%,0 100%)}
-.tpcard .rg{position:absolute;right:9px;top:11px;font-size:11px;letter-spacing:.06em;
+.tcard .rg{position:absolute;right:9px;top:10px;font-size:11px;letter-spacing:.06em;
   color:#fff;opacity:.94;text-shadow:0 1px 4px #000}
-.tpcard .nm{position:absolute;left:11px;right:11px;bottom:10px;font-size:13.5px;font-weight:600;
+.tcard .nm{position:absolute;left:10px;right:10px;bottom:9px;font-size:13px;font-weight:600;
   color:#fff;line-height:1.35;text-shadow:0 1px 5px #000;overflow:hidden;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
-/* HUD */
-#tourRing .thud{position:absolute;inset:0;pointer-events:none}
-#tourRing .thud .c{position:absolute;width:18px;height:18px;border-color:var(--accent);opacity:.75}
-#tourRing .thud .lt{left:14px;top:14px;border-left:2px solid;border-top:2px solid}
-#tourRing .thud .rt{right:14px;top:14px;border-right:2px solid;border-top:2px solid}
-#tourRing .thud .lb{left:14px;bottom:16px;border-left:2px solid;border-bottom:2px solid}
-#tourRing .thud .rb{right:14px;bottom:16px;border-right:2px solid;border-bottom:2px solid}
-#tourRing .thd{position:absolute;font-size:10.5px;letter-spacing:.16em;color:var(--muted);
+/* HUD（浮在卡片之上，但不吃指针事件） */
+#tourWall .thud{position:absolute;inset:0;pointer-events:none;z-index:300}
+#tourWall .thud .c{position:absolute;width:18px;height:18px;border-color:var(--accent);opacity:.75}
+#tourWall .thud .lt{left:14px;top:14px;border-left:2px solid;border-top:2px solid}
+#tourWall .thud .rt{right:14px;top:14px;border-right:2px solid;border-top:2px solid}
+#tourWall .thud .lb{left:14px;bottom:16px;border-left:2px solid;border-bottom:2px solid}
+#tourWall .thud .rb{right:14px;bottom:16px;border-right:2px solid;border-bottom:2px solid}
+#tourWall .thd{position:absolute;font-size:10.5px;letter-spacing:.16em;color:var(--muted);
   font-family:ui-monospace,"SFMono-Regular",Consolas,monospace}
-#tourRing .thd.lt{left:42px;top:15px}
-#tourRing .thd.rt{right:42px;top:15px}
-#tourRing .thd b{color:var(--accent)}
-#tourRing .tstats{position:absolute;left:42px;bottom:15px;display:flex;gap:16px;
+#tourWall .thd.lt{left:42px;top:15px}
+#tourWall .thd.rt{right:42px;top:15px}
+#tourWall .thd b{color:var(--accent)}
+#tourWall .tstats{position:absolute;left:42px;bottom:15px;display:flex;gap:16px;
   font-size:10.5px;letter-spacing:.12em;color:var(--faint);
   font-family:ui-monospace,Consolas,monospace}
-#tourRing .tstats b{color:var(--accent)}
-#tourRing .tfoot{position:absolute;right:42px;bottom:13px;font-size:11px;color:var(--faint);
-  padding:5px 12px;border:1px solid var(--border);background:rgba(8,13,20,.55);
+#tourWall .tstats b{color:var(--accent)}
+#tourWall .tfoot{position:absolute;right:42px;bottom:13px;font-size:11px;color:var(--faint);
+  padding:5px 12px;border:1px solid var(--border);background:rgba(8,13,20,.72);
   clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%)}
 
 #tourDetail{padding-bottom:30px}
@@ -206,8 +205,7 @@ img{display:block}
 #tourDetail td{color:var(--muted)}
 #tourDetail td.m{font-family:ui-monospace,Consolas,monospace;color:var(--accent)}
 @media (max-width:720px){
-  #tourRing{height:420px}
-  .tpcard{width:120px;height:166px;margin:-83px 0 0 -60px}
+  #tourWall{height:400px}
   .tgr{grid-template-columns:repeat(2,1fr)}
   .ts3{padding:8px 13px;font-size:12px}
 }
@@ -570,16 +568,16 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
     <div class="cards" id="docList"></div>
 
     <!-- 旅游攻略专用：3D 环（分类=旅游攻略 时显示） -->
-    <div id="tourRing" style="display:none">
+    <div id="tourWall" style="display:none">
       <div class="tfloor"></div>
-      <div class="tstg"><div class="tring3d" id="tourRing3d"></div></div>
+      <div id="tourWallStage"></div>
       <div class="thud">
         <i class="c lt"></i><i class="c rt"></i><i class="c lb"></i><i class="c rb"></i>
         <div class="thd lt">TOUR-DB <b>//</b> 旅游攻略</div>
         <div class="thd rt" id="trHudR">SYS <b>&#9679;</b> ONLINE</div>
         <div class="tstats" id="trStats"></div>
       </div>
-      <div class="tfoot" id="trFoot">拖拽旋转 &#183; 点方块进入攻略</div>
+      <div class="tfoot" id="trFoot">拖动可自由摆放 &#183; 点卡片进入攻略</div>
     </div>
 
     <!-- 旅游攻略专用：三卡详情 -->
@@ -717,7 +715,7 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
   </div>
 </div>
 
-<script src="docs.js?v=20260918g"></script>
-<script src="app.js?v=20260918g"></script>
+<script src="docs.js?v=20260918h"></script>
+<script src="app.js?v=20260918h"></script>
 </body>
 </html>

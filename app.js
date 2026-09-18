@@ -548,15 +548,15 @@ function showList() {
   var tdet = document.getElementById("tourDetail");
   if (tdet) tdet.style.display = "none";
   if (activeCategory === "旅游攻略" && !activeTag) {
-    var ring = document.getElementById("tourRing");
-    if (ring) ring.style.display = "";
+    var wall = document.getElementById("tourWall");
+    if (wall) wall.style.display = "";
   } else {
     document.getElementById("docList").style.display = "";
   }
   window.scrollTo(0, 0);
 }
 
-// ===================== 旅游攻略：环 + 三卡 =====================
+// ===================== 旅游攻略：可拖动卡片墙 + 三卡 =====================
 // 科技感手法（切角 / HUD / 等宽字 / 数据化）仅用于本分类
 
 // 行程地图投影：与 assets/cn-map.js 的 proj 参数配套（Albers 等积圆锥）
@@ -595,20 +595,35 @@ function ensureMapData(cb) {
   document.head.appendChild(s);
 }
 
-// ---------------- 3D 环 ----------------
-var tourDocs = [], tourCards = [], tourRy = 0, tourDrag = false, tourDx = 0, tourDry = 0;
-var tourHold = false, tourHoldT = null, tourTick = false;
+// ---------------- 可拖动卡片墙 ----------------
+// 交互参考 motion/react 的 DraggableCard，用原生 JS 实现（站点保持零依赖）：
+//   自由拖动 + 鼠标经过时 3D 倾斜 + 光斑 + 松手惯性甩出（越界自然落回）+ 悬停微放大
+var tourDocs = [], tourCards = [];
 
-function tourHoldOn() { tourHold = true; if (tourHoldT) { clearTimeout(tourHoldT); tourHoldT = null; } }
-function tourHoldOff() {
-  if (tourHoldT) clearTimeout(tourHoldT);
-  tourHoldT = setTimeout(function () { tourHold = false; tourHoldT = null; }, 420);
+function twClamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
+
+// 卡片可活动的范围：上下各让出 HUD 的位置
+function twBounds(el, home) {
+  var w = el.offsetWidth, h = el.offsetHeight;
+  var W = home.clientWidth, H = home.clientHeight;
+  var pad = 12;
+  return {
+    x0: pad, x1: Math.max(pad, W - w - pad),
+    y0: 46, y1: Math.max(46, H - h - 40)
+  };
 }
 
-function renderTourRing(docs) {
-  var box = document.getElementById("tourRing3d");
-  if (!box) return;
-  box.innerHTML = "";
+function twApply(el) {
+  el.style.setProperty("--x", el.dataset.x + "px");
+  el.style.setProperty("--y", el.dataset.y + "px");
+  el.style.setProperty("--r", el.dataset.r + "deg");
+}
+
+function renderTourWall(docs) {
+  var stage = document.getElementById("tourWallStage");
+  var home = document.getElementById("tourWall");
+  if (!stage || !home) return;
+  stage.innerHTML = "";
   tourCards = [];
   tourDocs = docs || [];
   var n = tourDocs.length;
@@ -619,10 +634,7 @@ function renderTourRing(docs) {
     var regs = {}, km = 0;
     tourDocs.forEach(function (d) {
       if (d.region) regs[d.region] = 1;
-      (d.plan || []).forEach(function (r) {
-        var v = +r[3];
-        if (isFinite(v)) km += v;
-      });
+      (d.plan || []).forEach(function (r) { var v = +r[3]; if (isFinite(v)) km += v; });
     });
     st.innerHTML =
       "<span>ENTRIES <b>" + String(n).padStart(3, "0") + "</b></span>" +
@@ -631,93 +643,129 @@ function renderTourRing(docs) {
   }
 
   if (!n) {
-    box.innerHTML = '<div style="position:absolute;left:-150px;top:-10px;width:300px;text-align:center;' +
-                    'color:var(--faint);font-size:13px">这个分类下还没有攻略</div>';
-    tourTick = false;
+    stage.innerHTML = '<div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);' +
+                      'color:var(--faint);font-size:13px">这个分类下还没有攻略</div>';
     return;
   }
 
-  for (var i = 0; i < n; i++) {
-    var d = tourDocs[i];
+  var W = home.clientWidth, H = home.clientHeight;
+  // 卡片宽度随数量自适应：篇数少时卡片大、篇数多时自然靠拢（像散在桌上的一叠照片）
+  var cw = Math.min(200, Math.max(118, Math.round((W - 40) / Math.max(n, 3) - 16)));
+  var ch = Math.round(cw * 264 / 190);
+  var gap = Math.min((W - n * cw) / (n + 1), 42);   // 间隙设上限：篇数少时别散得太开
+  var totalW = n * cw + (n - 1) * gap;
+  var xStart = Math.max(14, (W - totalW) / 2);
+
+  tourDocs.forEach(function (d, i) {
     var el = document.createElement("div");
-    el.className = "tpcard";
-    el.style.transitionDelay = (i * 22) + "ms";
-    var inner = '<img src="' + getDocCover(d) + '" alt="">' +
-                '<span class="ov"></span><span class="sc"></span>' +
-                '<span class="no">' + String(i + 1).padStart(2, "0") + '</span>' +
-                '<span class="rg">' + escapeHtml(d.region || "") + '</span>' +
-                '<span class="nm">' + escapeHtml(d.title) + '</span>';
-    el.innerHTML = '<div class="fc fr">' + inner + '</div><div class="fc bk">' + inner + "</div>";
-    el.addEventListener("mouseenter", tourHoldOn);
-    el.addEventListener("mouseleave", tourHoldOff);
-    (function (doc) {
-      el.addEventListener("click", function () { openTour(doc); });
-    })(d);
-    box.appendChild(el);
+    el.className = "tcard";
+    el.style.width = cw + "px";
+    el.style.height = ch + "px";
+    el.style.zIndex = String(10 + i);
+    el.dataset.x = Math.round(xStart + i * (cw + gap));
+    el.dataset.y = Math.round((H - ch) / 2 + ((i % 2) ? -28 : 24));
+    el.dataset.r = ((i % 2 ? 1 : -1) * (2.6 + (i % 3) * 1.3)).toFixed(2);
+    twApply(el);
+    el.innerHTML =
+      '<div class="fc">' +
+        '<img src="' + getDocCover(d) + '" alt="">' +
+        '<span class="sc"></span>' +
+        '<span class="glare"></span>' +
+        '<span class="no">' + String(i + 1).padStart(2, "0") + '</span>' +
+        '<span class="rg">' + escapeHtml(d.region || "") + '</span>' +
+        '<span class="nm">' + escapeHtml(d.title) + '</span>' +
+      '</div>';
+    stage.appendChild(el);
     tourCards.push(el);
+    bindTourDrag(el, d, home);
+  });
+}
+
+// 单卡交互：拖动 / 倾斜 / 惯性
+function bindTourDrag(el, doc, home) {
+  var drag = false, sx = 0, sy = 0, ox = 0, oy = 0, moved = 0, hr = null, hist = [];
+
+  el.addEventListener("pointerenter", function () { hr = home.getBoundingClientRect(); });
+
+  el.addEventListener("pointerdown", function (e) {
+    if (e.button !== 0) return;
+    drag = true; moved = 0;
+    sx = e.clientX; sy = e.clientY;
+    ox = +el.dataset.x; oy = +el.dataset.y;
+    hist = [{ x: e.clientX, y: e.clientY, t: performance.now() }];
+    el.classList.add("drag");
+    el.style.zIndex = "200";
+    try { el.setPointerCapture(e.pointerId); } catch (err) {}
+    e.preventDefault();
+  });
+
+  el.addEventListener("pointermove", function (e) {
+    // 倾斜基准用"未变换时的卡片中心"（缓存容器 rect）——
+    // 若读 getBoundingClientRect()，倾斜本身会改变 rect，形成越倾越大的反馈
+    if (!hr) hr = home.getBoundingClientRect();
+    var cx = hr.left + (+el.dataset.x) + el.offsetWidth / 2;
+    var cy = hr.top + (+el.dataset.y) + el.offsetHeight / 2;
+    var dx = e.clientX - cx, dy = e.clientY - cy;
+    el.style.setProperty("--ry", twClamp(dx / 13.5, -22, 22).toFixed(2) + "deg");
+    el.style.setProperty("--rx", twClamp(-dy / 13.5, -22, 22).toFixed(2) + "deg");
+    el.style.setProperty("--glare", Math.min(0.22, Math.abs(dx) / 1400).toFixed(3));
+    el.style.setProperty("--sc", "1.02");
+
+    if (!drag) return;
+    var b = twBounds(el, home);
+    el.dataset.x = Math.round(twClamp(ox + (e.clientX - sx), b.x0, b.x1));
+    el.dataset.y = Math.round(twClamp(oy + (e.clientY - sy), b.y0, b.y1));
+    twApply(el);
+    moved = Math.max(moved, Math.sqrt(
+      (e.clientX - sx) * (e.clientX - sx) + (e.clientY - sy) * (e.clientY - sy)));
+    hist.push({ x: e.clientX, y: e.clientY, t: performance.now() });
+    if (hist.length > 6) hist.shift();
+  });
+
+  function twEnd() {
+    if (!drag) return;
+    drag = false;
+    el.classList.remove("drag");
+    // 惯性：按最后一段的速度再滑约 0.26s，越界由边界钳住（松手后有点"甩"的手感）
+    var a = hist[0], z = hist[hist.length - 1], dt = z ? z.t - a.t : 0;
+    var vx = dt > 0 ? (z.x - a.x) / dt : 0, vy = dt > 0 ? (z.y - a.y) / dt : 0;
+    var b = twBounds(el, home);
+    el.dataset.x = Math.round(twClamp(+el.dataset.x + vx * 260, b.x0, b.x1));
+    el.dataset.y = Math.round(twClamp(+el.dataset.y + vy * 260, b.y0, b.y1));
+    twApply(el);
+    el.style.zIndex = "10";
+    hist = [];
   }
-  layoutTourRing();
-  tourTick = true;
-}
+  el.addEventListener("pointerup", twEnd);
+  el.addEventListener("pointercancel", twEnd);
 
-function layoutTourRing() {
-  var n = tourCards.length;
-  if (!n) return;
-  // 卡片宽 176、可视区约 760。半径下限 280：让前后卡片在横向也分开（否则前卡会挡住后卡）
-  var R = Math.max(280, Math.round(150 / (2 * Math.sin(Math.PI / n))));
-  tourCards.forEach(function (c, i) {
-    c.style.transform = "rotateY(" + (i * 360 / n).toFixed(2) + "deg) rotateX(0deg) " +
-                        "translate3d(0px,0px," + R + "px) rotateZ(0deg)";
+  el.addEventListener("pointerleave", function () {
+    if (drag) return;
+    el.style.setProperty("--rx", "0deg");
+    el.style.setProperty("--ry", "0deg");
+    el.style.setProperty("--glare", "0");
+    el.style.setProperty("--sc", "1");
   });
-  tourRy = 0;
-  tourDry = 0;
-  applyTourDepth();
-}
 
-// 景深：按卡片当前朝向角实时压暗背面卡片（1 = 正对观察者）
-// 只写 CSS 变量、不加 filter —— 在 preserve-3d 子元素上用 filter 会把 3D 压平
-function applyTourDepth() {
-  var n = tourCards.length;
-  if (!n) return;
-  var base = (tourRy + tourDry) * Math.PI / 180;
-  tourCards.forEach(function (c, i) {
-    var d = (Math.cos(i * 2 * Math.PI / n + base) + 1) / 2;
-    var s = (1 - d) * 0.52;      // 上限不宜太高：否则背面卡片几乎全黑，环上只看得到一张
-    var prev = +c.dataset.sh;
-    if (!(Math.abs(s - prev) < 0.012)) {      // 变化够小就不写，省掉无谓的重绘
-      c.dataset.sh = s;
-      c.style.setProperty("--shade", s.toFixed(3));
-    }
+  el.addEventListener("click", function () {
+    if (moved > 6) return;        // 拖动过就不算点击
+    openTour(doc);
   });
 }
 
-(function tourSpin() {
-  if (tourTick) {
-    var el = document.getElementById("tourRing3d");
-    if (el) {
-      if (!tourDrag && !tourHold) tourRy += 0.16;
-      el.style.setProperty("--try", (tourRy + tourDry).toFixed(2) + "deg");
-      applyTourDepth();
-    }
-  }
-  requestAnimationFrame(tourSpin);
-})();
-// 拖动旋转
-(function () {
-  var home = document.getElementById("tourRing");
-  if (!home) return;
-  home.addEventListener("pointerdown", function (e) { tourDrag = true; tourDx = e.clientX; });
-  window.addEventListener("pointerup", function () { tourDrag = false; });
-  window.addEventListener("pointermove", function (e) {
-    if (!tourDrag) return;
-    tourDry += (e.clientX - tourDx) * 0.32;
-    tourDx = e.clientX;
-  });
-})();
+// 窗口尺寸变化后重排（防抖）
+var _twRt = null;
+window.addEventListener("resize", function () {
+  if (_twRt) clearTimeout(_twRt);
+  _twRt = setTimeout(function () {
+    var home = document.getElementById("tourWall");
+    if (home && home.style.display !== "none" && tourDocs.length) renderTourWall(tourDocs);
+  }, 320);
+});
 
 // ---------------- 三卡详情 ----------------
 function openTour(d) {
-  document.getElementById("tourRing").style.display = "none";
+  document.getElementById("tourWall").style.display = "none";
   var td = document.getElementById("tourDetail");
   td.style.display = "";
   td.dataset.idx = String(tourDocs.indexOf(d));
@@ -1085,14 +1133,14 @@ function renderCards() {
   var list = document.getElementById("docList");
   var docs = filteredDocs();
 
-  // 旅游攻略：走 3D 环（点方块 → 三卡详情），不用通栏卡片列表
+  // 旅游攻略：走「可拖动卡片墙」（点卡片 → 三卡详情），不用通栏卡片列表
   var isTour = (activeCategory === "旅游攻略" && !activeTag);
-  var ring = document.getElementById("tourRing"), tdet = document.getElementById("tourDetail");
-  if (ring) ring.style.display = isTour ? "" : "none";
+  var wall = document.getElementById("tourWall"), tdet = document.getElementById("tourDetail");
+  if (wall) wall.style.display = isTour ? "" : "none";
   if (tdet) tdet.style.display = "none";
   if (isTour) {
     list.style.display = "none";
-    renderTourRing(docs);
+    renderTourWall(docs);
     return;
   }
   list.style.display = "";
