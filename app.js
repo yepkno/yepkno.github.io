@@ -126,7 +126,12 @@ var searchKeyword = "";
 // ===== 主题切换 =====
 function initTheme() {
   var saved = localStorage.getItem("site_theme");
-  if (saved === "dark") {
+  // ⚠️ 默认 = **夜间**（2026-09-19 改）。
+  // 原为 `saved === "dark"`，即默认白天；而 initTheme 只在**点过**主题按钮时才写入
+  // site_theme —— 所以一旦 localStorage 丢失（清除站点数据 / 换设备 / 手机端首次访问），
+  // 主题就"跳回白天"，表现为"主站背景光强度和以前不一样了"（用户 2026-09-19 报）。
+  // 现改为「除显式选过白天外，一律夜间」。
+  if (saved !== "light") {
     document.documentElement.setAttribute("data-theme", "dark");
   }
   document.getElementById("themeToggle").addEventListener("click", function () {
