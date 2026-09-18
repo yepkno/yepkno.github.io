@@ -58,6 +58,103 @@ img{display:block}
 
 /* ===== 文章卡片 ===== */
 .cards{display:flex;flex-direction:column;gap:24px}
+
+/* ===================================================================
+   旅游攻略 · 新版（首页 3D 环 → 点开三卡「正文 / 行程地图 / 数据报表」）
+   科技感语言：切角 / HUD 角标 / 等宽字 / 数据化 —— 仅用于本分类
+   =================================================================== */
+#tourRing{position:relative;height:440px;margin:0 0 24px;border-radius:16px;overflow:hidden;
+  background:radial-gradient(circle at 50% 46%,rgba(255,70,31,.06) 0%,rgba(0,0,0,0) 62%)}
+#tourRing .tstg{position:absolute;left:50%;top:50%;width:0;height:0;perspective:1500px;perspective-origin:50% 46%}
+#tourRing .tring3d{position:absolute;left:0;top:0;width:0;height:0;transform-style:preserve-3d;
+  transform:rotateX(-12deg) rotateY(var(--try,0deg));transition:transform .5s ease}
+.tpcard{position:absolute;left:0;top:0;width:124px;height:166px;margin:-83px 0 0 -62px;
+  transform-style:preserve-3d;cursor:pointer;
+  transition:transform 1.05s cubic-bezier(.35,.05,.2,1),opacity .5s}
+.tpcard .fc{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.tpcard .fc.bk{transform:rotateY(180deg)}
+.tpcard img{width:100%;height:100%;object-fit:cover;display:block;border:1px solid rgba(255,255,255,.28);border-radius:3px}
+.tpcard .ov{position:absolute;inset:0;background:rgba(6,11,19,.28);transition:background .3s}
+.tpcard:hover .ov{background:rgba(255,70,31,.14)}
+.tpcard:hover img{border-color:var(--accent)}
+.tpcard .rg{position:absolute;left:7px;top:6px;font-size:10.5px;color:#fff;opacity:.92;text-shadow:0 1px 3px #000}
+.tpcard .nm{position:absolute;left:7px;right:7px;bottom:6px;font-size:11px;color:#fff;
+  text-shadow:0 1px 4px #000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#tourRing .thud{position:absolute;inset:0;pointer-events:none}
+#tourRing .thud .c{position:absolute;width:20px;height:20px;border-color:var(--accent);opacity:.7}
+#tourRing .thud .lt{left:12px;top:12px;border-left:2px solid;border-top:2px solid}
+#tourRing .thud .rb{right:12px;bottom:14px;border-right:2px solid;border-bottom:2px solid}
+#tourRing .thd{position:absolute;font-size:10.5px;letter-spacing:.14em;color:var(--muted);
+  font-family:ui-monospace,"SFMono-Regular",Consolas,monospace}
+#tourRing .thd.lt{left:42px;top:13px}
+#tourRing .thd.rt{right:42px;top:13px}
+#tourRing .thd b{color:var(--accent)}
+#tourRing .tfoot{position:absolute;left:0;right:0;bottom:16px;text-align:center;font-size:12px;color:var(--faint)}
+
+#tourDetail{padding-bottom:30px}
+.tdbar{display:flex;align-items:center;gap:14px;padding-bottom:12px;border-bottom:1px solid var(--border);
+  margin-bottom:16px;flex-wrap:wrap}
+.tback{padding:7px 16px;background:var(--tag-bg);border:1px solid var(--border);color:var(--muted);
+  font-size:12.5px;font-family:inherit;cursor:pointer;transition:.22s;
+  clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%)}
+.tback:hover{color:var(--text);border-color:var(--accent);background:var(--accent-soft)}
+.tdtitle{font-size:19px;font-weight:600;color:var(--text)}
+.tdmeta{font-size:11px;color:var(--faint)}
+.mono{font-family:ui-monospace,"SFMono-Regular",Consolas,monospace;letter-spacing:.08em}
+.tseg{display:inline-flex;gap:2px;padding:3px;background:rgba(0,0,0,.25);border:1px solid var(--border);margin-bottom:20px}
+.ts3{display:flex;align-items:center;gap:8px;padding:9px 22px;background:none;border:0;color:var(--muted);
+  font-size:13px;font-family:inherit;cursor:pointer;transition:.25s;
+  clip-path:polygon(0 0,calc(100% - 9px) 0,100% 9px,100% 100%,0 100%)}
+.ts3 i{font-style:normal;font-size:11px;color:var(--accent);opacity:.85;
+  font-family:ui-monospace,Consolas,monospace}
+.ts3.on{background:var(--accent);color:#fff}
+.ts3.on i{color:#fff;opacity:.85}
+.ts3:not(.on):hover{color:var(--text);background:rgba(255,255,255,.06)}
+.tpane{animation:tfade .42s ease}
+@keyframes tfade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.tbox{background:var(--card);border:1px solid var(--border);padding:20px 24px;margin-bottom:16px;
+  clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px))}
+.tbox h4{margin:0 0 10px;font-size:12px;color:var(--accent);
+  font-family:ui-monospace,Consolas,monospace;letter-spacing:.12em}
+.tbox p{font-size:14px;line-height:1.95;color:var(--muted);margin:0 0 12px}
+.tbox p:last-child{margin-bottom:0}
+.tmapbox{background:var(--card);border:1px solid var(--border);padding:10px;
+  clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px))}
+#routeMap{display:block;width:100%;height:auto}
+#routeMap .prov{fill:rgba(255,255,255,.05);stroke:rgba(255,255,255,.14);stroke-width:.7}
+#routeMap .rte{fill:none;stroke:var(--accent);stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round}
+#routeMap .stop{fill:var(--bg);stroke:var(--accent);stroke-width:2}
+#routeMap .stop.stay{fill:var(--accent);stroke:#ffd0c2}
+#routeMap .lbl{fill:#eaf2fb;font-size:12px;font-family:ui-monospace,Consolas,monospace;
+  paint-order:stroke;stroke:rgba(8,12,18,.92);stroke-width:3.4px;stroke-linejoin:round}
+.tleg{display:flex;gap:20px;padding:10px 4px 0;font-size:11px;color:var(--faint)}
+.tleg b{color:var(--accent)}
+.tgr{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.tmetric{background:var(--card);border:1px solid var(--border);padding:14px 16px;
+  clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,0 100%)}
+.tmetric span{display:block;font-size:10.5px;color:var(--faint);letter-spacing:.1em;
+  font-family:ui-monospace,Consolas,monospace}
+.tmetric b{display:block;margin-top:7px;font-size:23px;font-weight:500;color:var(--text);
+  font-family:ui-monospace,Consolas,monospace}
+.tmetric b em{font-size:12px;font-style:normal;color:var(--faint);margin-left:3px}
+.tbar{display:flex;align-items:center;gap:12px;margin-bottom:9px;font-size:12px}
+.tbar i{flex:0 0 50px;font-style:normal;color:var(--muted)}
+.tbar .t{flex:1;height:8px;background:rgba(255,255,255,.08)}
+.tbar .t div{height:100%;background:var(--accent);width:0;transition:width .9s cubic-bezier(.3,.8,.3,1)}
+.tbar u{flex:0 0 66px;text-align:right;text-decoration:none;color:var(--text);font-size:11px;
+  font-family:ui-monospace,Consolas,monospace}
+#tourDetail table{width:100%;border-collapse:collapse;font-size:12.5px}
+#tourDetail th,#tourDetail td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--border)}
+#tourDetail th{color:var(--faint);font-weight:400;font-size:10.5px;letter-spacing:.08em;
+  font-family:ui-monospace,Consolas,monospace}
+#tourDetail td{color:var(--muted)}
+#tourDetail td.m{font-family:ui-monospace,Consolas,monospace;color:var(--accent)}
+@media (max-width:720px){
+  #tourRing{height:430px}
+  .tpcard{width:96px;height:128px;margin:-64px 0 0 -48px}
+  .tgr{grid-template-columns:repeat(2,1fr)}
+  .ts3{padding:8px 13px;font-size:12px}
+}
 .doc-card{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;box-shadow:var(--shadow);transition:transform .22s,box-shadow .22s,border-color .22s;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);position:relative}
 .doc-card:hover{transform:translateY(-4px);box-shadow:0 14px 40px rgba(0,0,0,.45),var(--glow);border-color:rgba(255,70,31,.35)}
 .doc-card::after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.06) 50%,transparent 60%);transform:translateX(-100%);transition:transform .7s ease;pointer-events:none}
@@ -415,6 +512,42 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
   <!-- 中间内容 -->
   <main class="main">
     <div class="cards" id="docList"></div>
+
+    <!-- 旅游攻略专用：3D 环（分类=旅游攻略 时显示） -->
+    <div id="tourRing" style="display:none">
+      <div class="tstg"><div class="tring3d" id="tourRing3d"></div></div>
+      <div class="thud">
+        <i class="c lt"></i><i class="c rb"></i>
+        <div class="thd lt" id="trHudL">TOUR-DB // 旅游攻略</div>
+        <div class="thd rt" id="trHudR">SYS <b>&#9679;</b> ONLINE</div>
+      </div>
+      <div class="tfoot" id="trFoot">拖动可旋转 · 点任意方块进入攻略</div>
+    </div>
+
+    <!-- 旅游攻略专用：三卡详情 -->
+    <div id="tourDetail" style="display:none">
+      <div class="tdbar">
+        <button class="tback" id="tourBack" type="button">&#8592; 返回</button>
+        <span class="tdtitle" id="tdTitle"></span>
+        <span class="tdmeta mono" id="tdMeta"></span>
+        <span style="flex:1"></span>
+        <span class="tdmeta mono" id="tdRegion"></span>
+      </div>
+      <div class="tseg">
+        <button class="ts3 on" data-p="1" type="button"><i>01</i>正文</button>
+        <button class="ts3" data-p="2" type="button"><i>02</i>行程地图</button>
+        <button class="ts3" data-p="3" type="button"><i>03</i>数据报表</button>
+      </div>
+      <div id="tdP1" class="tpane"></div>
+      <div id="tdP2" class="tpane" style="display:none">
+        <div class="tmapbox"><svg id="routeMap" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 830"></svg></div>
+        <div class="tleg">
+          <span><b>&#9679;</b> 住宿点（D1/D2…）</span>
+          <span class="dim">连线为行程示意，非实际道路</span>
+        </div>
+      </div>
+      <div id="tdP3" class="tpane" style="display:none"></div>
+    </div>
     <div class="reader" id="reader">
       <span class="back" id="backBtn">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5m7-7-7 7 7 7"/></svg>
@@ -518,7 +651,7 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
   </div>
 </div>
 
-<script src="docs.js?v=20260918c"></script>
-<script src="app.js?v=20260918e"></script>
+<script src="docs.js?v=20260918f"></script>
+<script src="app.js?v=20260918f"></script>
 </body>
 </html>

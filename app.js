@@ -545,9 +545,284 @@ function renderCatWall(cat, item) {
 
 function showList() {
   document.getElementById("reader").classList.remove("active");
-  document.getElementById("docList").style.display = "";
+  var tdet = document.getElementById("tourDetail");
+  if (tdet) tdet.style.display = "none";
+  if (activeCategory === "旅游攻略" && !activeTag) {
+    var ring = document.getElementById("tourRing");
+    if (ring) ring.style.display = "";
+  } else {
+    document.getElementById("docList").style.display = "";
+  }
   window.scrollTo(0, 0);
 }
+
+// ===================== 旅游攻略：环 + 三卡 =====================
+// 科技感手法（切角 / HUD / 等宽字 / 数据化）仅用于本分类
+
+// 行程地图投影：与 assets/cn-map.js 的 proj 参数配套（Albers 等积圆锥）
+var _projFn = null;
+function tourProj(lon, lat) {
+  var M = window.CN_MAP;
+  if (!M) return [0, 0];
+  if (!_projFn) {
+    var P = M.proj, r = Math.PI / 180;
+    var n = (Math.sin(r * P.lat1) + Math.sin(r * P.lat2)) / 2;
+    var C = Math.cos(r * P.lat1) * Math.cos(r * P.lat1) + 2 * n * Math.sin(r * P.lat1);
+    var rho0 = Math.sqrt(C - 2 * n * Math.sin(r * P.lat0)) / n;
+    _projFn = function (lo, la) {
+      var rho = Math.sqrt(Math.max(0, C - 2 * n * Math.sin(r * la))) / n;
+      var th = n * r * (lo - P.lon0);
+      var x = rho * Math.sin(th), y = rho0 - rho * Math.cos(th);
+      return [(x - P.minx) * P.k + P.pad, (P.maxy - y) * P.k + P.pad];
+    };
+  }
+  return _projFn(lon, lat);
+}
+
+// 地图数据 169KB —— 懒加载，只在需要画行程图时才引入，不进首页
+var _mapWait = null;
+function ensureMapData(cb) {
+  if (window.CN_MAP) { cb(); return; }
+  if (_mapWait) { _mapWait.push(cb); return; }
+  _mapWait = [cb];
+  var s = document.createElement("script");
+  s.src = "assets/cn-map.js";
+  s.onload = function () {
+    var q = _mapWait; _mapWait = null;
+    (q || []).forEach(function (f) { f(); });
+  };
+  s.onerror = function () { _mapWait = null; };
+  document.head.appendChild(s);
+}
+
+// ---------------- 3D 环 ----------------
+var tourDocs = [], tourCards = [], tourRy = 0, tourDrag = false, tourDx = 0, tourDry = 0;
+var tourHold = false, tourHoldT = null, tourTick = false;
+
+function tourHoldOn() { tourHold = true; if (tourHoldT) { clearTimeout(tourHoldT); tourHoldT = null; } }
+function tourHoldOff() {
+  if (tourHoldT) clearTimeout(tourHoldT);
+  tourHoldT = setTimeout(function () { tourHold = false; tourHoldT = null; }, 420);
+}
+
+function renderTourRing(docs) {
+  var box = document.getElementById("tourRing3d");
+  if (!box) return;
+  box.innerHTML = "";
+  tourCards = [];
+  tourDocs = docs || [];
+  var n = tourDocs.length;
+  if (!n) {
+    box.innerHTML = '<div style="position:absolute;left:-140px;top:-10px;width:280px;text-align:center;' +
+                    'color:var(--faint);font-size:13px">这个分类下还没有攻略</div>';
+    return;
+  }
+    // 半径下限 260：卡片数少时（如 3 篇）按"刚好相接"算出来的半径太小，卡片会叠在一起
+    var R = Math.max(210, Math.round(112 / (2 * Math.sin(Math.PI / n))));
+  tourDocs.forEach(function (d, i) {
+    var el = document.createElement("div");
+    el.className = "tpcard";
+    el.style.transitionDelay = (i * 20) + "ms";
+    var inner = '<img src="' + getDocCover(d) + '" alt="">' +
+                '<span class="ov"></span>' +
+                '<span class="rg">' + escapeHtml(d.region || "") + '</span>' +
+                '<span class="nm">' + escapeHtml(d.title) + '</span>';
+    el.innerHTML = '<div class="fc fr">' + inner + '</div><div class="fc bk">' + inner + "</div>";
+    el.addEventListener("mouseenter", tourHoldOn);
+    el.addEventListener("mouseleave", tourHoldOff);
+    el.addEventListener("click", function () { openTour(d); });
+    box.appendChild(el);
+    tourCards.push(el);
+  });
+  layoutTourRing();
+  tourTick = true;
+}
+
+function layoutTourRing() {
+  var n = tourCards.length;
+  if (!n) return;
+    // 半径下限 260：卡片数少时（如 3 篇）按"刚好相接"算出来的半径太小，卡片会叠在一起
+    var R = Math.max(210, Math.round(112 / (2 * Math.sin(Math.PI / n))));
+  tourCards.forEach(function (c, i) {
+    c.style.transform = "rotateY(" + (i * 360 / n).toFixed(2) + "deg) rotateX(0deg) " +
+                        "translate3d(0px,0px," + R + "px) rotateZ(0deg)";
+  });
+}
+
+(function tourSpin() {
+  if (tourTick) {
+    var el = document.getElementById("tourRing3d");
+    if (el) {
+      if (!tourDrag && !tourHold) tourRy += 0.16;
+      el.style.setProperty("--try", (tourRy + tourDry).toFixed(2) + "deg");
+    }
+  }
+  requestAnimationFrame(tourSpin);
+})();
+
+// 拖动旋转
+(function () {
+  var home = document.getElementById("tourRing");
+  if (!home) return;
+  home.addEventListener("pointerdown", function (e) { tourDrag = true; tourDx = e.clientX; });
+  window.addEventListener("pointerup", function () { tourDrag = false; });
+  window.addEventListener("pointermove", function (e) {
+    if (!tourDrag) return;
+    tourDry += (e.clientX - tourDx) * 0.32;
+    tourDx = e.clientX;
+  });
+})();
+
+// ---------------- 三卡详情 ----------------
+function openTour(d) {
+  document.getElementById("tourRing").style.display = "none";
+  var td = document.getElementById("tourDetail");
+  td.style.display = "";
+  td.dataset.idx = String(tourDocs.indexOf(d));
+  document.getElementById("tdTitle").textContent = d.title;
+  document.getElementById("tdMeta").textContent = (d.date || "") + "  ·  " + (d.region || "");
+  document.getElementById("tdRegion").textContent = "REGION " + (d.region || "—");
+  document.getElementById("tdP1").innerHTML =
+    '<div class="tbox">' + (d.content || "<p>暂无内容</p>") + "</div>";
+  renderTourReport(d);
+  showTourPane("1");
+  window.scrollTo(0, 0);
+}
+
+function showTourPane(p) {
+  ["1", "2", "3"].forEach(function (k) {
+    var el = document.getElementById("tdP" + k);
+    if (el) el.style.display = (k === p) ? "" : "none";
+  });
+  document.querySelectorAll("#tourDetail .ts3").forEach(function (b) {
+    b.classList.toggle("on", b.getAttribute("data-p") === p);
+  });
+  var idx = +(document.getElementById("tourDetail").dataset.idx || 0);
+  var d = tourDocs[idx];
+  if (!d) return;
+  if (p === "2") ensureMapData(function () { drawTourRoute(d); });
+  if (p === "3") animateTourBars();
+}
+
+function renderTourReport(d) {
+  var cost = d.cost || {};
+  var keys = Object.keys(cost);
+  var total = keys.reduce(function (a, k) { return a + cost[k]; }, 0);
+  var people = 2;
+  var days = 0;
+  (d.plan || []).forEach(function (r) { days++; });
+  var km = 0;
+  (d.plan || []).forEach(function (r) {
+    var v = parseInt(String(r[3]).replace(/[^0-9]/g, ""), 10);
+    if (!isNaN(v)) km += v;
+  });
+  var paid = total ? Math.round(total / people) : 0;
+
+  var bars = keys.map(function (k) {
+    var v = cost[k], pc = total ? Math.round(v / total * 100) : 0;
+    return '<div class="tbar"><i>' + escapeHtml(k) + '</i><span class="t"><div data-w="' +
+           pc + '"></div></span><u>&#165;' + v + ' / ' + pc + '%</u></div>';
+  }).join("");
+
+  var plan = (d.plan || []).map(function (r) {
+    return "<tr><td class=\"m\">" + escapeHtml(r[0]) + "</td><td>" + escapeHtml(r[1]) +
+           "</td><td>" + escapeHtml(r[2]) + "</td><td class=\"m\">" + escapeHtml(r[3]) + "</td></tr>";
+  }).join("");
+
+  document.getElementById("tdP3").innerHTML =
+    '<div class="tgr">' +
+      '<div class="tmetric"><span>TOTAL COST</span><b>&#165;' + total.toLocaleString() + '</b></div>' +
+      '<div class="tmetric"><span>PER PERSON</span><b>&#165;' + paid.toLocaleString() + '</b></div>' +
+      '<div class="tmetric"><span>DAYS</span><b>' + days + '<em>D</em></b></div>' +
+      '<div class="tmetric"><span>DISTANCE</span><b>' + km.toLocaleString() + '<em>KM</em></b></div>' +
+    "</div>" +
+    '<div class="tbox"><h4>COST BREAKDOWN</h4>' + bars + "</div>" +
+    '<div class="tbox"><h4>PLAN</h4><table><tr><th>DAY</th><th>ROUTE</th><th>STAY</th><th>KM</th></tr>' +
+      plan + "</table></div>";
+}
+
+function animateTourBars() {
+  var bs = document.querySelectorAll("#tdP3 .tbar .t div");
+  bs.forEach(function (b) { b.style.width = "0"; });
+  requestAnimationFrame(function () {
+    requestAnimationFrame(function () {
+      bs.forEach(function (b) { b.style.width = b.getAttribute("data-w") + "%"; });
+    });
+  });
+}
+
+function drawTourRoute(d) {
+  var svg = document.getElementById("routeMap");
+  if (!svg || !window.CN_MAP || !d.pts || !d.pts.length) return;
+  var M = window.CN_MAP;
+
+  var pts = d.pts.map(function (p) {
+    var xy = tourProj(p.lon, p.lat);
+    return { x: xy[0], y: xy[1], p: p };
+  });
+
+  // viewBox 按行程点范围自动算 —— 每篇自动聚焦到自己的活动区域
+  var xs = pts.map(function (a) { return a.x; }), ys = pts.map(function (a) { return a.y; });
+  var pad = 90;
+  var x0 = Math.min.apply(null, xs) - pad, x1 = Math.max.apply(null, xs) + pad;
+  var y0 = Math.min.apply(null, ys) - pad, y1 = Math.max.apply(null, ys) + pad;
+  var vw = x1 - x0, vh = y1 - y0, ratio = 1000 / 560;
+  if (vw / vh < ratio) { var nw = vh * ratio; x0 -= (nw - vw) / 2; vw = nw; }
+  else { var nh = vw / ratio; y0 -= (nh - vh) / 2; vh = nh; }
+  svg.setAttribute("viewBox", x0.toFixed(0) + " " + y0.toFixed(0) + " " +
+                              vw.toFixed(0) + " " + vh.toFixed(0));
+
+  var h = "";
+  Object.keys(M.provinces).forEach(function (a) {
+    if (a === "100000_JD") return;
+    M.provinces[a].forEach(function (dd) { h += '<path class="prov" d="' + dd + '"/>'; });
+  });
+  // 九段线不画在主图（避免凌乱），但保持数据完整可用
+  (M.provinces["100000_JD"] || []).forEach(function (dd) {
+    h += '<path class="prov" d="' + dd + '"/>';
+  });
+
+  var dpath = "M" + pts.map(function (a) {
+    return a.x.toFixed(1) + " " + a.y.toFixed(1);
+  }).join(" L");
+
+  var dots = "", labels = "", seen = {}, li = 0;
+  pts.forEach(function (a) {
+    var stay = !!a.p.stay;
+    dots += '<circle class="stop' + (stay ? " stay" : "") + '" cx="' + a.x.toFixed(1) +
+            '" cy="' + a.y.toFixed(1) + '" r="' + (stay ? 6 : 3.5) + '"/>';
+    if (!seen[a.p.n]) {
+      seen[a.p.n] = 1;
+      var dy = (li % 2) ? 21 : -13;      // 相邻标签上下交替，避免叠在一起
+      labels += '<text class="lbl" x="' + (a.x + 14).toFixed(1) + '" y="' +
+                (a.y + dy).toFixed(1) + '">D' + a.p.d + ' &#183; ' + escapeHtml(a.p.n) + "</text>";
+      li++;
+    }
+  });
+
+  svg.innerHTML = h + '<path class="rte" id="routePath" d="' + dpath + '"/>' + dots + labels;
+
+  var el = document.getElementById("routePath");
+  var len = el.getTotalLength();
+  el.style.strokeDasharray = len;
+  el.style.strokeDashoffset = len;
+  el.style.transition = "none";
+  requestAnimationFrame(function () {
+    requestAnimationFrame(function () {
+      el.style.transition = "stroke-dashoffset 2.2s cubic-bezier(.3,.7,.3,1)";
+      el.style.strokeDashoffset = 0;
+    });
+  });
+}
+
+// 三卡按钮绑定（DOM 已就绪：app.js 在 body 末尾加载）
+(function bindTourUI() {
+  var back = document.getElementById("tourBack");
+  if (back) back.addEventListener("click", showList);
+  document.querySelectorAll("#tourDetail .ts3").forEach(function (b) {
+    b.addEventListener("click", function () { showTourPane(b.getAttribute("data-p")); });
+  });
+})();
 
 // ===== 渲染入口 =====
 function renderAll() {
@@ -657,6 +932,19 @@ function filteredDocs() {
 function renderCards() {
   var list = document.getElementById("docList");
   var docs = filteredDocs();
+
+  // 旅游攻略：走 3D 环（点方块 → 三卡详情），不用通栏卡片列表
+  var isTour = (activeCategory === "旅游攻略" && !activeTag);
+  var ring = document.getElementById("tourRing"), tdet = document.getElementById("tourDetail");
+  if (ring) ring.style.display = isTour ? "" : "none";
+  if (tdet) tdet.style.display = "none";
+  if (isTour) {
+    list.style.display = "none";
+    renderTourRing(docs);
+    return;
+  }
+  list.style.display = "";
+
   list.innerHTML = "";
 
   // 选中标签时，列表顶部显示该标签的照片横幅
