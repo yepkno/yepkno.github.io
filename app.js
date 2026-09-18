@@ -554,6 +554,7 @@ function renderCatWall(cat, item) {
 
 function showList() {
   document.getElementById("reader").classList.remove("active");
+  document.body.classList.remove("reading");
   var tdet = document.getElementById("tourDetail");
   if (tdet) tdet.style.display = "none";
   var st = document.getElementById("tourStage");
@@ -904,8 +905,8 @@ function openTour(d) {
   document.getElementById("tdTitle").textContent = d.title;
   document.getElementById("tdMeta").textContent = (d.date || "") + "  ·  " + (d.region || "");
   document.getElementById("tdRegion").textContent = "REGION " + (d.region || "—");
-  document.getElementById("tdP1").innerHTML =
-    '<div class="tbox">' + (d.content || "<p>暂无内容</p>") + "</div>";
+  document.getElementById("tourBody").innerHTML = d.content || "<p>暂无内容</p>";
+  buildToc("tourBody", "tourToc");
   renderTourReport(d);
   showTourPane("1");
   td.scrollTop = 0;
@@ -1282,9 +1283,17 @@ function drawTourRoute(d) {
     base += '<path class="prov" d="' + dd + '"/>';
   });
 
-  var dpath = "M" + pts.map(function (a) {
-    return a.x.toFixed(1) + " " + a.y.toFixed(1);
-  }).join(" L");
+  // 路线拆成两束：去程（主线，带生长动画）与返程（原路返回，画虚线）。
+  // 不拆的话，回程会与去程完全重叠，图上看着就是"一条路上下往返"，
+  // 明明闭环了却看不出"环"。
+  var fwd = [], bwd = [];
+  for (var si = 0; si < pts.length - 1; si++) {
+    var seg = "M" + pts[si].x.toFixed(1) + " " + pts[si].y.toFixed(1) +
+              " L" + pts[si + 1].x.toFixed(1) + " " + pts[si + 1].y.toFixed(1);
+    (pts[si + 1].p.back ? bwd : fwd).push(seg);
+  }
+  var dpath = fwd.join(" ");
+  var dback = bwd.join(" ");
 
   // 统一"屏幕单位"：记号 / 文字都按 viewBox 宽度换算尺寸，
   // 这样视野大小不同的每篇地图，在屏幕上看到的记号大小是一致的
@@ -1367,6 +1376,8 @@ function drawTourRoute(d) {
     '<path class="glow" id="routeGlow" d="' + dpath + '"/>' +
     '<path class="rte" id="routePath" d="' + dpath + '"/>' +
     '<path class="dash" id="routeDash" d="' + dpath + '"/>' +
+    // 返程段（虚线）：没有返程段时整条不渲染
+    (dback ? '<path class="rte back" id="routeBack" d="' + dback + '"/>' : '') +
     // 逐日高亮层：默认空 d（不显示），点右侧 DAY 时只填当天那几段
     '<path class="rte hi" id="routeHi" d=""/>' +
     marks + labels;
@@ -1740,6 +1751,7 @@ function openDoc(d) {
   document.getElementById("docList").style.display = "none";
   var reader = document.getElementById("reader");
   reader.classList.add("active");
+  document.body.classList.add("reading");   // 让出右侧宽度给正文 + 目录
   document.getElementById("readerTitle").textContent = d.title;
 
   var meta = document.getElementById("readerMeta");
@@ -1764,6 +1776,71 @@ function renderDocBody(d) {
   document.getElementById("readerBody").innerHTML =
     '<div class="reader-cover"><img src="' + getDocCover(d) + '" alt=""></div>' +
     (d.content || "<p>暂无内容</p>");
+  buildToc("readerBody", "docToc");
+}
+
+// ===== 正文右侧目录：扫描 h2/h3 自动生成，滚动时高亮当前章节 =====
+// 两处共用：阅读页（readerBody/docToc）与旅游攻略正文卡（tourBody/tourToc）。
+// 只取两级 —— h4 太碎，全列出来目录本身就没法用了。
+var _tocHeads = [], _tocLinks = [], _tocBody = null;
+
+function buildToc(bodyId, tocId) {
+  var box = document.getElementById(tocId);
+  var body = document.getElementById(bodyId);
+  if (!box || !body) return;
+  var heads = [].slice.call(body.querySelectorAll("h2, h3"));
+  if (heads.length < 3) {          // 章节太少就不摆目录了
+    box.hidden = true; box.innerHTML = "";
+    if (_tocBody === body) { _tocHeads = []; _tocLinks = []; _tocBody = null; }
+    return;
+  }
+  var html = '<div class="tch">CONTENTS · 目录</div>';
+  heads.forEach(function (h, i) {
+    if (!h.id) h.id = bodyId + "-sec-" + i;      // 作者没写 id 时兜底
+    html += '<a href="#' + h.id + '" data-lv="' + (h.tagName === "H3" ? 3 : 2) + '">' +
+      escapeHtml((h.textContent || "").trim()) + '</a>';
+  });
+  box.innerHTML = html;
+  box.hidden = false;
+  _tocLinks = [].slice.call(box.querySelectorAll("a"));
+  _tocHeads = heads;
+  _tocBody = body;
+  _tocLinks.forEach(function (a) {
+    a.addEventListener("click", function (e) {
+      e.preventDefault();
+      // 先乐观高亮，别等滚动结束 —— 否则点了半天高亮还停在上一条
+      _tocLinks.forEach(function (x) { x.classList.remove("on"); });
+      a.classList.add("on");
+      var el = document.getElementById(a.getAttribute("href").slice(1));
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  });
+  // 旅游攻略里是 #tourDetail 内部滚动（不是窗口滚动），两处都要听
+  window.removeEventListener("scroll", syncToc);
+  window.addEventListener("scroll", syncToc, { passive: true });
+  var sc = document.getElementById("tourDetail");
+  if (sc) {
+    sc.removeEventListener("scroll", syncToc);
+    sc.addEventListener("scroll", syncToc, { passive: true });
+  }
+  syncToc();
+}
+
+// 高亮"正在读的那一节"：取最后一个已经越过顶部的标题
+function syncToc() {
+  if (!_tocHeads.length || !_tocBody || _tocBody.offsetParent === null) return;
+  // 判据线 = 滚动容器顶部偏移 + 标题的 scroll-margin-top（即点目录后标题停靠的位置）+ 2px 容差。
+  // 踩过的坑：旅游攻略是全屏层内部滚动，容器上方还有站点顶栏（实测容器顶在 60px），
+  // 拿固定数字（124 / 132）当判据时标题实际停在 184px，永远判不到目标节，高亮停在上一条。
+  var _host = _tocBody.closest("#tourDetail");
+  var _base = _host ? _host.getBoundingClientRect().top : 0;
+  var _sm = parseFloat(getComputedStyle(_tocHeads[0]).scrollMarginTop) || 0;
+  var _line = _base + _sm + 2;
+  var cur = 0;
+  for (var i = 0; i < _tocHeads.length; i++) {
+    if (_tocHeads[i].getBoundingClientRect().top <= _line) cur = i;
+  }
+  _tocLinks.forEach(function (a, i) { a.classList.toggle("on", i === cur); });
 }
 
 function escapeHtml(str) {
