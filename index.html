@@ -200,8 +200,23 @@ img{display:block}
   font-family:ui-monospace,Consolas,monospace}
 .mzoom.at-min button[data-z="out"],.mzoom.at-max button[data-z="in"]{
   opacity:.28;pointer-events:none}
-#routeMap{cursor:default}
+#routeMap{cursor:grab}
 #routeMap.grabbing{cursor:grabbing}
+
+/* 悬停某个点时的浮层：文字标签要互相避让，被推远的那些看着像"只有点没有名字"，
+   鼠标放上去才是确凿的对应关系 */
+.mtip{position:absolute;z-index:6;pointer-events:none;padding:6px 11px;border-radius:9px;
+  background:rgba(12,18,28,.95);border:1px solid rgba(255,70,31,.45);
+  box-shadow:0 8px 24px rgba(0,0,0,.5);transform:translate(-50%,-138%);white-space:nowrap}
+.mtip[hidden]{display:none}
+.mtip b{display:block;font-size:13px;color:var(--text);font-weight:600}
+.mtip em{display:block;font-style:normal;font-size:10.5px;color:var(--accent);
+  font-family:ui-monospace,Consolas,monospace;margin-top:2px;letter-spacing:.05em}
+.mtip span{display:block;font-size:10.5px;color:var(--faint);margin-top:1px;
+  font-family:ui-monospace,Consolas,monospace}
+#routeMap .stop{touch-action:none}
+#routeMap .lbl.hov{fill:#fff}
+
 #tourStage #tourDetail::-webkit-scrollbar{width:8px}
 #tourStage #tourDetail::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18);border-radius:8px}
 
@@ -273,7 +288,9 @@ img{display:block}
 #routeMap .endring{fill:none;stroke:rgba(255,214,202,.85);stroke-width:1.4;
   vector-effect:non-scaling-stroke}
 /* 地名：描边文字，自带深色描边做底（比方块省地方，也不会把路线盖死） */
-#routeMap .lbl{fill:#eaf2fb;paint-order:stroke;stroke:rgba(5,9,15,.9);stroke-linejoin:round;
+#routeMap .lead{stroke:rgba(255,255,255,.62);stroke-width:1.3;stroke-dasharray:2.4 2.2;
+  stroke-linecap:round;vector-effect:non-scaling-stroke;pointer-events:none}
+#routeMap .lbl{fill:#f4f8ff;paint-order:stroke;stroke:rgba(5,9,15,.92);stroke-linejoin:round;
   font-family:ui-monospace,"SFMono-Regular",Consolas,monospace;pointer-events:none}
 .tmapbox .mgrid-tl,.tmapbox .mgrid-br{position:absolute;width:16px;height:16px;
   border-color:var(--accent);opacity:.55;pointer-events:none;z-index:3}
@@ -995,6 +1012,8 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
             <!-- 当天详情：路线 + 住宿 + 途经城市与景点 -->
             <div class="mapday" id="mapDayBox" hidden></div>
             <svg id="routeMap" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 620"></svg>
+            <!-- 悬停某个点时的浮层：文字标签会互相避让，鼠标放上去才是确凿的对应 -->
+            <div class="mtip" id="mapTip" hidden></div>
           </div>
           <div class="tleg">
             <span><i class="lg stay"></i>住宿点（点内为第几天）</span>
@@ -1107,7 +1126,7 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
   </div>
 </div>
 
-<script src="docs.js?v=20260918zc"></script>
-<script src="app.js?v=20260918zc"></script>
+<script src="docs.js?v=20260918ze"></script>
+<script src="app.js?v=20260918ze"></script>
 </body>
 </html>

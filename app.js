@@ -1274,7 +1274,10 @@ function applyMapZoom() {
 // 缩放时把平移量钳在"不跑出基准视野"的范围内
 function clampPan() {
   if (!_mapVB) return;
-  var mx = _mapVB.w * (_mapZoom - 1) / 2, my = _mapVB.h * (_mapZoom - 1) / 2;
+  // 留一点额外余量：未放大时也能拖出去看看周边（原来 mx=0，1× 完全拖不动）
+  var slack = 0.16;
+  var mx = _mapVB.w * ((_mapZoom - 1) / 2 + slack);
+  var my = _mapVB.h * ((_mapZoom - 1) / 2 + slack);
   _mapPanX = Math.max(-mx, Math.min(mx, _mapPanX));
   _mapPanY = Math.max(-my, Math.min(my, _mapPanY));
 }
@@ -1312,7 +1315,7 @@ function bindMapZoom() {
   // 放大后可拖动平移
   var dragging = false, lastX = 0, lastY = 0;
   svg.addEventListener("pointerdown", function (e) {
-    if (_mapZoom <= MAP_ZMIN + 0.001) return;
+    if (e.button !== 0) return;          // 只认鼠标左键
     dragging = true;
     _mapDragged = false;
     lastX = e.clientX; lastY = e.clientY;
@@ -1326,7 +1329,10 @@ function bindMapZoom() {
     lastX = e.clientX; lastY = e.clientY;
     var rect = svg.getBoundingClientRect();
     if (!rect.width) return;
-    var k = (_mapVB.w / _mapZoom) / rect.width;     // 1 屏幕像素 = 多少 viewBox 单位
+    // 1 屏幕像素 = 多少 viewBox 单位。
+    // ⚠️ 这里**不能**再除以 _mapZoom —— panX 是在 viewBox 坐标系里平移的，
+    // 多除一个 s 会让拖动距离只剩 1/s，表现就是"拖起来特别慢、不跟手"。
+    var k = _mapVB.w / rect.width;
     _mapPanX += dx * k;
     _mapPanY += dy * k;
     clampPan();
@@ -1338,7 +1344,38 @@ function bindMapZoom() {
   }
   svg.addEventListener("pointerup", endDrag);
   svg.addEventListener("pointercancel", endDrag);
-  svg.addEventListener("pointerleave", endDrag);
+  svg.addEventListener("pointerleave", function () { endDrag(); hideMapTip(); });
+
+  // 悬停某个点 → 浮层写清"这是什么地方"，并让它自己的标签一起点亮。
+  // 为什么要有：文字标签之间要互相避让，被推远的那些看着就像"只有点、没有名字"，
+  // 鼠标放上去才是确凿无误的对应关系。
+  svg.addEventListener("pointermove", function (e) {
+    if (dragging) { hideMapTip(); return; }
+    var c = e.target && e.target.closest ? e.target.closest(".stop") : null;
+    if (!c) { hideMapTip(); return; }
+    var i = +c.getAttribute("data-i");
+    var pt = _tourPts[i];
+    if (!pt || !pt.p) { hideMapTip(); return; }
+    var p = pt.p;
+    var tip = document.getElementById("mapTip");
+    var host = svg.parentElement.getBoundingClientRect();
+    tip.innerHTML = "<b>" + escapeHtml(p.n || "\u2014") + "</b>" +
+      "<em>" + (p.stay ? "住宿 \u00b7 第 " + p.d + " 天" : "途经 \u00b7 第 " + p.d + " 天") +
+      "</em>" + (p.alt ? "<span>海拔 " + (+p.alt).toLocaleString() + " m</span>" : "");
+    tip.style.left = (e.clientX - host.left) + "px";
+    tip.style.top = (e.clientY - host.top - 6) + "px";
+    tip.hidden = false;
+    svg.querySelectorAll('.lbl[data-i="' + i + '"]').forEach(function (t) {
+      t.classList.add("hov");
+    });
+  });
+}
+
+function hideMapTip() {
+  var tip = document.getElementById("mapTip");
+  if (tip) tip.hidden = true;
+  var svg = document.getElementById("routeMap");
+  if (svg) svg.querySelectorAll(".hov").forEach(function (t) { t.classList.remove("hov"); });
 }
 
 function drawTourRoute(d) {
@@ -1477,10 +1514,10 @@ function drawTourRoute(d) {
   // 统一"屏幕单位"：记号 / 文字都按 viewBox 宽度换算尺寸，
   // 这样视野大小不同的每篇地图，在屏幕上看到的记号大小是一致的
   var u = vw / 148.0;
-  var marks = "", labels = "", seen = {}, li = 0, placed = [];
+  var marks = "", labels = "", leaders = "", seen = {}, li = 0, placed = [];
   pts.forEach(function (a, i) {
     var isStay = !!a.p.stay;
-    var rr = isStay ? u * 1.42 : u * 0.72;
+    var rr = isStay ? u * 1.42 : u * 0.85;
     marks += '<circle class="stop' + (isStay ? ' stay' : '') + '" data-i="' + i +
              '" data-r="' + rr.toFixed(2) + '" cx="' + a.x.toFixed(1) +
              '" cy="' + a.y.toFixed(1) + '" r="' + rr.toFixed(2) + '"/>';
@@ -1505,7 +1542,7 @@ function drawTourRoute(d) {
     if (!seen[a.p.n]) {
       seen[a.p.n] = 1;
       var txt = a.p.n;                                  // 只写地名
-      var fs = vw / 74;
+      var fs = vw / 65;
       var w = fs * 1.15;
       for (var k = 0; k < txt.length; k++) {
         w += /[\u4e00-\u9fa5]/.test(txt.charAt(k)) ? fs * 1.03 : fs * 0.62;
@@ -1545,11 +1582,21 @@ function drawTourRoute(d) {
         ly = a.y + (li % 2 ? fs * 1.4 : -fs * 0.5);
       }
       li++;
+      // 标签被避让算法推远时，画一条引线连回原点 ——
+      // 否则"这个名字属于哪个点"要靠猜，看着就像"有声点没名字"。
+      var ty = ly + fs * 0.35;
+      var far = Math.abs(lx - a.x) > fs * 2.2 || Math.abs(ly - a.y) > fs * 1.6;
+      if (far) {
+        // 引线止于文字边缘（左/右各取近端），不要穿进字里
+        var ex = (lx + w / 2 >= a.x) ? lx : (lx + w);
+        leaders += '<line class="lead" x1="' + a.x.toFixed(1) + '" y1="' + a.y.toFixed(1) +
+                   '" x2="' + ex.toFixed(1) + '" y2="' + ty.toFixed(1) + '"/>';
+      }
       // 地名用"描边文字"（halo）而不是方框 —— 点一密集，方框就把路线全盖住了
       labels += '<text class="lbl" data-i="' + i + '" data-fs="' + fs.toFixed(2) +
                 '" style="font-size:' + fs.toFixed(2) + 'px;stroke-width:' +
                 (fs * 0.30).toFixed(2) + 'px" x="' + (lx + fs * 0.55).toFixed(1) + '" y="' +
-                (ly + fs * 0.35).toFixed(1) + '">' + escapeHtml(a.p.n) + '</text>';
+                ty.toFixed(1) + '">' + escapeHtml(a.p.n) + '</text>';
     }
   });
 
@@ -1565,7 +1612,7 @@ function drawTourRoute(d) {
     (dback ? '<path class="rte back" id="routeBack" d="' + dback + '"/>' : '') +
     // 逐日高亮层：默认空 d（不显示），点右侧 DAY 时只填当天那几段
     '<path class="rte hi" id="routeHi" d=""/>' +
-    marks + labels + '</g>';
+    marks + leaders + labels + '</g>';
 
   // 逐日查看：先清掉上一天的选中态，再重建 DAY 按钮
   _tourPts = pts;
