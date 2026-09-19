@@ -264,11 +264,14 @@ img{display:block}
    落笔是墨绿与鎏金，与门户的学院风同源；旅游攻略仍用它的蓝族波纹门（互不影响）。
    ⚠️ 全部以 `#knowledgeGate` 前缀覆盖共享的 `.gatewall` 规则（id 优先级高于 class）。 */
 #knowledgeGate{background:#f8f3e8}
-/* 上下柔光：原来是"压暗的暗场"，这里改成纸面的呼吸感 + 顶部一道窗光 */
+/* 上下柔光：原来是"压暗的暗场"，这里改成纸面的呼吸感 + 顶部一道窗光。
+   ⚠️ 2026-09-20（用户："特效有点太简单了"）：原值上 .92 / 下 .72 **把水墨盖掉了大半**
+   —— 探针实测墨的峰值 alpha 有 150，落到屏幕上却几乎看不见，就是这层纸色糊的。
+   现在窗户光收到 .8、上下纸色压到 .34 / .46，墨才透得出来。 */
 #knowledgeGate .tscrim{background:
-  radial-gradient(ellipse 72% 52% at 50% -8%,rgba(255,252,242,.92),transparent 62%),
-  linear-gradient(180deg,rgba(246,240,228,.5) 0%,rgba(246,240,228,0) 28%,
-                  rgba(246,240,228,0) 66%,rgba(238,229,211,.72) 100%)}
+  radial-gradient(ellipse 66% 44% at 50% -10%,rgba(255,252,242,.8),transparent 60%),
+  linear-gradient(180deg,rgba(246,240,228,.34) 0%,rgba(246,240,228,0) 22%,
+                  rgba(246,240,228,0) 74%,rgba(240,232,216,.46) 100%)}
 /* 大字背后的"暗雾"改成纸色柔晕（让字从纸里浮出来，而不是从暗场里） */
 #knowledgeGate .gstage::before{background:
   radial-gradient(closest-side,rgba(251,247,238,.88),rgba(251,247,238,.46) 62%,transparent 100%)}
@@ -2008,9 +2011,10 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
        —— 复用旅游攻略的波纹门视觉（大字 + 无框输入），仅栏目名与口令不同。 -->
   <div id="knowledgeGate" class="gatewall" hidden>
     <div class="tpanel" id="knowledgeGatePanel">
-      <canvas id="knowledgeGateWave" aria-hidden="true"></canvas>
-      <!-- 背景书卷插画（极淡，垫在纸面之上、文字之下）＋ 证书式细金框 -->
+      <!-- ⚠️ 顺序要紧：`.gdeco`（书卷插画）在 canvas **之前** —— canvas 现在是**透明**的，
+           只画水墨；这样墨是叠在插画之上的（否则会被 15.5% 的插画层蒙住）。 -->
       <div class="gdeco" aria-hidden="true"></div>
+      <canvas id="knowledgeGateWave" aria-hidden="true"></canvas>
       <div class="gframe" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
       <div class="tscrim" aria-hidden="true"></div>
       <div class="gstage">
@@ -2128,6 +2132,6 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 
 <script src="docs.js?v=20260920c"></script>
 <script src="app.js?v=20260920f"></script>
-<script src="knowledge.js?v=20260920f"></script>
+<script src="knowledge.js?v=20260920g"></script>
 </body>
 </html>
