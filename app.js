@@ -567,6 +567,17 @@ document.addEventListener("DOMContentLoaded", function () {
       showTourGate();
       return;
     }
+    if (cat === "知识文档") {
+      // 知识文档 = 同页全屏层（与旅游攻略同一套「门 → 沉浸阅读」体验），逻辑在 knowledge.js
+      var _ks = document.getElementById("knowledgeStage");
+      if (_ks && !_ks.hidden && activeCategory === "知识文档") return;   // 已在库内，不重复问
+      if (typeof showKnowledgeGate === "function") { showKnowledgeGate(); return; }
+    }
+    if (cat === "游戏资源") {
+      // 游戏资源 = 同仓独立主页（games/index.html），直接跳转
+      window.location.href = "games/index.html";
+      return;
+    }
     if (isWallCategory(cat) && !isDocWallUnlocked(cat)) {
       renderCatWall(cat, item);
       return;
@@ -590,7 +601,8 @@ function switchCategory(cat, item) {
   renderCards();
   showList();
   if (cat === "旅游攻略" && !activeTag) openTourStage();
-  else closeTourStage();
+  else if (cat === "知识文档" && !activeTag && typeof openKnowledgeStage === "function") openKnowledgeStage();
+  else { closeTourStage(); if (typeof closeKnowledgeStage === "function") closeKnowledgeStage(); }
 }
 
 // 分类密码墙：点击受保护导航时整页出现密码框，解锁后进入该分类
@@ -643,11 +655,20 @@ function showList() {
   document.body.classList.remove("reading");
   var tdet = document.getElementById("tourDetail");
   if (tdet) tdet.style.display = "none";
+  var kdet = document.getElementById("knowledgeDetail");
+  if (kdet) kdet.style.display = "none";
   var st = document.getElementById("tourStage");
   if (st && !st.hidden) {
     // 全屏内：返回 = 回到卡片墙
     var ws = document.getElementById("tourWallStage");
     if (ws) ws.style.display = "";
+    return;
+  }
+  var ks = document.getElementById("knowledgeStage");
+  if (ks && !ks.hidden) {
+    // 知识文档全屏内：返回 = 回到卡片墙
+    var kws = document.getElementById("knowledgeWallStage");
+    if (kws) kws.style.display = "";
     return;
   }
   document.getElementById("docList").style.display = "";
@@ -2522,11 +2543,13 @@ function renderCards() {
 
   // 旅游攻略：走「可拖动卡片墙」（点卡片 → 三卡详情），不用通栏卡片列表
   var isTour = (activeCategory === "旅游攻略" && !activeTag);
+  // 知识文档：走「同页全屏层」（门 → 卡片墙 → 沉浸阅读），同样不用通栏卡片列表
+  var isKnowledge = (activeCategory === "知识文档" && !activeTag);
   var tdet = document.getElementById("tourDetail");
   if (tdet) tdet.style.display = "none";
-  if (isTour) {
+  if (isTour || isKnowledge) {
     list.style.display = "none";
-    return;                       // 卡片墙由全屏舞台负责（openTourStage）
+    return;                       // 卡片墙由全屏舞台负责（openTourStage / openKnowledgeStage）
   }
   list.style.display = "";
 
@@ -2714,14 +2737,16 @@ function buildToc(bodyId, tocId) {
       if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   });
-  // 旅游攻略里是 #tourDetail 内部滚动（不是窗口滚动），两处都要听
+  // 全屏层里是详情容器内部滚动（不是窗口滚动），窗口与详情容器都要听
   window.removeEventListener("scroll", syncToc);
   window.addEventListener("scroll", syncToc, { passive: true });
-  var sc = document.getElementById("tourDetail");
-  if (sc) {
-    sc.removeEventListener("scroll", syncToc);
-    sc.addEventListener("scroll", syncToc, { passive: true });
-  }
+  ["tourDetail", "knowledgeDetail"].forEach(function (id) {
+    var sc = document.getElementById(id);
+    if (sc) {
+      sc.removeEventListener("scroll", syncToc);
+      sc.addEventListener("scroll", syncToc, { passive: true });
+    }
+  });
   syncToc();
 }
 
@@ -2737,7 +2762,8 @@ function syncToc() {
   // 判据线 = 滚动容器顶部偏移 + 标题的 scroll-margin-top（即点目录后标题停靠的位置）+ 2px 容差。
   // 踩过的坑：旅游攻略是全屏层内部滚动，容器上方还有站点顶栏（实测容器顶在 60px），
   // 拿固定数字（124 / 132）当判据时标题实际停在 184px，永远判不到目标节，高亮停在上一条。
-  var _host = _tocBody.closest("#tourDetail");
+  // 知识文档同样是全屏层内部滚动（#knowledgeDetail），两处滚动容器都要识别。
+  var _host = _tocBody.closest("#tourDetail, #knowledgeDetail");
   var _base = _host ? _host.getBoundingClientRect().top : 0;
   var _sm = parseFloat(getComputedStyle(_tocHeads[0]).scrollMarginTop) || 0;
   var _line = _base + _sm + 2;

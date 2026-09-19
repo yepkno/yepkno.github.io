@@ -109,7 +109,7 @@
    · 旅游攻略：SVG 地图的地名是白色描边字（`#routeMap .lbl{fill:#f4f8ff}`），
      若跟随浅色主题，白字会落在浅色卡片上直接看不见；
    · 播放器：面板是写死的深蓝玻璃渐变 + 白字，跟随主题会变成"浅底白字"。 */
-#tourStage, #tourGate, #playerFix{
+.stagewall, .gatewall, #playerFix{
   --bg:#0c0f14; --card:rgba(20,24,31,.85); --border:rgba(255,255,255,.08);
   --text:#e8edf3; --muted:#b6c1cc; --faint:#9aa6b3;
   --accent-text:#ff6a45;
@@ -232,7 +232,7 @@ img{display:block}
 
    ① 点导航 → `.tpanel` 整块**从右滑入**（PPT 换页感）→ 波纹先到位；
       大字 / 副标题 / 输入行**各错开 70–80ms 依次浮出**（这才是"呼出"）；
-   ② 密码正确 → `#tourGate.ok` 闪一下（`okFlash`，不是循环呼吸）；
+   ② 密码正确 → `.gatewall.ok` 闪一下（`okFlash`，不是循环呼吸）；
       那行输入**收拢成一条线**，`进入` 按钮从同一条线长出来（`gentIn`）；
    ③ 点进入 → `.tpanel` 向**左滑出**，门后的舞台同时淡入（"点击即入"）。
 
@@ -255,14 +255,14 @@ img{display:block}
    · ⚠️ **暗场底色跟波纹走**：2026-09-20 波纹从暖色换成蓝族（用户要求"以蓝色为主色"），
      底色也一并从 `#05070d`（暖墨）挪到 `#040714`（蓝墨），否则蓝带子落在暖墨上会"发脏"。
      底色与 `app.js` 里 canvas 的 `FILL` **必须一致**（canvas 铺底 + 这层 div 兜底）。 */
-#tourGate{position:fixed;inset:0;z-index:120;overflow:hidden;background:#040714}
-#tourGate[hidden]{display:none}
+.gatewall{position:fixed;inset:0;z-index:120;overflow:hidden;background:#040714}
+.gatewall[hidden]{display:none}
 .tpanel{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
   padding:20px;will-change:transform}
 .tpanel::after{content:"";position:absolute;top:0;bottom:0;left:0;width:2px;pointer-events:none;
   opacity:0;background:linear-gradient(180deg,transparent,rgba(255,138,101,.85),transparent)}
 /* 波纹画布铺满。blur 由 JS 设在 canvas 上下文的 filter 上（Safari 兜底见 app.js） */
-#tourGateWave{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;display:block}
+#tourGateWave,#knowledgeGateWave{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;display:block}
 /* 上下压成暗场、**中间一段完全留亮**：画面于是读作"中间一条横向波纹带、上下大片暗"，
    正是用户给的参考图（黑底 ＋ 一条彩带 ＋ 压在上面的大字）的形态。
    ⚠️ 别把中间也压暗 —— 一压就又回到"背景看不见"。 */
@@ -281,18 +281,18 @@ img{display:block}
       下划线收拢后**长出来的就是那个朱红按钮**，两者必须同色（否则 morph 会跳色）；
       而"动作色不参与装饰"也正是配色通则：朱红是本站唯一的动作色，蓝带子只是氛围。
       真要连按钮一起换色，得先动品牌主色，那是另一件事。 */
-#tourGate .gstage{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;
+.gatewall .gstage{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;
   text-align:center;padding:24px 20px;max-width:min(680px,92vw)}
-#tourGate .gstage::before{content:"";position:absolute;left:-18%;right:-18%;top:-26%;bottom:-30%;
+.gatewall .gstage::before{content:"";position:absolute;left:-18%;right:-18%;top:-26%;bottom:-30%;
   z-index:-1;pointer-events:none;
   background:radial-gradient(closest-side,rgba(3,6,18,.80),rgba(3,6,18,.48) 60%,transparent 100%)}
-#tourGate .geyebrow{font-size:12px;font-weight:600;letter-spacing:.44em;text-indent:.44em;
+.gatewall .geyebrow{font-size:12px;font-weight:600;letter-spacing:.44em;text-indent:.44em;
   color:rgba(255,255,255,.62);margin-bottom:15px}
-#tourGate .gtitle{font-family:var(--serif);font-weight:600;
+.gatewall .gtitle{font-family:var(--serif);font-weight:600;
   font-size:clamp(30px,5.8vw,58px);line-height:1.24;letter-spacing:.02em;color:#fdfefe;
   text-shadow:0 1px 2px rgba(0,0,0,.62),0 3px 22px rgba(0,0,0,.55)}
 /* 副标题字距收到 .04em：再宽会被检测器的 `wide-tracking` 判为"正文过度字距" */
-#tourGate .gsub{margin-top:15px;font-size:clamp(13px,1.5vw,15px);letter-spacing:.04em;
+.gatewall .gsub{margin-top:15px;font-size:clamp(13px,1.5vw,15px);letter-spacing:.04em;
   color:rgba(255,255,255,.76);text-shadow:0 1px 12px rgba(0,0,0,.62)}
 /* ---- 「输入行 → 按钮」的**共用格** ----
    两者叠在同一个 grid 单元里，所以「收拢成一条线 → 从这条线长出按钮」是真的同一条线，
@@ -300,33 +300,33 @@ img{display:block}
    ⚠️ 这也顺手把间隔收回来了：原来 `.gfield` 只做视觉收拢（scaleY .06），**布局盒仍在**，
    副标题到按钮之间实测空 ≈106px（32 阶梯 + 46 输入行 + 28 按钮边距），用户报"有点丑"。
    现在间隔 = 这里的 `margin-top` 一处说了算，**改间距只改这一个数**。 */
-#tourGate .gsync{display:grid;place-items:center;margin-top:30px}
-#tourGate .gsync > *{grid-area:1/1}
+.gatewall .gsync{display:grid;place-items:center;margin-top:30px}
+.gatewall .gsync > *{grid-area:1/1}
 /* 输入行：**没有框**，只有一条与波纹同色的下划线（"框"这个概念在这里被删掉了） */
-#tourGate .gfield{position:relative;display:flex;align-items:center;justify-content:center;
+.gatewall .gfield{position:relative;display:flex;align-items:center;justify-content:center;
   width:min(340px,74vw);transform-origin:center;
   transition:opacity .24s ease,transform .32s cubic-bezier(.4,0,.2,1),filter .24s}
-#tourGate .gfield input{width:100%;padding:10px 30px 12px;border:0;background:transparent;outline:none;
+.gatewall .gfield input{width:100%;padding:10px 30px 12px;border:0;background:transparent;outline:none;
   color:#fff;font-family:var(--sans);font-size:clamp(17px,2.4vw,22px);text-align:center;
   letter-spacing:.3em;caret-color:var(--accent)}
-#tourGate .gfield input::placeholder{color:rgba(255,255,255,.5);letter-spacing:.32em;font-size:.84em}
-#tourGate .gfield::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;
+.gatewall .gfield input::placeholder{color:rgba(255,255,255,.5);letter-spacing:.32em;font-size:.84em}
+.gatewall .gfield::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;
   background:linear-gradient(90deg,transparent,rgba(255,138,101,.8) 24%,rgba(255,70,31,.95) 50%,
              rgba(255,138,101,.8) 76%,transparent);transition:height .2s,background .2s}
-#tourGate .gfield:focus-within::after{height:2px;
+.gatewall .gfield:focus-within::after{height:2px;
   background:linear-gradient(90deg,transparent,#ffb08a 20%,#ff461f 50%,#ffb08a 80%,transparent)}
 /* 回车记号：只是个符号，不是按钮框（手机端没有实体回车键时也能点） */
-#tourGate .gok{position:absolute;right:-4px;bottom:2px;width:34px;height:34px;padding:0;border:0;
+.gatewall .gok{position:absolute;right:-4px;bottom:2px;width:34px;height:34px;padding:0;border:0;
   background:transparent;color:rgba(255,255,255,.58);font-size:15px;line-height:1;cursor:pointer;
   transition:color .18s,transform .18s}
-#tourGate .gok:hover{color:#fff;transform:translateX(2px)}
-#tourGate .err{color:#ff8a72;font-size:13.5px;min-height:18px;margin-top:16px;
+.gatewall .gok:hover{color:#fff;transform:translateX(2px)}
+.gatewall .err{color:#ff8a72;font-size:13.5px;min-height:18px;margin-top:16px;
   text-shadow:0 1px 8px rgba(0,0,0,.6)}
 /* 解锁：输入行**收拢成一条线**（这是"框变成按钮"那个 morph 的起点） */
-#tourGate.unlocked .gfield{opacity:0;transform:scaleY(.06);filter:blur(5px);pointer-events:none}
-#tourGate.unlocked .gok{opacity:0;pointer-events:none}
-#tourGate.wrong .gfield{animation:gshake .42s cubic-bezier(.36,.07,.19,.97) both}
-#tourGate.ok .gstage{animation:okFlash .5s cubic-bezier(.2,.8,.3,1) both}
+.gatewall.unlocked .gfield{opacity:0;transform:scaleY(.06);filter:blur(5px);pointer-events:none}
+.gatewall.unlocked .gok{opacity:0;pointer-events:none}
+.gatewall.wrong .gfield{animation:gshake .42s cubic-bezier(.36,.07,.19,.97) both}
+.gatewall.ok .gstage{animation:okFlash .5s cubic-bezier(.2,.8,.3,1) both}
 @keyframes gshake{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(4px)}
   30%,50%,70%{transform:translateX(-6px)}40%,60%{transform:translateX(6px)}}
 @keyframes okFlash{0%{filter:brightness(1.45)}100%{filter:brightness(1)}}
@@ -335,17 +335,17 @@ img{display:block}
    ⚠️ 入场动画一律用 `backwards`（**不是 both**）。因为 `.gfield` 在解锁时要靠
    transition 做收拢；若入场动画用 `both`，它的填充会一直锁住 transform/opacity，
    把解锁时的收拢整个吃掉。`backwards` 只保留"延迟期间"的起始态，播完即交还基础样式。 */
-#tourGate.enter .tpanel{animation:panelIn .54s cubic-bezier(.16,.84,.24,1) backwards}
-#tourGate.enter .tpanel::after{animation:leadEdge .72s ease-out backwards}
+.gatewall.enter .tpanel{animation:panelIn .54s cubic-bezier(.16,.84,.24,1) backwards}
+.gatewall.enter .tpanel::after{animation:leadEdge .72s ease-out backwards}
 /* "呼出"：eyebrow → 大字 → 副标题 → 输入行 依次到位（各错开 70–80ms），
    读作一层层浮起，而不是整块弹出 */
-#tourGate.enter .geyebrow{animation:cardIn .5s cubic-bezier(.22,1,.36,1) .22s backwards}
-#tourGate.enter .gtitle{animation:cardIn .5s cubic-bezier(.22,1,.36,1) .30s backwards}
-#tourGate.enter .gsub{animation:cardIn .5s cubic-bezier(.22,1,.36,1) .38s backwards}
-#tourGate.enter .gfield{animation:cardIn .5s cubic-bezier(.22,1,.36,1) .46s backwards}
-#tourGate.leaving .tpanel{animation:panelOut .42s cubic-bezier(.6,0,.9,.4) backwards}
+.gatewall.enter .geyebrow{animation:cardIn .5s cubic-bezier(.22,1,.36,1) .22s backwards}
+.gatewall.enter .gtitle{animation:cardIn .5s cubic-bezier(.22,1,.36,1) .30s backwards}
+.gatewall.enter .gsub{animation:cardIn .5s cubic-bezier(.22,1,.36,1) .38s backwards}
+.gatewall.enter .gfield{animation:cardIn .5s cubic-bezier(.22,1,.36,1) .46s backwards}
+.gatewall.leaving .tpanel{animation:panelOut .42s cubic-bezier(.6,0,.9,.4) backwards}
 /* 舞台淡入：门向左滑开时从后面露出来 */
-#tourStage:not([hidden]){animation:stageIn .42s ease-out both}
+.stagewall:not([hidden]){animation:stageIn .42s ease-out both}
 
 @keyframes panelIn{from{transform:translateX(100%)}to{transform:none}}
 @keyframes panelOut{from{transform:none}to{transform:translateX(-100%)}}
@@ -393,7 +393,7 @@ img{display:block}
    `genter-quiet` 由 `setGateUnlocked(true)` 加上，用户一按键盘（keydown）就摘掉。 */
 .genter.genter-quiet:focus-visible{outline:none}
 /* "线变按钮"：从一条压扁的线（scaleY .08）在位移 + 模糊中长成按钮 */
-#tourGate.unlocked .genter{animation:gentIn .52s cubic-bezier(.2,1.02,.3,1) backwards}
+.gatewall.unlocked .genter{animation:gentIn .52s cubic-bezier(.2,1.02,.3,1) backwards}
 @keyframes gentIn{
   0%{opacity:0;transform:scale(.64,.08) translateY(7px);filter:blur(5px)}
   55%{opacity:1;filter:blur(0)}
@@ -404,74 +404,74 @@ img{display:block}
 /* 尊重"减少动效"：过场与噪声光全部落位静止 */
 @media (prefers-reduced-motion: reduce){
   .genter::after{animation:none}
-  #tourGate.unlocked .genter{animation:none}
-  #tourGate.enter .tpanel,#tourGate.leaving .tpanel,#tourGate.enter .tpanel::after,
-  #tourGate.enter .geyebrow,#tourGate.enter .gtitle,#tourGate.enter .gsub,
-  #tourGate.enter .gfield,#tourGate.wrong .gfield,#tourGate.ok .gstage,
-  #tourStage:not([hidden]){animation:none}
+  .gatewall.unlocked .genter{animation:none}
+  .gatewall.enter .tpanel,.gatewall.leaving .tpanel,.gatewall.enter .tpanel::after,
+  .gatewall.enter .geyebrow,.gatewall.enter .gtitle,.gatewall.enter .gsub,
+  .gatewall.enter .gfield,.gatewall.wrong .gfield,.gatewall.ok .gstage,
+  .stagewall:not([hidden]){animation:none}
 }
 
-#tourStage{position:fixed;inset:0;z-index:110;overflow:hidden;
+.stagewall{position:fixed;inset:0;z-index:110;overflow:hidden;
   /* 只留**一个**朱红光源。原来第二团是 `rgba(96,146,224,…)` 的**蓝**，
      与 body::before 上那团蓝同源（双色光晕），且蓝不在本站用色体系里（朱红／中性）。 */
   background:
     radial-gradient(ellipse 58% 48% at 50% 36%,rgba(255,70,31,.13) 0%,rgba(0,0,0,0) 70%),
     linear-gradient(180deg,#05080e,#080d16)}
-#tourStage[hidden]{display:none}
+.stagewall[hidden]{display:none}
 /* 主页背景：AI 生成的「虚构路书地图」—— 不对应任何真实地理，纯装饰。
    半透明 + 压暗降饱和：只留一层纸纹与航迹，卡片照旧是主角。
    父元素背景（两团光晕 + 深色渐变）从它下面透出来，等于自带一层柔光。 */
-#tourStage::before{content:"";position:absolute;inset:0;pointer-events:none;
+.stagewall::before{content:"";position:absolute;inset:0;pointer-events:none;
   background:url("assets/travel/roadbook.jpg?v=20260920b") center center/cover no-repeat;
   opacity:.72;filter:brightness(.95) saturate(.6) contrast(1.05)}
 /* 地面：只保留**横向**的等距细线（读作"地平线／地面"），删掉纵向那一套。
    原来两轴都有 → 那是标准的"装饰性网格背景"，检测器判为 `codex-grid-background`
    （规则原文：网格叠加应留给真正的画布／地图／蓝图／测量面，其他地方用产品结构或素面）。 */
-#tourStage .tfloor{position:absolute;left:-6%;right:-6%;bottom:0;height:46%;pointer-events:none;
+.stagewall .tfloor{position:absolute;left:-6%;right:-6%;bottom:0;height:46%;pointer-events:none;
   background-image:linear-gradient(rgba(255,255,255,.07) 1px,transparent 1px);
   background-size:100% 32px;
   -webkit-mask-image:linear-gradient(180deg,rgba(0,0,0,0) 0%,#000 78%);
   mask-image:linear-gradient(180deg,rgba(0,0,0,0) 0%,#000 78%)}
-#tourWallStage{position:absolute;inset:0;z-index:2;transform-style:preserve-3d}
+.wallstage{position:absolute;inset:0;z-index:2;transform-style:preserve-3d}
 /* 参考 demo 背后那行大字：给散落的卡片一个"景深底" */
-#tourStage .tmark{position:absolute;left:0;right:0;top:46%;transform:translateY(-50%);
+.stagewall .tmark{position:absolute;left:0;right:0;top:46%;transform:translateY(-50%);
   text-align:center;font-family:ui-monospace,"SFMono-Regular",Consolas,monospace;font-weight:900;
   font-size:clamp(26px,5.2vw,62px);letter-spacing:.16em;color:rgba(255,255,255,.05);
   pointer-events:none;z-index:1;white-space:nowrap;user-select:none}
 /* 顶栏 */
-#tourStage .ttop{position:absolute;top:0;left:0;right:0;height:66px;display:flex;align-items:center;
+.stagewall .ttop{position:absolute;top:0;left:0;right:0;height:66px;display:flex;align-items:center;
   gap:22px;padding:0 30px;z-index:300;pointer-events:none}
-#tourStage .ttop::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;
+.stagewall .ttop::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;
   background:linear-gradient(90deg,transparent,rgba(255,255,255,.15),transparent)}
 /* 品牌：中文用正文字体（等宽字排中文会显得别扭），英文段单独走等宽 */
-#tourStage .brand{font-size:15.5px;font-weight:600;letter-spacing:.04em;color:#eef4fd}
-#tourStage .brand i{font-style:normal;font-family:ui-monospace,"SFMono-Regular",Consolas,monospace;
+.stagewall .brand{font-size:15.5px;font-weight:600;letter-spacing:.04em;color:#eef4fd}
+.stagewall .brand i{font-style:normal;font-family:ui-monospace,"SFMono-Regular",Consolas,monospace;
   font-size:13.5px;font-weight:500;letter-spacing:.18em;color:rgba(255,255,255,.68)}
-#tourStage .brand b{color:var(--accent-text);margin:0 9px;font-weight:400}
-#tourStage .stats{display:flex;gap:24px;margin-left:auto;font-size:12.5px;letter-spacing:.1em;
+.stagewall .brand b{color:var(--accent-text);margin:0 9px;font-weight:400}
+.stagewall .stats{display:flex;gap:24px;margin-left:auto;font-size:12.5px;letter-spacing:.1em;
   color:rgba(255,255,255,.52);font-family:ui-monospace,"SFMono-Regular",Consolas,monospace}
-#tourStage .stats b{color:var(--accent-text);font-size:13.5px;margin-left:5px}
-#tourStage .texit{pointer-events:auto;padding:9px 19px;font-size:13.5px;font-weight:500;font-family:inherit;
+.stagewall .stats b{color:var(--accent-text);font-size:13.5px;margin-left:5px}
+.stagewall .texit{pointer-events:auto;padding:9px 19px;font-size:13.5px;font-weight:500;font-family:inherit;
   cursor:pointer;color:var(--muted);background:rgba(255,255,255,.05);border:1px solid var(--border);
   transition:.22s;clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%)}
-#tourStage .texit:hover{color:#fff;border-color:var(--accent);background:rgba(255,70,31,.18)}
-#tourStage .thint{position:absolute;left:0;right:0;bottom:24px;text-align:center;font-size:12.5px;
+.stagewall .texit:hover{color:#fff;border-color:var(--accent);background:rgba(255,70,31,.18)}
+.stagewall .thint{position:absolute;left:0;right:0;bottom:24px;text-align:center;font-size:12.5px;
   color:var(--faint);letter-spacing:.06em;z-index:300;pointer-events:none}
 /* 拖动区外框：左 / 右 / 下三条渐隐细线（顶部由顶栏分割线收口）
    —— 旧的"四角 L 形"上角在 74px、下角在 16px 且被顶栏切断，看着像没对齐的碎框，已删 */
-#tourStage .tframe{position:absolute;left:16px;right:16px;top:60px;bottom:14px;
+.stagewall .tframe{position:absolute;left:16px;right:16px;top:60px;bottom:14px;
   pointer-events:none;z-index:1}
-#tourStage .tframe i{position:absolute;display:block}
-#tourStage .tframe .v{top:0;bottom:0;width:1px;
+.stagewall .tframe i{position:absolute;display:block}
+.stagewall .tframe .v{top:0;bottom:0;width:1px;
   background:linear-gradient(180deg,rgba(255,255,255,0),rgba(255,255,255,.18) 16%,
              rgba(255,255,255,.18) 84%,rgba(255,255,255,.22))}
-#tourStage .tframe .l{left:0}
-#tourStage .tframe .r{right:0}
-#tourStage .tframe .h{left:0;right:0;bottom:0;height:1px;
+.stagewall .tframe .l{left:0}
+.stagewall .tframe .r{right:0}
+.stagewall .tframe .h{left:0;right:0;bottom:0;height:1px;
   background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.18) 16%,
              rgba(255,255,255,.18) 84%,rgba(255,255,255,0))}
 /* 暗角：让视觉收在中间，边界自然内收（不用画死框） */
-#tourStage::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:1;
+.stagewall::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:1;
   background:radial-gradient(ellipse 76% 66% at 50% 50%,rgba(0,0,0,0) 40%,rgba(0,0,0,.40) 100%)}
 /* 可自由拖动的卡片 —— 关注点分离：
    .tcard 外层只管"位置"（拖动必须即时跟手 → 拖拽中关掉过渡）
@@ -521,8 +521,8 @@ img{display:block}
 .tcard .nm{font-size:15px;font-weight:700;color:#131c29;line-height:1.2;letter-spacing:.01em;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* 全屏内的三卡详情（可滚动） */
-#tourDetail{position:relative}
-#tourStage #tourDetail{position:absolute;inset:60px 0 0;overflow-y:auto;z-index:320;
+.detailview{position:relative}
+.stagewall .detailview,.stagewall .detailview{position:absolute;inset:60px 0 0;overflow-y:auto;z-index:320;
   padding:24px max(22px,calc((100vw - 980px)/2)) 60px;
   background:linear-gradient(180deg,rgba(5,8,14,.95),rgba(5,8,14,.995))}
 /* 地图缩放控件（左下角；右上角被读数占用） */
@@ -560,10 +560,10 @@ body.map-dragging{-webkit-user-select:none;user-select:none;cursor:grabbing}
 #routeMap .stop{touch-action:none}
 #routeMap .lbl.hov{fill:#fff}
 
-#tourStage #tourDetail::-webkit-scrollbar{width:8px}
-#tourStage #tourDetail::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18);border-radius:8px}
+.stagewall .detailview::-webkit-scrollbar,.stagewall .detailview::-webkit-scrollbar{width:8px}
+.stagewall .detailview::-webkit-scrollbar-thumb,.stagewall .detailview::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18);border-radius:8px}
 
-#tourDetail{padding-bottom:30px}
+.detailview{padding-bottom:30px}
 .tdbar{display:flex;align-items:center;gap:14px;padding-bottom:12px;border-bottom:1px solid var(--border);
   margin-bottom:16px;flex-wrap:wrap}
 .tback{padding:7px 16px;background:var(--tag-bg);border:1px solid var(--border);color:var(--muted);
@@ -734,14 +734,14 @@ body.map-dragging{-webkit-user-select:none;user-select:none;cursor:grabbing}
    （`.tbar` / `.tbar i` / `.tbar .t` / `.tbar .t div` / `.tbar u`）——
    全站 CSS、HTML、JS 里**再没有任何地方生成 `tbar` 结构**，是彻头彻尾的孤立样式，
    其中还挂着一条把 **width** 做成过渡的属性（检测器报的 `layout-transition`）。已整体删除。 */
-#tourDetail table{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}
-#tourDetail th,#tourDetail td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--border)}
-#tourDetail th{color:var(--faint);font-weight:400;font-size:10.5px;letter-spacing:.08em;
+.detailview table{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}
+.detailview th,.detailview td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--border)}
+.detailview th{color:var(--faint);font-weight:400;font-size:10.5px;letter-spacing:.08em;
   font-family:ui-monospace,Consolas,monospace}
-#tourDetail th em{font-style:normal;margin-left:7px;letter-spacing:.04em;color:var(--muted);
+.detailview th em{font-style:normal;margin-left:7px;letter-spacing:.04em;color:var(--muted);
   font-family:var(--sans);font-size:11px}
-#tourDetail td{color:var(--muted)}
-#tourDetail td.m{font-family:ui-monospace,Consolas,monospace;color:var(--accent-text)}
+.detailview td{color:var(--muted)}
+.detailview td.m{font-family:ui-monospace,Consolas,monospace;color:var(--accent-text)}
 /* ---- 报表：图表区 ---- */
 .tcostflex{display:flex;align-items:center;gap:30px;flex-wrap:wrap}
 .tdonut{flex:0 0 176px;width:176px}
@@ -793,25 +793,25 @@ body.map-dragging{-webkit-user-select:none;user-select:none;cursor:grabbing}
      既看不清封面也点不准。窄屏改成可滚动的竖向列表（仍占满整个全屏层）。
      只覆盖 display/定位/transform —— 卡片内部「白边照片」的外观一字不动。
      与 JS 的 wallflow 类同阈值（容器宽 ≤600）。 */
-  #tourWallStage.wallflow{display:flex;flex-direction:column;align-items:center;
+  .wallstage.wallflow{display:flex;flex-direction:column;align-items:center;
     gap:16px;padding:12px 18px 150px;overflow-y:auto;-webkit-overflow-scrolling:touch;
     transform-style:flat}
-  #tourWallStage.wallflow .tcard{position:relative;left:auto;top:auto;
+  .wallstage.wallflow .tcard{position:relative;left:auto;top:auto;
     transform:none;cursor:pointer;touch-action:pan-y;transition:none}
 
   /* ===== ⑪ 报表：窄屏竖排 + 图表/表格改「横向滚动」 =====
      图表**不能压缩** —— SVG 整体缩放会把 10px 的轴标签缩到读不清，
      所以保持原尺寸、让容器横滑（与行程表同策）。 */
-  #tourDetail .tbox{padding:16px 13px}
+  .detailview .tbox{padding:16px 13px}
   .tgr{gap:9px;margin-bottom:12px}
   .tmetric{padding:11px 12px}
   .tcostflex{flex-direction:column;align-items:stretch;gap:14px}
   .tdonut{flex:0 0 auto;width:min(168px,62vw);margin:0 auto}
   #tdP3 table{min-width:520px}
   #tdP3 .tcombo{min-width:660px}
-  #tourStage .ttop{padding:0 16px;gap:12px}
-  #tourStage .stats{display:none}
-  #tourStage #tourDetail{padding:18px 14px 48px}
+  .stagewall .ttop{padding:0 16px;gap:12px}
+  .stagewall .stats{display:none}
+  .stagewall .detailview,.stagewall .detailview{padding:18px 14px 48px}
   .tgr{grid-template-columns:repeat(2,1fr)}
   .ts3{padding:8px 13px;font-size:12px}
   /* 窄屏：当日详情卡改为贴底弹层，按钮列保持右侧但不压到顶栏读数 */
@@ -832,7 +832,7 @@ body.map-dragging{-webkit-user-select:none;user-select:none;cursor:grabbing}
      （2026-09-19 推送后自查发现）。放不下时**整组横向滚动**，而不是折行。 */
   .ts3{min-height:44px;display:inline-flex;align-items:center;justify-content:center;
     padding:0 10px;white-space:nowrap;flex:0 0 auto}
-  #tourDetail .tseg{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+  .detailview .tseg{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
   /* 密码门按钮 */
   .doc-wall button{min-height:44px}
   .gate-box button{min-height:46px}
@@ -936,10 +936,10 @@ body.map-dragging{-webkit-user-select:none;user-select:none;cursor:grabbing}
 .content-body .gal .cr a{color:var(--faint);text-decoration:none;border-bottom:1px dotted}
 .content-body .gal .cr a:hover{color:var(--accent-text)}
 /* 旅游攻略「正文」卡：.content-body 只管排版，卡片外观在这里补 */
-#tdP1 .content-body{background:var(--card);border:1px solid var(--border);
+#tdP1 .content-body,.detailview .content-body{background:var(--card);border:1px solid var(--border);
   padding:24px 28px;
   clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px))}
-#tdP1 .content-body>:first-child{margin-top:0}
+#tdP1 .content-body>:first-child,.detailview .content-body>:first-child{margin-top:0}
 /* ---- 正文右侧粘性目录 ---- */
 .doc-wrap{display:grid;grid-template-columns:minmax(0,1fr) 206px;gap:28px;align-items:start}
 .doc-toc{position:sticky;top:84px;max-height:calc(100vh - 128px);overflow:auto;
@@ -1056,7 +1056,7 @@ body.reading .rightbar{display:none}
   .tagcloud .tc{min-height:44px;display:inline-flex;align-items:center}
 }
 /* 「目录」开关（仅窄屏显示）—— 用 sticky 而非 fixed：
-   sticky 不脱离文档流，不受 .layout / #tourDetail 的堆叠上下文限制。 */
+   sticky 不脱离文档流，不受 .layout / .detailview 的堆叠上下文限制。 */
 /* 次动作 ＝ **幽灵按钮**：常态只有一条 1px 中性边 ＋ 中性字色，hover 才上朱红。
    原来常态就同时挂了「朱红字 ＋ 朱红边 ＋ 阴影」三样强调，三个都在喊，反而没有主角
    （craft floor：颜色只做 10% 的点缀，中性色承担主责）。 */
@@ -1073,7 +1073,7 @@ body.reading .rightbar{display:none}
 .toc-fab .toc-fab-n{font-size:11px;font-weight:500;color:var(--faint)}
 .toc-fab:hover .toc-fab-n{color:rgba(12,15,20,.66)}
 /* 旅游攻略是全屏层内部滚动、顶部还有 60px 工具条 —— 粘性按钮要让开 */
-#tourDetail .toc-fab{top:66px}
+.detailview .toc-fab{top:66px}
 
 /* ===== 右侧标签云（胶囊风格）===== */
 .panel{background:transparent;border:none;box-shadow:none;padding:0}
@@ -1436,6 +1436,21 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
   #routeMap .dash{animation:none !important}
   .tpane{animation:none !important}
 }
+
+/* ===== 知识文档 · 全屏舞台的专属微调（复用 .stagewall 的通用视觉，只换"身份"）=====
+   ⚠️ 旅游攻略的 .stagewall::before 铺的是「虚构路书地图」背景；知识文档是内容型教程，
+   不该露出路书图，改为知识向的深色底 + 极淡的横向纸纹，视觉语言保持一致（门→全屏）。 */
+#knowledgeStage::before{
+  background:linear-gradient(180deg,rgba(5,8,14,.0),rgba(5,8,14,.0)),
+             repeating-linear-gradient(90deg,rgba(255,255,255,.022) 0 1px,transparent 1px 96px);
+  opacity:1;filter:none}
+/* 知识文档舞台的底色：比旅游攻略更深一档的蓝墨，和「知识档案」气质贴近 */
+#knowledgeStage{
+  background:
+    radial-gradient(ellipse 58% 48% at 50% 36%,rgba(70,120,255,.10) 0%,rgba(0,0,0,0) 70%),
+    linear-gradient(180deg,#04070e,#070b14)}
+/* 知识文档卡片墙：教程是长文，卡片墙仅作目录/入口，不强调"拖散一地"的随意感，
+   用更克制的提示文案即可（文案由 knowledge.js 渲染时写入） */
 </style>
 </head>
 <body>
@@ -1570,10 +1585,10 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 
 
     <!-- 旅游攻略 · 全屏舞台（点导航进入；未解锁先过全屏密码门） -->
-    <div id="tourStage" hidden>
+    <div id="tourStage" class="stagewall" hidden>
       <div class="tfloor"></div>
       <div class="tmark">TOUR · DATABASE</div>
-      <div id="tourWallStage"></div>
+      <div id="tourWallStage" class="wallstage"></div>
       <div class="tframe"><i class="v l"></i><i class="v r"></i><i class="h"></i></div>
       <div class="ttop">
         <span class="brand"><i>TOUR-DB</i><b>//</b>旅游攻略</span>
@@ -1582,7 +1597,7 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
       </div>
       <div class="thint">拖动可自由摆放 &#183; 点卡片进入攻略</div>
 
-      <div id="tourDetail" style="display:none">
+      <div id="tourDetail" class="detailview" style="display:none">
         <div class="tdbar">
           <button class="tback" id="tourBack" type="button">&#8592; 返回</button>
           <span class="tdtitle" id="tdTitle"></span>
@@ -1645,7 +1660,7 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
     </div>
 
   <!-- 旅游攻略 · 全屏密码门（点导航「旅游攻略」时弹出，通过后进全屏舞台） -->
-  <div id="tourGate" hidden>
+  <div id="tourGate" class="gatewall" hidden>
     <!-- 动态波纹背景：原生移植 shadcn 的 WavyBackground（自写 3D simplex 噪声 + canvas + blur），
          配色换成站内暖色族。启动/停止由 app.js 跟着门的显隐走，且尊重 prefers-reduced-motion。
          ⚠️ canvas 必须在 `.tpanel` **里面** —— 过场是整块 panel 平移，画布留在外面就不会跟着滑。 -->
@@ -1676,6 +1691,59 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
           </button>
         </div>
         <div class="err" id="tourGateErr" role="status" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 知识文档 · 全屏舞台（点导航进入；未解锁先过全屏密码门）
+       —— 与旅游攻略同一套「门 → 沉浸阅读」体验，但详情只有一篇完整教程（正文 + 右侧目录），
+          没有地图 / 报表 / 路书三卡。逻辑在 knowledge.js，视觉复用 .tcard/.tdbar/.doc-wrap 等通用样式。 -->
+  <div id="knowledgeStage" class="stagewall" hidden>
+    <div class="tfloor"></div>
+    <div class="tmark">KNOWLEDGE · BASE</div>
+    <div id="knowledgeWallStage" class="wallstage"></div>
+    <div class="tframe"><i class="v l"></i><i class="v r"></i><i class="h"></i></div>
+    <div class="ttop">
+      <span class="brand"><i>KB-DB</i><b>//</b>知识文档</span>
+      <span class="stats" id="knStats"></span>
+      <button class="texit" id="knowledgeExit" type="button">返回站点</button>
+    </div>
+    <div class="thint">拖动可自由摆放 &#183; 点卡片进入阅读</div>
+
+    <div id="knowledgeDetail" class="detailview" style="display:none">
+      <div class="tdbar">
+        <button class="tback" id="knowledgeBack" type="button">&#8592; 返回</button>
+        <span class="tdtitle" id="knTitle"></span>
+        <span class="tdmeta mono" id="knMeta"></span>
+      </div>
+      <div class="doc-wrap">
+        <div class="content-body" id="knBody"></div>
+        <aside class="doc-toc" id="knToc" hidden></aside>
+      </div>
+    </div>
+  </div>
+
+  <!-- 知识文档 · 全屏密码门（点导航「知识文档」时弹出，通过后进全屏舞台）
+       —— 复用旅游攻略的波纹门视觉（大字 + 无框输入），仅栏目名与口令不同。 -->
+  <div id="knowledgeGate" class="gatewall" hidden>
+    <div class="tpanel" id="knowledgeGatePanel">
+      <canvas id="knowledgeGateWave" aria-hidden="true"></canvas>
+      <div class="tscrim" aria-hidden="true"></div>
+      <div class="gstage">
+        <div class="geyebrow">知识文档</div>
+        <h2 class="gtitle">请输入访问密码</h2>
+        <p class="gsub">本栏目受密码保护 · 该密码仅对本栏目有效</p>
+        <div class="gsync">
+          <div class="gfield" id="knowledgeGateField">
+            <input type="password" id="knowledgeGatePwd" placeholder="密码" autocomplete="off"
+                   aria-label="知识文档栏目密码" enterkeyhint="go" spellcheck="false">
+            <button type="button" class="gok" id="knowledgeGateOk" aria-label="确认密码">&#8629;</button>
+          </div>
+          <button type="button" class="genter" id="knowledgeGateEnter" hidden>
+            <span class="genter-in">进入知识文档</span>
+          </button>
+        </div>
+        <div class="err" id="knowledgeGateErr" role="status" aria-live="polite"></div>
       </div>
     </div>
   </div>
@@ -1770,5 +1838,6 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 
 <script src="docs.js?v=20260920b"></script>
 <script src="app.js?v=20260920f"></script>
+<script src="knowledge.js?v=20260920a"></script>
 </body>
 </html>
