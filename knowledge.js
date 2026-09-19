@@ -167,6 +167,42 @@ function shakeKnowledgeGate(g) {
 }
 
 // ---------- 3. 舞台逻辑 ----------
+// 门户时钟（仿灵澄岛「陪伴时间」），15s 级联新，仅在门户可见时跑
+var _knClock = null;
+function knPortalTick() {
+  var t = document.getElementById("knTime");
+  if (!t) return;
+  var d = new Date();
+  var h = d.getHours(), ap = h >= 12 ? "PM" : "AM";
+  var h12 = h % 12 || 12;
+  function p2(n) { return (n < 10 ? "0" : "") + n; }
+  t.innerHTML = p2(h12) + ":" + p2(d.getMinutes()) + " <small>" + ap + "</small>";
+  var dd = document.getElementById("knDate");
+  if (dd) {
+    var wk = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"][d.getDay()];
+    dd.textContent = d.getFullYear() + "-" + p2(d.getMonth() + 1) + "-" + p2(d.getDate()) + " · " + wk;
+  }
+}
+function knPortalClock(on) {
+  if (on) {
+    knPortalTick();
+    if (_knClock) clearInterval(_knClock);
+    _knClock = setInterval(knPortalTick, 15000);
+  } else {
+    if (_knClock) { clearInterval(_knClock); _knClock = null; }
+  }
+}
+
+// 门户按钮 → 沉浸阅读。按钮 data-doc 是知识文档列表里的下标（占位按钮超界时给提示，不打开）
+function knOpenByIndex(i) {
+  var docs = knowledgeDocs();
+  if (i >= 0 && i < docs.length) { openKnowledge(docs[i]); return; }
+  // 占位按钮：还没有对应文档，轻提示（不打断，不弹框）
+  var err = document.getElementById("knowledgeGateErr");
+  // 借门的 err 位做提示不优雅，改在按钮下临时提示 —— 这里用 alert 太粗暴，静默 + 控制台即可
+  if (window.console) console.log("[知识文档] 该板块内容整理中");
+}
+
 function openKnowledgeStage() {
   var st = document.getElementById("knowledgeStage");
   if (!st) return;
@@ -174,242 +210,51 @@ function openKnowledgeStage() {
   document.body.style.overflow = "hidden";
   var kd = document.getElementById("knowledgeDetail");
   if (kd) kd.style.display = "none";
-  var ws = document.getElementById("knowledgeWallStage");
-  if (ws) ws.style.display = "";
+  var kh = document.getElementById("knowledgeHome");
+  if (kh) { kh.hidden = false; kh.scrollTop = 0; }
   var dl = document.getElementById("docList");
   if (dl) dl.style.display = "none";
-  renderKnowledgeWall(knowledgeDocs());
+  // 顶栏统计：显示知识文档库的文档数
+  var st = document.getElementById("knStats");
+  if (st) {
+    var n = knowledgeDocs().length;
+    st.innerHTML =
+      "<span>ENTRIES <b>" + String(n).padStart(3, "0") + "</b></span>" +
+      "<span>BASE <b>KB</b></span>";
+  }
+  knPortalClock(true);
 }
 
 function closeKnowledgeStage() {
   var st = document.getElementById("knowledgeStage");
   if (st) st.hidden = true;
   document.body.style.overflow = "";
+  knPortalClock(false);
 }
 
-// ---------- 4. 卡片墙 ----------
-// 复用旅游攻略卡片墙的「拖动 + 3D 倾斜 + 惯性」交互，但知识文档卡片信息条显示「编号 + 日期」，
-// 且详情是沉浸阅读（不是四卡）。
-var knowledgeDocsList = [], knowledgeCards = [], knowledgeZTop = 100;
+// 回到门户首页（从沉浸阅读返回 / ESC）
+function knBackToHome() {
+  var kd = document.getElementById("knowledgeDetail");
+  if (kd) kd.style.display = "none";
+  var kh = document.getElementById("knowledgeHome");
+  if (kh) kh.hidden = false;
+  knPortalClock(true);
+}
 
+// ---------- 4. 知识文档列表 ----------
 function knowledgeDocs() {
   return (window.DOCS || []).filter(function (d) {
     return d.category === "知识文档" && isDocVisible(d);
   });
 }
 
-function kwClamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
-
-function kwIsFlow() {
-  var ws = document.getElementById("knowledgeWallStage");
-  return !!(ws && ws.classList.contains("wallflow"));
-}
-
-function kwBounds(el, home) {
-  var w = el.offsetWidth, h = el.offsetHeight;
-  var W = home.clientWidth, H = home.clientHeight;
-  var mx = Math.round(w / 3), my = Math.round(h / 3);
-  return {
-    x0: -w + mx, x1: Math.max(-w + mx, W - mx),
-    y0: 58, y1: Math.max(58, H - my - 20)
-  };
-}
-
-function kwApply(el) {
-  el.style.setProperty("--x", el.dataset.x + "px");
-  el.style.setProperty("--y", el.dataset.y + "px");
-  el.style.setProperty("--r", el.dataset.r + "deg");
-}
-
-function renderKnowledgeWall(docs) {
-  var home = document.getElementById("knowledgeWallStage");
-  if (!home) return;
-  home.innerHTML = "";
-  knowledgeCards = [];
-  knowledgeDocsList = docs || [];
-  var n = knowledgeDocsList.length;
-
-  var st = document.getElementById("knStats");
-  if (st) {
-    st.innerHTML =
-      "<span>ENTRIES <b>" + String(n).padStart(3, "0") + "</b></span>" +
-      "<span>BASE <b>KB</b></span>";
-  }
-
-  if (!n) {
-    home.innerHTML = '<div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);' +
-                      'color:var(--faint);font-size:13px">这个分类下还没有文档</div>';
-    return;
-  }
-
-  var W = home.clientWidth, H = home.clientHeight;
-  if (!W || !H) return;
-  var flow = W <= 600;
-  home.classList.toggle("wallflow", flow);
-  var hint = document.querySelector("#knowledgeStage .thint");
-  if (hint) hint.innerHTML = flow ? "上下滑动浏览 &#183; 点卡片进入阅读"
-                                  : "拖动可自由摆放 &#183; 点卡片进入阅读";
-  var cw = flow ? Math.min(334, W - 36)
-                : Math.min(334, Math.max(188, Math.round(W * 0.225)));
-  var ch = cw + 46;
-
-  var SLOTS = [
-    { x: .24, y: .04, r: -6 }, { x: .52, y: .26, r: 8 },  { x: .34, y: .46, r: -4 },
-    { x: .68, y: .06, r: 10 }, { x: .10, y: .24, r: -9 }, { x: .60, y: .48, r: 5 },
-    { x: .42, y: .16, r: -3 }, { x: .82, y: .30, r: 7 },  { x: .18, y: .50, r: -7 },
-    { x: .50, y: .02, r: 4 },  { x: .30, y: .30, r: -5 }, { x: .72, y: .44, r: 9 }
-  ];
-  var padX = 22, padT = 86, padB = 62;
-  var ax = Math.max(40, W - cw - padX * 2);
-  var ay = Math.max(40, H - ch - padT - padB);
-  var pos = [], i2;
-  if (flow) {
-    for (i2 = 0; i2 < n; i2++) pos.push({ x: 0, y: 0, r: 0 });
-  } else {
-    for (i2 = 0; i2 < n; i2++) {
-      var sl = SLOTS[i2 % SLOTS.length], rd = Math.floor(i2 / SLOTS.length);
-      pos.push({ x: padX + sl.x * ax + rd * 15, y: padT + sl.y * ay + rd * 11, r: sl.r });
-    }
-  }
-  if (!flow) {
-    var mnx = Infinity, mxx = -Infinity, mny = Infinity, mxy = -Infinity;
-    pos.forEach(function (p) {
-      mnx = Math.min(mnx, p.x); mxx = Math.max(mxx, p.x + cw);
-      mny = Math.min(mny, p.y); mxy = Math.max(mxy, p.y + ch);
-    });
-    var dx = (W - (mnx + mxx)) / 2, dy = H * 0.50 - (mny + mxy) / 2;
-    dx = Math.min(Math.max(dx, padX - mnx), (W - padX) - mxx);
-    dy = Math.min(Math.max(dy, padT - mny), (H - padB) - mxy);
-    pos.forEach(function (p) { p.x += dx; p.y += dy; });
-  }
-
-  knowledgeDocsList.forEach(function (d, i) {
-    var el = document.createElement("div");
-    el.className = "tcard";
-    el.style.width = cw + "px";
-    el.style.height = ch + "px";
-    el.style.zIndex = String(10 + i);
-    el.dataset.x = Math.round(pos[i].x);
-    el.dataset.y = Math.round(pos[i].y);
-    el.dataset.r = pos[i].r.toFixed(2);
-    kwApply(el);
-    el.innerHTML =
-      '<div class="fc">' +
-        '<div class="ph">' +
-          '<img src="' + getDocCover(d) + '" alt="" draggable="false" loading="lazy" decoding="async">' +
-          '<span class="glare"></span>' +
-        '</div>' +
-        '<div class="cap">' +
-          '<div class="r1">' +
-            '<span class="no">' + String(i + 1).padStart(2, "0") + '</span>' +
-            '<i class="sep"></i>' +
-            '<span class="rg">' + escapeHtml(d.date || "") + '</span>' +
-          '</div>' +
-          '<div class="nm">' + escapeHtml(d.title) + '</div>' +
-        '</div>' +
-      '</div>';
-    home.appendChild(el);
-    knowledgeCards.push(el);
-    bindKnowledgeDrag(el, d, home);
-  });
-}
-
-function bindKnowledgeDrag(el, doc, home) {
-  var drag = false, sx = 0, sy = 0, ox = 0, oy = 0, moved = 0, hr = null, hist = [];
-
-  el.addEventListener("pointerenter", function () { hr = home.getBoundingClientRect(); });
-  el.addEventListener("dragstart", function (e) { e.preventDefault(); });
-
-  el.addEventListener("pointerdown", function (e) {
-    if (e.button !== 0) return;
-    if (drag) return;
-    if (kwIsFlow()) return;
-    drag = true; moved = 0;
-    sx = e.clientX; sy = e.clientY;
-    ox = +el.dataset.x; oy = +el.dataset.y;
-    hist = [{ x: e.clientX, y: e.clientY, t: performance.now() }];
-    el.classList.add("drag");
-    el.style.zIndex = String(++knowledgeZTop);
-    try { el.setPointerCapture(e.pointerId); } catch (err) {}
-    e.preventDefault();
-  });
-
-  el.addEventListener("pointermove", function (e) {
-    if (!kwIsFlow() && e.pointerType !== "touch") {
-      if (!hr) hr = home.getBoundingClientRect();
-      var cx = hr.left + (+el.dataset.x) + el.offsetWidth / 2;
-      var cy = hr.top + (+el.dataset.y) + el.offsetHeight / 2;
-      var dx = e.clientX - cx, dy = e.clientY - cy;
-      el.style.setProperty("--ry", kwClamp(dx / 12, -25, 25).toFixed(2) + "deg");
-      el.style.setProperty("--rx", kwClamp(-dy / 12, -25, 25).toFixed(2) + "deg");
-      el.style.setProperty("--glare", Math.min(0.22, Math.abs(dx) / 1400).toFixed(3));
-      el.style.setProperty("--sc", "1.02");
-    }
-    if (!drag) return;
-    var b = kwBounds(el, home);
-    el.dataset.x = Math.round(kwClamp(ox + (e.clientX - sx), b.x0, b.x1));
-    el.dataset.y = Math.round(kwClamp(oy + (e.clientY - sy), b.y0, b.y1));
-    kwApply(el);
-    moved = Math.max(moved, Math.sqrt(
-      (e.clientX - sx) * (e.clientX - sx) + (e.clientY - sy) * (e.clientY - sy)));
-    hist.push({ x: e.clientX, y: e.clientY, t: performance.now() });
-    if (hist.length > 6) hist.shift();
-  });
-
-  function kwEnd() {
-    if (!drag) return;
-    drag = false;
-    el.classList.remove("drag");
-    var a = hist[0], z = hist[hist.length - 1], dt = z ? z.t - a.t : 0;
-    var vx = dt > 0 ? (z.x - a.x) / dt : 0, vy = dt > 0 ? (z.y - a.y) / dt : 0;
-    var b = kwBounds(el, home);
-    el.dataset.x = Math.round(kwClamp(+el.dataset.x + vx * 260, b.x0, b.x1));
-    el.dataset.y = Math.round(kwClamp(+el.dataset.y + vy * 260, b.y0, b.y1));
-    kwApply(el);
-    hist = [];
-  }
-  el.addEventListener("pointerup", kwEnd);
-  el.addEventListener("pointercancel", kwEnd);
-  el.addEventListener("lostpointercapture", kwEnd);
-
-  el.addEventListener("pointerleave", function () {
-    if (drag) return;
-    el.style.setProperty("--rx", "0deg");
-    el.style.setProperty("--ry", "0deg");
-    el.style.setProperty("--glare", "0");
-    el.style.setProperty("--sc", "1");
-  });
-
-  el.addEventListener("click", function () {
-    if (moved > 6) return;
-    openKnowledge(doc);
-  });
-  el.tabIndex = 0;
-  el.setAttribute("role", "button");
-  el.setAttribute("aria-label", "打开文档：" + (doc.title || ""));
-  el.addEventListener("keydown", function (e) {
-    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openKnowledge(doc); }
-  });
-}
-
-var _kwRt = null;
-window.addEventListener("resize", function () {
-  if (_kwRt) clearTimeout(_kwRt);
-  _kwRt = setTimeout(function () {
-    var ws = document.getElementById("knowledgeWallStage");
-    var st = document.getElementById("knowledgeStage");
-    if (ws && st && !st.hidden && ws.style.display !== "none" && knowledgeDocsList.length) {
-      renderKnowledgeWall(knowledgeDocsList);
-    }
-  }, 320);
-});
-
 // ---------- 5. 沉浸阅读详情 ----------
 function openKnowledge(d) {
-  document.getElementById("knowledgeWallStage").style.display = "none";
+  var kh = document.getElementById("knowledgeHome");
+  if (kh) kh.hidden = true;
+  knPortalClock(false);
   var kd = document.getElementById("knowledgeDetail");
   kd.style.display = "";
-  kd.dataset.idx = String(knowledgeDocsList.indexOf(d));
   document.getElementById("knTitle").textContent = d.title;
   document.getElementById("knMeta").textContent = (d.date || "") + "  ·  知识文档";
   document.getElementById("knBody").innerHTML = d.content || "<p>暂无内容</p>";
@@ -424,19 +269,25 @@ function openKnowledge(d) {
   var gp = document.getElementById("knowledgeGatePwd");
   var ge = document.getElementById("knowledgeGateEnter");
   var kb = document.getElementById("knowledgeBack");
+  var kh = document.getElementById("knowledgeHome");
 
   if (ex) ex.addEventListener("click", function () {
     closeKnowledgeStage();
     var home = document.querySelector('#mainNav a[data-cat="主页"]');
     if (home) home.click();
   });
-  if (kb) kb.addEventListener("click", function () {
-    // 详情内返回 = 回到卡片墙
-    var ws = document.getElementById("knowledgeWallStage");
-    if (ws) ws.style.display = "";
-    var kd = document.getElementById("knowledgeDetail");
-    if (kd) kd.style.display = "none";
+  if (kb) kb.addEventListener("click", knBackToHome);
+
+  // 门户点击：导航卡按钮 → 打开对应文档；「叶の电台」胶囊 → 展开播放器
+  if (kh) kh.addEventListener("click", function (e) {
+    var item = e.target.closest(".pt-item");
+    if (item) { knOpenByIndex(parseInt(item.getAttribute("data-doc") || "0", 10)); return; }
+    if (e.target.closest("#knRadio")) {
+      var disc = document.getElementById("pDisc");
+      if (disc) disc.click();
+    }
   });
+
   if (gok) gok.addEventListener("click", tryKnowledgeUnlock);
   if (gp) gp.addEventListener("keydown", function (e) { if (e.key === "Enter") tryKnowledgeUnlock(); });
   if (ge) ge.addEventListener("click", enterKnowledgeGate);
@@ -456,10 +307,8 @@ function openKnowledge(d) {
     if (st && !st.hidden) {
       var kd = document.getElementById("knowledgeDetail");
       if (kd && kd.style.display !== "none") {
-        // 详情内 ESC = 回到卡片墙
-        kd.style.display = "none";
-        var ws = document.getElementById("knowledgeWallStage");
-        if (ws) ws.style.display = "";
+        // 详情内 ESC = 回到门户首页
+        knBackToHome();
       } else if (ex) {
         ex.click();
       }

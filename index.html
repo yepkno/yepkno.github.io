@@ -219,13 +219,18 @@ img{display:block}
 /* ===== 文章卡片 ===== */
 .cards{display:flex;flex-direction:column;gap:24px}
 
-/* ===== 主页门户（仿知识站首页版式：Banner ＋ 导航卡）=====
+/* ===== 知识文档门户（仿知识站首页版式：Banner ＋ 导航卡）=====
    版式参考用户提供的 FlowUs「灵澄岛」主页：顶部一条 Banner（左大字标题 / 中插画带 /
    右陪伴时间＋胶囊按钮），下面一张门户卡（eyebrow 小字 ＋ 卡标题 ＋ 纵向导航按钮列表）。
-   视觉仍走本站语言：深色玻璃 ＋ 朱红点缀 ＋ 切角，**不搬对方配色与插画**（版权且风格冲突）。
-   ⚠️ 显隐由 app.js 的 renderCards 控制：只在「纯主页状态」（无标签筛选、无搜索词）出现。 */
-#portal{margin-bottom:30px}
-#portal[hidden]{display:none}
+   挂在**知识文档全屏层**内 —— 打开知识文档、过完密码门后，进入的就是这一屏（不同屏），
+   点导航卡按钮 → 沉浸阅读；点「返回」回到本门户。
+   视觉仍走本站语言：深色玻璃 ＋ 朱红点缀 ＋ 切角，**不搬对方配色与插画**（版权且风格冲突）。 */
+.kn-home{position:absolute;inset:60px 0 0;overflow-y:auto;z-index:320;
+  padding:26px max(22px,calc((100vw - 980px)/2)) 60px;
+  background:linear-gradient(180deg,rgba(5,8,14,.9),rgba(5,8,14,.98))}
+.kn-home[hidden]{display:none}
+.kn-home::-webkit-scrollbar{width:8px}
+.kn-home::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18);border-radius:8px}
 .pt-banner{position:relative;overflow:hidden;display:grid;
   grid-template-columns:minmax(0,1fr) auto;gap:24px;align-items:center;
   background:var(--card);border:1px solid var(--border);padding:32px 36px;
@@ -1626,56 +1631,6 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 
   <!-- 中间内容 -->
   <main class="main" id="mainContent" tabindex="-1">
-    <!-- 主页门户（仿知识站首页版式：Banner ＋ 导航卡）。只在「纯主页状态」由 app.js 显示；
-         四个按钮的 data-cat 对应左侧导航分类，点击 = 模拟点导航（密码墙 / 跳转逻辑全部复用）。
-         ⚠️ 按钮文案是占位（用户：先随便取，后面再改）——改文案直接改下面四组 <b>/<i> 即可。 -->
-    <section id="portal" hidden>
-      <div class="pt-banner">
-        <div class="pt-art" aria-hidden="true"><i></i><i></i><i></i></div>
-        <div class="pt-title">
-          <h1 class="pt-h1">叶<em>の</em>个人数据库</h1>
-          <p class="pt-sub">"Personal Database"</p>
-          <i class="pt-rule" aria-hidden="true"></i>
-        </div>
-        <div class="pt-clock">
-          <span class="pt-clock-label">COMPANION TIME · 陪伴时间</span>
-          <div class="pt-time" id="ptTime">--:-- <small>--</small></div>
-          <div class="pt-date" id="ptDate">—</div>
-          <button class="pt-pill" id="ptRadio" type="button" title="打开右下角播放器">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
-            叶の电台
-          </button>
-        </div>
-      </div>
-      <h2 class="pt-heading">叶の个人数据库 · 官方导航</h2>
-      <div class="pt-card">
-        <div class="pt-card-eyebrow">✦ 让知识各归其位</div>
-        <div class="pt-card-title">Navigation System</div>
-        <div class="pt-list">
-          <button class="pt-item" data-cat="软件资源" type="button">
-            <span class="pt-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8m-4-4v4"/></svg></span>
-            <span class="pt-tx"><b>软件资源 · 工具与教程</b><i>八套软件的安装教学与说明原件</i></span>
-            <span class="pt-arrow" aria-hidden="true">&#8594;</span>
-          </button>
-          <button class="pt-item" data-cat="知识文档" type="button">
-            <span class="pt-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>
-            <span class="pt-tx"><b>知识文档 · 沉浸阅读</b><i>全屏长文，门后是完整教程库</i></span>
-            <span class="pt-arrow" aria-hidden="true">&#8594;</span>
-          </button>
-          <button class="pt-item" data-cat="旅游攻略" type="button">
-            <span class="pt-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.2.6-.7.5-1.2z"/></svg></span>
-            <span class="pt-tx"><b>旅游攻略 · 路书与地图</b><i>行程地图 · 数据报表 · 景点路书</i></span>
-            <span class="pt-arrow" aria-hidden="true">&#8594;</span>
-          </button>
-          <button class="pt-item" data-cat="游戏资源" type="button">
-            <span class="pt-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 11h4m-2-2v4"/><circle cx="15" cy="11" r="1"/><circle cx="18" cy="13" r="1"/><path d="M17.32 5H6.68a4 4 0 0 0-3.98 3.6L2 15.5A4 4 0 0 0 6 20h12a4 4 0 0 0 4-4.5l-.7-6.9A4 4 0 0 0 17.32 5z"/></svg></span>
-            <span class="pt-tx"><b>游戏资源 · 独立游戏库</b><i>封面墙 · 筛选 · 下载面板</i></span>
-            <span class="pt-arrow" aria-hidden="true">&#8594;</span>
-          </button>
-        </div>
-      </div>
-    </section>
-
     <div class="cards" id="docList"></div>
 
     <div class="reader" id="reader">
@@ -1828,14 +1783,61 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
   <div id="knowledgeStage" class="stagewall" hidden>
     <div class="tfloor"></div>
     <div class="tmark">KNOWLEDGE · BASE</div>
-    <div id="knowledgeWallStage" class="wallstage"></div>
     <div class="tframe"><i class="v l"></i><i class="v r"></i><i class="h"></i></div>
     <div class="ttop">
       <span class="brand"><i>KB-DB</i><b>//</b>知识文档</span>
       <span class="stats" id="knStats"></span>
       <button class="texit" id="knowledgeExit" type="button">返回站点</button>
     </div>
-    <div class="thint">拖动可自由摆放 &#183; 点卡片进入阅读</div>
+
+    <!-- 知识文档门户（不同屏首页）：Banner ＋ 导航卡。打开知识文档、过完密码门后进入的就是它。
+         ⚠️ 四个按钮文案是占位（用户：先随便取，后面再改）——改文案直接改下面四组 <b>/<i>。 -->
+    <div id="knowledgeHome" class="kn-home">
+      <div class="pt-banner">
+        <div class="pt-art" aria-hidden="true"><i></i><i></i><i></i></div>
+        <div class="pt-title">
+          <h1 class="pt-h1">知识<em>文档</em></h1>
+          <p class="pt-sub">"Knowledge Base"</p>
+          <i class="pt-rule" aria-hidden="true"></i>
+        </div>
+        <div class="pt-clock">
+          <span class="pt-clock-label">COMPANION TIME · 陪伴时间</span>
+          <div class="pt-time" id="knTime">--:-- <small>--</small></div>
+          <div class="pt-date" id="knDate">—</div>
+          <button class="pt-pill" id="knRadio" type="button" title="打开右下角播放器">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+            叶の电台
+          </button>
+        </div>
+      </div>
+      <h2 class="pt-heading">知识文档 · 栏目导航</h2>
+      <div class="pt-card">
+        <div class="pt-card-eyebrow">✦ 让知识各归其位</div>
+        <div class="pt-card-title">Knowledge System</div>
+        <div class="pt-list">
+          <button class="pt-item" data-doc="0" type="button">
+            <span class="pt-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>
+            <span class="pt-tx"><b>OpenCode 使用教程</b><i>从零上手 AI 编程代理 · 沉浸阅读</i></span>
+            <span class="pt-arrow" aria-hidden="true">&#8594;</span>
+          </button>
+          <button class="pt-item" data-doc="1" type="button">
+            <span class="pt-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M9 9h6M9 13h6"/></svg></span>
+            <span class="pt-tx"><b>教程二（占位）</b><i>内容整理中，敬请期待</i></span>
+            <span class="pt-arrow" aria-hidden="true">&#8594;</span>
+          </button>
+          <button class="pt-item" data-doc="2" type="button">
+            <span class="pt-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M9 9h6M9 13h6"/></svg></span>
+            <span class="pt-tx"><b>教程三（占位）</b><i>内容整理中，敬请期待</i></span>
+            <span class="pt-arrow" aria-hidden="true">&#8594;</span>
+          </button>
+          <button class="pt-item" data-doc="3" type="button">
+            <span class="pt-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M9 9h6M9 13h6"/></svg></span>
+            <span class="pt-tx"><b>教程四（占位）</b><i>内容整理中，敬请期待</i></span>
+            <span class="pt-arrow" aria-hidden="true">&#8594;</span>
+          </button>
+        </div>
+      </div>
+    </div>
 
     <div id="knowledgeDetail" class="detailview" style="display:none">
       <div class="tdbar">
@@ -1964,7 +1966,7 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 </div>
 
 <script src="docs.js?v=20260920b"></script>
-<script src="app.js?v=20260920g"></script>
+<script src="app.js?v=20260920f"></script>
 <script src="knowledge.js?v=20260920a"></script>
 </body>
 </html>
