@@ -4,8 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>叶の个人数据库</title>
-<link rel="icon" type="image/jpeg" href="assets/avatar.jpg">
-<link rel="apple-touch-icon" href="assets/avatar.jpg">
+<link rel="icon" type="image/jpeg" href="assets/avatar.jpg?v=20260920b">
+<link rel="apple-touch-icon" href="assets/avatar.jpg?v=20260920b">
+<!-- 背景图预加载：它是 CSS 背景（body 的 background-image），浏览器要**等 CSS 解析完**才发现它。
+     在这里提前声明，请求可以早 ~100ms 出发。⚠️ href 必须与 CSS 里那个 URL **完全一致**（含 `?v=`），
+     否则浏览器会当成两个资源、下载两份 —— 改缓存号时**两处都要改**。 -->
+<link rel="preload" as="image" href="assets/bg.jpg?v=20260920b">
 <meta name="description" content="叶の个人数据库，公开可搜索的个人知识库。访问内容需输入密码。">
 <meta name="keywords" content="个人数据库,知识库,教学文档,教程,学习资料">
 <meta name="robots" content="index, follow">
@@ -130,7 +134,7 @@ html::-webkit-scrollbar{width:10px;height:10px}
 html::-webkit-scrollbar-track{background:transparent}
 html::-webkit-scrollbar-thumb{background:rgba(255,70,31,.38);border-radius:10px;border:2px solid transparent;background-clip:content-box}
 html::-webkit-scrollbar-thumb:hover{background:rgba(255,70,31,.66);background-clip:content-box}
-body{font-family:var(--sans);background-color:var(--bg);background-image:linear-gradient(var(--veil),var(--veil)),url("assets/bg.jpg?v=20260920a");background-size:cover,cover;background-position:center,center;background-repeat:no-repeat,no-repeat;background-attachment:fixed,fixed;color:var(--text);line-height:1.75;transition:color .25s,background-color .25s}
+body{font-family:var(--sans);background-color:var(--bg);background-image:linear-gradient(var(--veil),var(--veil)),url("assets/bg.jpg?v=20260920b");background-size:cover,cover;background-position:center,center;background-repeat:no-repeat,no-repeat;background-attachment:fixed,fixed;color:var(--text);line-height:1.75;transition:color .25s,background-color .25s}
 /* 背景 = 一张「白纸蓝水彩」＋ **一个光源** ＋ **一圈晕影**。只此三件。
    · ⚠️ **`background-blend-mode` 保持"不用"**。它历史上来回翻了两次，规律已经清楚：
      它只在"照片比目标色更脏"时有用；一旦照片本身就是站点要的色就只会捣乱
@@ -380,7 +384,7 @@ img{display:block}
    半透明 + 压暗降饱和：只留一层纸纹与航迹，卡片照旧是主角。
    父元素背景（两团光晕 + 深色渐变）从它下面透出来，等于自带一层柔光。 */
 #tourStage::before{content:"";position:absolute;inset:0;pointer-events:none;
-  background:url("assets/travel/roadbook.jpg") center center/cover no-repeat;
+  background:url("assets/travel/roadbook.jpg?v=20260920b") center center/cover no-repeat;
   opacity:.72;filter:brightness(.95) saturate(.6) contrast(1.05)}
 /* 地面：只保留**横向**的等距细线（读作"地平线／地面"），删掉纵向那一套。
    原来两轴都有 → 那是标准的"装饰性网格背景"，检测器判为 `codex-grid-background`
@@ -1436,7 +1440,7 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
   <!-- 左侧栏 -->
   <aside class="sidebar">
     <div class="profile">
-      <img class="avatar" id="siteAvatar" src="assets/avatar.jpg" alt="头像">
+      <img class="avatar" id="siteAvatar" src="assets/avatar.jpg?v=20260920b" alt="头像" decoding="async">
       <div class="info">
         <h1 id="siteName">叶の个人数据库</h1>
         <p class="desc" id="siteDesc">个人教学文档与知识整理</p>
@@ -1657,7 +1661,7 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
     <div class="psong">
       <div class="pcoverwrap">
         <div class="pvinyl"></div>
-        <div class="pcover"><img id="pCover" src="assets/music-cover.jpg" alt="专辑封面"></div>
+        <div class="pcover"><img id="pCover" src="assets/music-cover.jpg?v=20260920b" alt="专辑封面" loading="lazy" decoding="async"></div>
       </div>
       <div class="pinfo">
         <div class="ptitle" id="pTitle">—</div>
@@ -1715,12 +1719,12 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
   <div class="pdisc" id="pDisc" title="打开播放器" tabindex="0" role="button" aria-label="展开播放器">
     <div class="pdisc-ring"></div>
     <div class="pdisc-vinyl"></div>
-    <div class="pdisc-cover"><img id="pCoverMini" src="assets/music-cover.jpg" alt=""></div>
+    <div class="pdisc-cover"><img id="pCoverMini" src="assets/music-cover.jpg?v=20260920b" alt="" loading="lazy" decoding="async"></div>
     <button class="pdisc-play" id="pMiniPlay" type="button" title="播放 / 暂停" aria-label="播放 / 暂停"><span id="pMiniIcon">▶</span></button>
   </div>
 </div>
 
-<script src="docs.js?v=20260920a"></script>
-<script src="app.js?v=20260920a"></script>
+<script src="docs.js?v=20260920b"></script>
+<script src="app.js?v=20260920b"></script>
 </body>
 </html>

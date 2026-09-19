@@ -176,7 +176,7 @@ function initPlayer() {
   var list = raw.map(function (it) {
     var url = "";
     try { url = atob(it.src).split("").reverse().join(""); } catch (e) { url = ""; }
-    return { name: it.name, artist: it.artist, cover: it.cover || "assets/music-cover.jpg", url: url };
+    return { name: it.name, artist: it.artist, cover: it.cover || "assets/music-cover.jpg?v=20260920b", url: url };
   });
 
   var DEFAULT_INDEX = 0;            // 进站默认曲目：Bones
@@ -225,7 +225,11 @@ function initPlayer() {
       it.className = "pl-item" + (i === idx ? " cur" : "");
       it.innerHTML =
         '<span class="pl-mark">' + (i === idx ? "▶" : "") + "</span>" +
-        '<span class="pl-thumb"><img src="' + escapeHtml(s.cover) + '" alt=""></span>' +
+        // ⚠️ 2026-09-20 性能：这里原来没有 lazy —— 歌单里 **10 张专辑封面（约 450 KB）**
+        // 会在**首屏**就被全部下载，而播放器面板默认是**收起的**（图根本看不见）。
+        // 加 `loading="lazy"` 后，收起态（祖先 display:none）的图**不请求**；
+        // 展开面板时在视口内的会立刻加载，不影响使用。
+        '<span class="pl-thumb"><img src="' + escapeHtml(s.cover) + '" alt="" loading="lazy" decoding="async"></span>' +
         '<span class="pl-meta"><b>' + escapeHtml(s.name) + "</b><em>" + escapeHtml(s.artist || "") + "</em></span>" +
         '<span class="pl-dur">' + (durations[i] || "--:--") + "</span>";
       it.addEventListener("click", function () { load(i, true); });
@@ -1108,7 +1112,7 @@ function renderTourWall(docs) {
     el.innerHTML =
       '<div class="fc">' +
         '<div class="ph">' +
-          '<img src="' + getDocCover(d) + '" alt="" draggable="false">' +
+          '<img src="' + getDocCover(d) + '" alt="" draggable="false" loading="lazy" decoding="async">' +
           '<span class="glare"></span>' +
         '</div>' +
         '<div class="cap">' +
@@ -2391,7 +2395,7 @@ function renderAll() {
 // 有专属照片的标签用 TAG_IMAGES 里的配置，其余统一用默认照片
 function getTagImage(tag) {
   var conf = window.TAG_IMAGES || {};
-  return conf[tag] || "assets/tag-default.jpg";
+  return conf[tag] || "assets/tag-default.jpg?v=20260920b";
 }
 
 // ===== 文档卡片封面 =====
@@ -2402,7 +2406,7 @@ function getDocCover(d) {
   var tags = cleanTags(d.tags);
   if (tags.length && conf[tags[0]]) return conf[tags[0]];
   if (d.category && conf[d.category]) return conf[d.category];
-  return "assets/tag-default.jpg";
+  return "assets/tag-default.jpg?v=20260920b";
 }
 
 // ===== 标签云 =====
@@ -2514,7 +2518,7 @@ function renderCards() {
     var banner = document.createElement("div");
     banner.className = "tag-banner";
     banner.innerHTML =
-      '<img src="' + getTagImage(activeTag) + '" alt="">' +
+      '<img src="' + getTagImage(activeTag) + '" alt="" decoding="async">' +
       "<div><h2>标签：" + escapeHtml(activeTag) + "</h2>" +
       "<p>共 " + docs.length + " 篇文档</p></div>";
     list.appendChild(banner);
@@ -2557,7 +2561,7 @@ function renderCards() {
     var card = document.createElement("div");
     card.className = "doc-card";
 
-    var coverHtml = '<div class="card-cover"><img src="' + getDocCover(d) + '" alt=""></div>';
+    var coverHtml = '<div class="card-cover"><img src="' + getDocCover(d) + '" alt="" loading="lazy" decoding="async"></div>';
     var tagsHtml = '<div class="tag-row">' +
       (cleanTags(d.tags)).map(function (t) { return '<span class="tag">' + escapeHtml(t) + "</span>"; }).join("") +
       "</div>";
@@ -2614,7 +2618,7 @@ function openDoc(d) {
 
 function renderDocBody(d) {
   document.getElementById("readerBody").innerHTML =
-    '<div class="reader-cover"><img src="' + getDocCover(d) + '" alt=""></div>' +
+    '<div class="reader-cover"><img src="' + getDocCover(d) + '" alt="" loading="lazy" decoding="async"></div>' +
     (d.content || "<p>暂无内容</p>");
   buildToc("readerBody", "docToc");
 }

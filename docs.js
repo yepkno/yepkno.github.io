@@ -8,7 +8,7 @@
 window.SITE = {
   name: "叶の个人数据库",
   desc: "个人教学文档与知识整理",
-  avatar: "assets/avatar.jpg"
+  avatar: "assets/avatar.jpg?v=20260920b"
 };
 
 // TAG_IMAGES：标签专属照片。
@@ -26,16 +26,16 @@ window.TAG_IMAGES = {
 // 加歌：本地生成新的编码 src 后在此加一行（操作步骤记录在本地工作日志，勿写入本文件）。
 window.MUSIC = {
   list: [
-    { name: "Bones", artist: "Low Roar / Jofridur Akadottir", src: "Y2FsZi5zZW5vQjAyJS0wMiVyaXR0b2Rha0EwMiVydWRpcmZvSkMyJXJhb1IwMiV3b0wvcHBhLnlmaWx0ZW4uY2lzdW0tb25rcGV5Ly86c3B0dGg=", cover: "assets/album/01-bones.jpg" },
-    { name: "Merry Christmas Mr. Lawrence", artist: "坂本龍一", src: "M3BtLikxKDA4JThCJTRFJUQ4JUVCJTlFJUNBJUM5JTZFJTI4JUQ5JTVFJS0pMDklOUIlNEUlQkElRkIlNUUlRTklRkElOEUlM0ElQzklNUUlRjklNDklN0UlODglNTglNUUlRkElNjklNkUlNkElQ0IlNEUlM0IlQTglNUUlKDAyJWVjbmVyd2FMLnJNMDIlc2FtdHNpcmhDMDIleXJyZU0vcHBhLnlmaWx0ZW4uY2lzdW0tb25rcGV5Ly86c3B0dGg=", cover: "assets/album/02-lawrence.jpg" },
-    { name: "起风了", artist: "买辣椒也用券", src: "M3BtLjk4JUNCJUZFJUFBJTQ4JTVFJUI4JTlBJTZFJTg5JUJBJTlFJUIyJXJldm9DODglQ0IlRkUlNjglQUIlNEUlRTglM0ElOUUlN0IlNUIlOEUlQjIlLUIyJThCJTg4JTVFJThBJTQ5JTdFJUY5JTlCJTRFJTI5JTRBJTZFJTNBJUVCJThFJTBCJTlCJTRFJS9wcGEueWZpbHRlbi5jaXN1bS1vbmtwZXkvLzpzcHR0aA==", cover: "assets/album/03-qifengle.jpg" },
-    { name: "如果爱忘了", artist: "蓝心羽", src: "M3BtLkRCJUVCJTdFJTM4JUZCJTVFJUQ5JTM5JThFJS02OCVBQiU0RSU4OSVGQiU1RSUxQiU4OCU3RSVDOSVFOSU2RSUyOCU2QSU1RSUvcHBhLnlmaWx0ZW4uY2lzdW0tb25rcGV5Ly86c3B0dGg=", cover: "assets/album/04-aiwangle.jpg" },
-    { name: "画心", artist: "张靓颖", src: "M3BtLjM4JUZCJTVFJUJCJTQ5JTdFJUIyJS1CMiU2OSUyQSU5RSUzOSVEOSU5RSUwQSVDQiU1RSUvcHBhLnlmaWx0ZW4uY2lzdW0tb25rcGV5Ly86c3B0dGg=", cover: "assets/album/05-huaxin.jpg" },
-    { name: "匆匆那年", artist: "王菲", src: "M3BtLjRCJTlCJTVFJTNBJTI4JTlFJTY4JUM4JTVFJTY4JUM4JTVFJUIyJS1CMiUyQiVGOCU4RSVCOCVFOCU3RSUvcHBhLnlmaWx0ZW4uY2lzdW0tb25rcGV5Ly86c3B0dGg=", cover: "assets/album/06-congcong.jpg" },
+    { name: "Bones", artist: "Low Roar / Jofridur Akadottir", src: "Y2FsZi5zZW5vQjAyJS0wMiVyaXR0b2Rha0EwMiVydWRpcmZvSkMyJXJhb1IwMiV3b0wvcHBhLnlmaWx0ZW4uY2lzdW0tb25rcGV5Ly86c3B0dGg=", cover: "assets/album/01-bones.jpg?v=20260920b" },
+    { name: "Merry Christmas Mr. Lawrence", artist: "坂本龍一", src: "M3BtLikxKDA4JThCJTRFJUQ4JUVCJTlFJUNBJUM5JTZFJTI4JUQ5JTVFJS0pMDklOUIlNEUlQkElRkIlNUUlRTklRkElOEUlM0ElQzklNUUlRjklNDklN0UlODglNTglNUUlRkElNjklNkUlNkElQ0IlNEUlM0IlQTglNUUlKDAyJWVjbmVyd2FMLnJNMDIlc2FtdHNpcmhDMDIleXJyZU0vcHBhLnlmaWx0ZW4uY2lzdW0tb25rcGV5Ly86c3B0dGg=", cover: "assets/album/02-lawrence.jpg?v=20260920b" },
+    { name: "起风了", artist: "买辣椒也用券", src: "M3BtLjk4JUNCJUZFJUFBJTQ4JTVFJUI4JTlBJTZFJTg5JUJBJTlFJUIyJXJldm9DODglQ0IlRkUlNjglQUIlNEUlRTglM0ElOUUlN0IlNUIlOEUlQjIlLUIyJThCJTg4JTVFJThBJTQ5JTdFJUY5JTlCJTRFJTI5JTRBJTZFJTNBJUVCJThFJTBCJTlCJTRFJS9wcGEueWZpbHRlbi5jaXN1bS1vbmtwZXkvLzpzcHR0aA==", cover: "assets/album/03-qifengle.jpg?v=20260920b" },
+    { name: "如果爱忘了", artist: "蓝心羽", src: "M3BtLkRCJUVCJTdFJTM4JUZCJTVFJUQ5JTM5JThFJS02OCVBQiU0RSU4OSVGQiU1RSUxQiU4OCU3RSVDOSVFOSU2RSUyOCU2QSU1RSUvcHBhLnlmaWx0ZW4uY2lzdW0tb25rcGV5Ly86c3B0dGg=", cover: "assets/album/04-aiwangle.jpg?v=20260920b" },
+    { name: "画心", artist: "张靓颖", src: "M3BtLjM4JUZCJTVFJUJCJTQ5JTdFJUIyJS1CMiU2OSUyQSU5RSUzOSVEOSU5RSUwQSVDQiU1RSUvcHBhLnlmaWx0ZW4uY2lzdW0tb25rcGV5Ly86c3B0dGg=", cover: "assets/album/05-huaxin.jpg?v=20260920b" },
+    { name: "匆匆那年", artist: "王菲", src: "M3BtLjRCJTlCJTVFJTNBJTI4JTlFJTY4JUM4JTVFJTY4JUM4JTVFJUIyJS1CMiUyQiVGOCU4RSVCOCVFOCU3RSUvcHBhLnlmaWx0ZW4uY2lzdW0tb25rcGV5Ly86c3B0dGg=", cover: "assets/album/06-congcong.jpg?v=20260920b" },
     { name: "白鸽", artist: "你的上好佳", src: "M3BtLjNCJURCJTRFJURCJTVBJTVFJUE4JThCJTRFJTQ4JUE5JTdFJTBBJURCJTRFJS1EQiU4QiU5RSVEQiU5OSU3RSUvcHBhLnlmaWx0ZW4uY2lzdW0tb25rcGV5Ly86c3B0dGg=", cover: "assets/album/07-baige.jpg" },
-    { name: "茶花开了，该回家了", artist: "王睿卓 / 加木", src: "M3BtLjhBJUM5JTZFJTBBJUE4JTVFJTYyJTM5JUQ4JTVFJUZCJUQ5JTdFJUI4JUU4JTdFJS02OCVBQiU0RSU2QiVFQSU1RSVFOSVCOSU1RSU1QSVGQSU4RSVDOCVDQiVGRSU2OCVBQiU0RSUwOCVDQiU1RSUxQiVBOCU4RSU2QiVDOCU4RSUvcHBhLnlmaWx0ZW4uY2lzdW0tb25rcGV5Ly86c3B0dGg=", cover: "assets/album/08-chahua.jpg" },
-    { name: "童话镇", artist: "陈一发", src: "M3BtLjc4JTU5JTlFJUQ5JUZBJThFJTVBJUJBJTdFJS0xOSVGOCU1RSUwOCU4QiU0RSU4OCU5OSU5RSUvcHBhLnlmaWx0ZW4uY2lzdW0tb25rcGV5Ly86c3B0dGg=", cover: "assets/album/09-tonghua.jpg" },
-    { name: "富士山下", artist: "陈奕迅", src: "M3BtLkI4JThCJTRFJTFCJTFCJTVFJUJBJTNBJTVFJUM4JUZBJTVFJUIyJS1CMiU1OCVGQiU4RSU1OSU1QSU1RSU4OCU5OSU5RSUvcHBhLnlmaWx0ZW4uY2lzdW0tb25rcGV5Ly86c3B0dGg=", cover: "assets/album/10-fuji.jpg" }
+    { name: "茶花开了，该回家了", artist: "王睿卓 / 加木", src: "M3BtLjhBJUM5JTZFJTBBJUE4JTVFJTYyJTM5JUQ4JTVFJUZCJUQ5JTdFJUI4JUU4JTdFJS02OCVBQiU0RSU2QiVFQSU1RSVFOSVCOSU1RSU1QSVGQSU4RSVDOCVDQiVGRSU2OCVBQiU0RSUwOCVDQiU1RSUxQiVBOCU4RSU2QiVDOCU4RSUvcHBhLnlmaWx0ZW4uY2lzdW0tb25rcGV5Ly86c3B0dGg=", cover: "assets/album/08-chahua.jpg?v=20260920b" },
+    { name: "童话镇", artist: "陈一发", src: "M3BtLjc4JTU5JTlFJUQ5JUZBJThFJTVBJUJBJTdFJS0xOSVGOCU1RSUwOCU4QiU0RSU4OCU5OSU5RSUvcHBhLnlmaWx0ZW4uY2lzdW0tb25rcGV5Ly86c3B0dGg=", cover: "assets/album/09-tonghua.jpg?v=20260920b" },
+    { name: "富士山下", artist: "陈奕迅", src: "M3BtLkI4JThCJTRFJTFCJTFCJTVFJUJBJTNBJTVFJUM4JUZBJTVFJUIyJS1CMiU1OCVGQiU4RSU1OSU1QSU1RSU4OCU5OSU5RSUvcHBhLnlmaWx0ZW4uY2lzdW0tb25rcGV5Ly86c3B0dGg=", cover: "assets/album/10-fuji.jpg?v=20260920b" }
   ]
 };
 
@@ -52,7 +52,7 @@ window.DOCS = [
     summary: "重庆出发五日自驾：大理、丽江、香格里拉一路到梅里雪山，看完日照金山原路回大理的环线。",
     date: "2026-10",
     tags: ["自驾", "高原", "环线"],
-    cover: "assets/travel/dianxibei/cover.jpg",
+    cover: "assets/travel/dianxibei/cover.jpg?v=20260920b",
     content: `<div class="callout">4 人 · 5 日核心行程 · <strong>大理起、大理止</strong>的滇西北环线：D0 从重庆自驾进云南（<strong>项目自有车辆，烧天然气，不产生租车与油费</strong>），<strong>到大理后 D1 才租车</strong>；D1–D5 走完大理 → 丽江 → 香格里拉 → 梅里雪山，D5 看完日照金山原路回大理还车，D6 用自有车返重庆。</div>
 
 <h2 id="tour-overview">先看懂整条路线</h2>
@@ -96,25 +96,25 @@ window.DOCS = [
 </table>
 <div class="gal" data-n="4">
     <figure>
-      <img src="assets/travel/dianxibei/dali-erhai.jpg" alt="海西线" loading="lazy">
+      <img src="assets/travel/dianxibei/dali-erhai.jpg?v=20260920b" alt="海西线" loading="lazy">
       <figcaption><b>海西线</b>洱海与苍山的开阔视野
         <span class="cr">Brücke-Osteuropa · Public domain · <a href="https://commons.wikimedia.org/wiki/File:Erhai_Lake_Dali_06.JPG" target="_blank" rel="noopener">Commons</a></span>
       </figcaption>
     </figure>
     <figure>
-      <img src="assets/travel/dianxibei/dali-oldtown.jpg" alt="大理古城" loading="lazy">
+      <img src="assets/travel/dianxibei/dali-oldtown.jpg?v=20260920b" alt="大理古城" loading="lazy">
       <figcaption><b>大理古城</b>古城街巷与白族建筑
         <span class="cr">Brücke-Osteuropa · Public domain · <a href="https://commons.wikimedia.org/wiki/File:Dali_Old_Town_05.JPG" target="_blank" rel="noopener">Commons</a></span>
       </figcaption>
     </figure>
     <figure>
-      <img src="assets/travel/dianxibei/dali-sbend.jpg" alt="洱海西岸" loading="lazy">
+      <img src="assets/travel/dianxibei/dali-sbend.jpg?v=20260920b" alt="洱海西岸" loading="lazy">
       <figcaption><b>洱海西岸</b>湖畔湿地与远处山影
         <span class="cr">ShuQizhe · <a href="https://creativecommons.org/licenses/by-sa/4.0" target="_blank" rel="noopener">CC BY-SA 4.0</a> · <a href="https://commons.wikimedia.org/wiki/File:Erhai_20260220-2.jpg" target="_blank" rel="noopener">Commons</a></span>
       </figcaption>
     </figure>
     <figure>
-      <img src="assets/travel/dianxibei/dali-xizhou.jpg" alt="喜洲" loading="lazy">
+      <img src="assets/travel/dianxibei/dali-xizhou.jpg?v=20260920b" alt="喜洲" loading="lazy">
       <figcaption><b>喜洲</b>白族民居与村口稻田
         <span class="cr">Brücke-Osteuropa · Public domain · <a href="https://commons.wikimedia.org/wiki/File:Xizhou_01.JPG" target="_blank" rel="noopener">Commons</a></span>
       </figcaption>
@@ -145,25 +145,25 @@ window.DOCS = [
 </table>
 <div class="gal" data-n="4">
     <figure>
-      <img src="assets/travel/dianxibei/lijiang-heilong.jpg" alt="黑龙潭" loading="lazy">
+      <img src="assets/travel/dianxibei/lijiang-heilong.jpg?v=20260920b" alt="黑龙潭" loading="lazy">
       <figcaption><b>黑龙潭</b>水面、古建与雪山远景
         <span class="cr">CEphoto, Uwe Aranas · <a href="https://creativecommons.org/licenses/by-sa/3.0" target="_blank" rel="noopener">CC BY-SA 3.0</a> · <a href="https://commons.wikimedia.org/wiki/File:Lijiang_Yunnan_Black-Dragon-Pool-01.jpg" target="_blank" rel="noopener">Commons</a></span>
       </figcaption>
     </figure>
     <figure>
-      <img src="assets/travel/dianxibei/lijiang-oldtown.jpg" alt="丽江古城" loading="lazy">
+      <img src="assets/travel/dianxibei/lijiang-oldtown.jpg?v=20260920b" alt="丽江古城" loading="lazy">
       <figcaption><b>丽江古城</b>四方街与古城街巷
         <span class="cr">ChiralJon · <a href="https://creativecommons.org/licenses/by/2.0" target="_blank" rel="noopener">CC BY 2.0</a> · <a href="https://commons.wikimedia.org/wiki/File:Lijiang_Old_Town.jpg" target="_blank" rel="noopener">Commons</a></span>
       </figcaption>
     </figure>
     <figure>
-      <img src="assets/travel/dianxibei/lijiang-mufu.jpg" alt="木府" loading="lazy">
+      <img src="assets/travel/dianxibei/lijiang-mufu.jpg?v=20260920b" alt="木府" loading="lazy">
       <figcaption><b>木府</b>明代木氏土司府邸正门
         <span class="cr">BrokenSphere · <a href="https://creativecommons.org/licenses/by-sa/3.0" target="_blank" rel="noopener">CC BY-SA 3.0</a> · <a href="https://commons.wikimedia.org/wiki/File:Mu_Mansion_entrance.JPG" target="_blank" rel="noopener">Commons</a></span>
       </figcaption>
     </figure>
     <figure>
-      <img src="assets/travel/dianxibei/lijiang-shuhe.jpg" alt="束河" loading="lazy">
+      <img src="assets/travel/dianxibei/lijiang-shuhe.jpg?v=20260920b" alt="束河" loading="lazy">
       <figcaption><b>束河</b>傍晚更适合慢逛
         <span class="cr">Gisling · <a href="https://creativecommons.org/licenses/by/3.0" target="_blank" rel="noopener">CC BY 3.0</a> · <a href="https://commons.wikimedia.org/wiki/File:%E4%B8%BD%E6%B1%9F%E6%9D%9F%E6%B2%B3%E5%8F%A4%E9%95%87.JPG" target="_blank" rel="noopener">Commons</a></span>
       </figcaption>
@@ -195,19 +195,19 @@ window.DOCS = [
 </table>
 <div class="gal" data-n="3">
     <figure>
-      <img src="assets/travel/dianxibei/tiger-gorge.jpg" alt="虎跳峡" loading="lazy">
+      <img src="assets/travel/dianxibei/tiger-gorge.jpg?v=20260920b" alt="虎跳峡" loading="lazy">
       <figcaption><b>虎跳峡</b>峡谷与金沙江
         <span class="cr">CEphoto, Uwe Aranas · <a href="https://creativecommons.org/licenses/by-sa/3.0" target="_blank" rel="noopener">CC BY-SA 3.0</a> · <a href="https://commons.wikimedia.org/wiki/File:Yunnan_China_Tiger-Leaping-Gorge-07.jpg" target="_blank" rel="noopener">Commons</a></span>
       </figcaption>
     </figure>
     <figure>
-      <img src="assets/travel/dianxibei/shangri-napa.jpg" alt="纳帕海" loading="lazy">
+      <img src="assets/travel/dianxibei/shangri-napa.jpg?v=20260920b" alt="纳帕海" loading="lazy">
       <figcaption><b>纳帕海</b>草原、湿地与高原天空
         <span class="cr">Zhongguotravel · <a href="https://creativecommons.org/licenses/by-sa/3.0" target="_blank" rel="noopener">CC BY-SA 3.0</a> · <a href="https://commons.wikimedia.org/wiki/File:Napa_Lake.jpg" target="_blank" rel="noopener">Commons</a></span>
       </figcaption>
     </figure>
     <figure>
-      <img src="assets/travel/dianxibei/shangri-songzanlin.jpg" alt="松赞林寺" loading="lazy">
+      <img src="assets/travel/dianxibei/shangri-songzanlin.jpg?v=20260920b" alt="松赞林寺" loading="lazy">
       <figcaption><b>松赞林寺</b>云南最大藏传佛寺，「小布达拉宫」
         <span class="cr">BrokenSphere · <a href="https://creativecommons.org/licenses/by-sa/3.0" target="_blank" rel="noopener">CC BY-SA 3.0</a> · <a href="https://commons.wikimedia.org/wiki/File:Songzanlin_Monastery_front.JPG" target="_blank" rel="noopener">Commons</a></span>
       </figcaption>
@@ -241,19 +241,19 @@ window.DOCS = [
 </table>
 <div class="gal" data-n="3">
     <figure>
-      <img src="assets/travel/dianxibei/deqin-bend.jpg" alt="金沙江大湾" loading="lazy">
+      <img src="assets/travel/dianxibei/deqin-bend.jpg?v=20260920b" alt="金沙江大湾" loading="lazy">
       <figcaption><b>金沙江大湾</b>月亮湾与公路观景位
         <span class="cr">Smwy09 · <a href="https://creativecommons.org/licenses/by-sa/3.0" target="_blank" rel="noopener">CC BY-SA 3.0</a> · <a href="https://commons.wikimedia.org/wiki/File:%E4%BA%91%E5%8D%97%EF%BC%8C%E6%9C%88%E4%BA%AE%E6%B9%BE.jpg" target="_blank" rel="noopener">Commons</a></span>
       </figcaption>
     </figure>
     <figure>
-      <img src="assets/travel/dianxibei/meili-panorama.jpg" alt="梅里雪山" loading="lazy">
+      <img src="assets/travel/dianxibei/meili-panorama.jpg?v=20260920b" alt="梅里雪山" loading="lazy">
       <figcaption><b>梅里雪山</b>飞来寺观景台方向的全景
         <span class="cr">Kevin Poh · <a href="https://creativecommons.org/licenses/by/2.0" target="_blank" rel="noopener">CC BY 2.0</a> · <a href="https://commons.wikimedia.org/wiki/File:Meili_Snow_Mountain,_Deqin_County,_Yunnan.jpg" target="_blank" rel="noopener">Commons</a></span>
       </figcaption>
     </figure>
     <figure>
-      <img src="assets/travel/dianxibei/shangri-pudacuo.jpg" alt="普达措" loading="lazy">
+      <img src="assets/travel/dianxibei/shangri-pudacuo.jpg?v=20260920b" alt="普达措" loading="lazy">
       <figcaption><b>普达措</b>弥里塘牧场；10 月正是层林尽染、草甸金黄的时候
         <span class="cr">Colin W · <a href="https://creativecommons.org/licenses/by-sa/3.0" target="_blank" rel="noopener">CC BY-SA 3.0</a> · <a href="https://commons.wikimedia.org/wiki/File:Militang_Pasture,_Potatso_(Pudacuo)_National_Park,_Diqing_-_panoramio.jpg" target="_blank" rel="noopener">Commons</a></span>
       </figcaption>
@@ -286,7 +286,7 @@ window.DOCS = [
 </table>
 <div class="gal" data-n="1">
     <figure>
-      <img src="assets/travel/dianxibei/meili-kawagebo.jpg" alt="卡瓦格博峰" loading="lazy">
+      <img src="assets/travel/dianxibei/meili-kawagebo.jpg?v=20260920b" alt="卡瓦格博峰" loading="lazy">
       <figcaption><b>卡瓦格博峰</b>梅里主峰；日照金山要看天气，不是保证项目
         <span class="cr">瑞丽江的河水 · <a href="https://creativecommons.org/licenses/by-sa/4.0" target="_blank" rel="noopener">CC BY-SA 4.0</a> · <a href="https://commons.wikimedia.org/wiki/File:%E5%8D%A1%E7%93%A6%E6%A0%BC%E5%8D%9A%E5%B3%B0_-_2025-05-10_IMG_3511.jpg" target="_blank" rel="noopener">Commons</a></span>
       </figcaption>
