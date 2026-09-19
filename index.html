@@ -351,9 +351,19 @@ img{display:block}
 .genter .genter-in{position:relative;display:block;padding:12px 40px;border-radius:var(--r-action);
   background:#05070a;color:#fff;font-size:15.5px;font-weight:600;letter-spacing:.06em;
   transition:background .22s ease,color .22s ease}
-.genter:hover .genter-in,.genter:focus-visible .genter-in{background:transparent;color:var(--on-accent)}
+/* ⚠️ 「亮起来」**只认 `:hover`，不认 `:focus-visible`** —— 这是一处踩过坑的改写，别合回去：
+   解锁后 `app.js` 会把焦点移给这个按钮（`en.focus()`，键盘焦点管理必需），而 Chromium 对
+   "**键盘交互之后的程序化 focus**"判定 `:focus-visible` **成立** → 按钮一露面就已经是亮的
+   渐变态，用户把鼠标移上去当然"没有变化"（2026-09-20 用户原话）。
+   上游源码本来也只有 `hover:bg-transparent`，这里对齐上游。
+   键盘可达性不靠亮态、靠下面那条 `outline` 焦点环（与全站 `:focus-visible` 约定一致）。 */
+.genter:hover .genter-in{background:transparent;color:var(--on-accent)}
 .genter:hover::after{opacity:1}
 .genter:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
+/* 但「解锁那一下」的焦点是 JS 替用户抢的（`.focus()`），不是用户自己 Tab 过来的 ——
+   焦点环在这一下**不露**，否则按钮一露面就是"渐变环 ＋ 红焦点环"的双环，像出了 bug。
+   `genter-quiet` 由 `setGateUnlocked(true)` 加上，用户一按键盘（keydown）就摘掉。 */
+.genter.genter-quiet:focus-visible{outline:none}
 /* "线变按钮"：从一条压扁的线（scaleY .08）在位移 + 模糊中长成按钮 */
 #tourGate.unlocked .genter{animation:gentIn .52s cubic-bezier(.2,1.02,.3,1) backwards}
 @keyframes gentIn{
@@ -1725,6 +1735,6 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 </div>
 
 <script src="docs.js?v=20260920b"></script>
-<script src="app.js?v=20260920b"></script>
+<script src="app.js?v=20260920c"></script>
 </body>
 </html>

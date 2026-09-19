@@ -855,6 +855,22 @@ function setGateUnlocked(on) {
     else { g.classList.remove("ok"); }
   }
   if (en) en.hidden = !on;
+  // ⚠️ 2026-09-20 补：解锁那一下我们会把焦点**替用户抢**给这个按钮（下面的 en.focus()），
+  //    Chromium 会因为"上一步是键盘操作（回车提交）"把 `:focus-visible` 判成**成立** ——
+  //    后果一：按钮一露面就带上 4px 红焦点环，和按钮自带的渐变环叠成"双环"；
+  //    后果二（用户实际报的）：连亮态判定也被带偏，鼠标移上去"没有变化"。
+  //    亮态已改成只认 `:hover`；焦点环则用 `genter-quiet` 压掉，**用户自己按键盘就摘掉**，
+  //    所以键盘用户 Tab 回来时焦点环照常出现（可达性没丢）。
+  if (en) {
+    if (on) {
+      en.classList.add("genter-quiet");
+      var dropQuiet = function () { en.classList.remove("genter-quiet"); };
+      document.addEventListener("keydown", dropQuiet, { once: true });
+      en.addEventListener("pointerdown", dropQuiet, { once: true });
+    } else {
+      en.classList.remove("genter-quiet");
+    }
+  }
 }
 
 // 点「进入旅游攻略」才真正进场（密码只负责解锁，不再一步跳走）
