@@ -225,19 +225,38 @@ img{display:block}
    与主站深色科技风、旅游攻略全屏层刻意拉开差距（用户要求换风格，借鉴网上学术站）。
    ⚠️ 本屏**固定浅底深字**（硬编码纸色/墨色），不随站内明暗主题走 —— 是栏目级独立视觉，
    与游戏资源独立页用青绿/靛紫同理；主站朱红科技风不受影响。 */
-.kn-home{position:absolute;inset:60px 0 0;overflow-y:auto;z-index:320;
+.kn-home{position:absolute;inset:0;overflow-y:auto;z-index:320;
   padding:0;color:#2b2a26;
-  /* 纸：暖象牙底 + 极淡横纹 + 书页边缘柔光，读作"翻开的讲义/羊皮纸" */
+  /* 纸 + 学院简绘背景：最底一张"图书馆线描淡彩"（书架/拱窗/地球仪/羽毛笔），
+     上面盖一层暖纸色 + 顶部淡金光晕 —— 图"压进纸里"只留质感，不抢内容。 */
   background:
     radial-gradient(ellipse 120% 70% at 50% -10%,rgba(176,138,62,.10),transparent 55%),
-    linear-gradient(180deg,#fbf7ee 0%,#f5efe1 100%)}
+    linear-gradient(180deg,rgba(251,247,238,.78) 0%,rgba(246,241,229,.88) 100%),
+    url("assets/knowledge-bg.jpg?v=20260920a") center top/cover no-repeat,#fbf7ee}
 .kn-home[hidden]{display:none}
 .kn-home::-webkit-scrollbar{width:10px}
 .kn-home::-webkit-scrollbar-thumb{background:rgba(47,93,80,.28);border-radius:8px}
 .kn-home::-webkit-scrollbar-track{background:rgba(47,93,80,.06)}
 
-/* 顶栏已由 .stagewall .ttop 承载（品牌 KB-DB / 返回站点），本屏内容从下方纸面开始 */
-.kn-inner{max-width:980px;margin:0 auto;padding:40px 40px 72px}
+/* 内容容器：顶部留出顶栏高度（门户铺满整屏后，顶栏浮在纸面上） */
+.kn-inner{max-width:980px;margin:0 auto;padding:84px 40px 72px}
+
+/* ---- 门户状态下的顶栏：改成学院风浅色（否则深色顶栏压在纸上就是一条突兀的黑横条）----
+   ⚠️ 只覆盖 `#knowledgeStage.kn-home-on`，**不动共享的 `.stagewall .ttop`**（旅游攻略仍用深色顶栏）。
+   class 由 knowledge.js 切换：进门户加、进沉浸阅读去掉。
+   ⚠️ z-index 必须提到 340（> 门户的 320）：门户已铺满整屏，若顶栏还在其下，
+   「返回站点」会被门户正文层截走点击（2026-09-20 冒烟抓到 —— 截图看着正常，点不动）。 */
+#knowledgeStage.kn-home-on .ttop{z-index:340}
+#knowledgeStage.kn-home-on .ttop::after{
+  background:linear-gradient(90deg,transparent,rgba(47,93,80,.22),transparent)}
+#knowledgeStage.kn-home-on .ttop .brand{color:#2b2a26}
+#knowledgeStage.kn-home-on .ttop .brand i{color:#8a6d2b}
+#knowledgeStage.kn-home-on .ttop .brand b{color:#2f5d50}
+#knowledgeStage.kn-home-on .ttop .stats{color:#8a8371}
+#knowledgeStage.kn-home-on .ttop .stats b{color:#2f5d50}
+#knowledgeStage.kn-home-on .ttop .texit{color:#2f5d50;background:rgba(47,93,80,.06);
+  border-color:rgba(47,93,80,.28);clip-path:none}
+#knowledgeStage.kn-home-on .ttop .texit:hover{color:#fff;background:#2f5d50;border-color:#2f5d50}
 
 /* ---- Banner：一张"藏书票"式的抬头 ---- */
 .pt-banner{position:relative;overflow:hidden;display:grid;
@@ -286,7 +305,7 @@ img{display:block}
 
 /* ---- 导航卡：一张"目录页/索引卡" ---- */
 .pt-heading{margin:44px 0 4px;font-family:var(--serif);font-size:22px;font-weight:700;
-  letter-spacing:.03em;color:#2b2a26}
+  letter-spacing:.03em;color:#2b2a26;text-shadow:0 1px 0 rgba(251,247,238,.95),0 0 14px rgba(251,247,238,.9)}
 .pt-card{background:#fffdf6;border:1px solid rgba(47,93,80,.16);
   box-shadow:0 12px 30px rgba(47,93,80,.07);padding:30px 32px}
 .pt-card-eyebrow{font-family:"Georgia","Times New Roman",var(--serif);font-style:italic;
@@ -316,13 +335,13 @@ img{display:block}
 .pt-item[data-doc]:not([data-doc="0"]) .pt-tx b{color:#8a8371;font-weight:600}
 
 @media (max-width:900px){
-  .kn-inner{padding:26px 20px 56px}
+  .kn-inner{padding:80px 20px 56px}
   .pt-banner{grid-template-columns:1fr;gap:20px;padding:32px 28px}
   .pt-art{left:auto;right:-46px;top:-46px;transform:none;width:150px;height:150px;opacity:.3}
   .pt-clock{align-items:flex-start;text-align:left}
 }
 @media (max-width:600px){
-  .kn-inner{padding:20px 14px 48px}
+  .kn-inner{padding:76px 14px 48px}
   .pt-banner{padding:26px 20px}
   .pt-card{padding:22px 18px}
   .pt-item{padding:14px 12px;gap:13px}
@@ -1997,6 +2016,6 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 
 <script src="docs.js?v=20260920b"></script>
 <script src="app.js?v=20260920f"></script>
-<script src="knowledge.js?v=20260920a"></script>
+<script src="knowledge.js?v=20260920b"></script>
 </body>
 </html>

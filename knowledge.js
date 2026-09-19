@@ -207,6 +207,7 @@ function openKnowledgeStage() {
   var st = document.getElementById("knowledgeStage");
   if (!st) return;
   st.hidden = false;
+  st.classList.add("kn-home-on");      // 顶栏切学院风浅色（门户是纸底，深色顶栏会像黑横条）
   document.body.style.overflow = "hidden";
   var kd = document.getElementById("knowledgeDetail");
   if (kd) kd.style.display = "none";
@@ -215,10 +216,10 @@ function openKnowledgeStage() {
   var dl = document.getElementById("docList");
   if (dl) dl.style.display = "none";
   // 顶栏统计：显示知识文档库的文档数
-  var st = document.getElementById("knStats");
-  if (st) {
+  var stat = document.getElementById("knStats");
+  if (stat) {
     var n = knowledgeDocs().length;
-    st.innerHTML =
+    stat.innerHTML =
       "<span>ENTRIES <b>" + String(n).padStart(3, "0") + "</b></span>" +
       "<span>BASE <b>KB</b></span>";
   }
@@ -227,7 +228,7 @@ function openKnowledgeStage() {
 
 function closeKnowledgeStage() {
   var st = document.getElementById("knowledgeStage");
-  if (st) st.hidden = true;
+  if (st) { st.hidden = true; st.classList.remove("kn-home-on"); }
   document.body.style.overflow = "";
   knPortalClock(false);
 }
@@ -238,6 +239,8 @@ function knBackToHome() {
   if (kd) kd.style.display = "none";
   var kh = document.getElementById("knowledgeHome");
   if (kh) kh.hidden = false;
+  var st = document.getElementById("knowledgeStage");
+  if (st) st.classList.add("kn-home-on");   // 顶栏回学院风浅色
   knPortalClock(true);
 }
 
@@ -252,6 +255,8 @@ function knowledgeDocs() {
 function openKnowledge(d) {
   var kh = document.getElementById("knowledgeHome");
   if (kh) kh.hidden = true;
+  var st = document.getElementById("knowledgeStage");
+  if (st) st.classList.remove("kn-home-on");   // 阅读页是深底，顶栏切回深色
   knPortalClock(false);
   var kd = document.getElementById("knowledgeDetail");
   kd.style.display = "";
