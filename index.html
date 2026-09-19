@@ -323,26 +323,135 @@ img{display:block}
 #knowledgeGate .gframe i:nth-child(3){left:-11px;bottom:-11px}
 #knowledgeGate .gframe i:nth-child(4){right:-11px;bottom:-11px}
 
-/* ③ 徽记：墨绿外环 + 内圈鎏金柔光 + 「摊开的书」墨线符号（门户那枚纹章的呼应） */
-#knowledgeGate .gcrest{position:relative;width:64px;height:64px;margin-bottom:20px;
-  display:flex;align-items:center;justify-content:center;color:#2f5d50;
-  filter:drop-shadow(0 4px 12px rgba(47,93,80,.18))}
+/* ===== 中央「一封信」（2026-09-20 用户提案）=====
+   叙事：信封打开 → 信抽出（密码展在信上）→ 输对后信收回、封口合上 → 盖邮戳 → 出现「拆阅」按钮。
+   ⚠️ 层级是这套东西的命门（改之前先读这段）：
+       闭合态：front 3 ／ flap 4 ／ 信纸 1 ／ 邮戳 8   —— 信纸被**前片整块盖住**（信封前面本来就是整片）
+       抽出态(.open)：信纸 5 ／ front 6 ／ flap 4      —— 信纸要"压在翻起的封口之上"（物理上也如此），
+                                                         但仍在**前片之下**，这样留在信封里的那段才藏得住
+       合上态(.unlocked)：回到 3/4/1（规则必须写在 .open 之后才压得住，同优先级看先后）
+   时序全部用 transition-delay 串起来，不写 JS 定时器。 */
+/* ⚠️ 宽度必须**显式**给，不能写 `min(520px,100%)` —— `.gstage` 是 .tpanel 的 flex 项、
+   宽度由内容撑（shrink-to-fit），百分比在里面会退化成 auto，结果整封信塌成 300px 一条。
+   这里直接按视口算，并留出 gstage 的 20px 内边距 ×2。
+   ⚠️ 抽信是 `transform` 做的，**transform 不占布局**：所以 `.mail` 的 padding-top 必须把
+   「信封高 + 抽出距离」都算进去，否则整组内容会按"没有信"的高度居中，
+   信一抽出来就顶到视口上沿（第一版就是这样，信纸贴到画面顶部）。
+   所以先把抽出量抽成 `--openY`，让 padding-top、.open、抖动关键帧共用同一个值。 */
+#knowledgeGate .mail{--envH:clamp(212px,33vh,320px);--cardH:clamp(200px,26vh,232px);
+  --openY:calc((var(--cardH) - var(--envH)) / 2 - var(--cardH) * .96);
+  position:relative;width:min(520px,calc(92vw - 40px));margin:0 auto;
+  padding-top:calc(var(--envH) + var(--cardH) * .96)}
+#knowledgeGate .mail-env{position:absolute;left:0;right:0;bottom:0;height:var(--envH);
+  z-index:3;perspective:1000px}
+#knowledgeGate .env-back{position:absolute;inset:0;border-radius:3px;
+  background:linear-gradient(160deg,#ece1c9,#dfd2b4);
+  box-shadow:inset 0 0 44px rgba(120,104,74,.22)}
+/* 信封前片：整块纸（信纸闭合时被它完全遮住）＋ 右下角的三道"地址线" */
+#knowledgeGate .env-front{position:absolute;inset:0;z-index:3;border-radius:3px;
+  background:linear-gradient(158deg,#fdfaf1 0%,#f4ecdc 100%);
+  border:1px solid rgba(176,138,62,.42);
+  box-shadow:0 1px 0 rgba(255,255,255,.7) inset,0 14px 30px rgba(47,93,80,.13)}
+#knowledgeGate .env-front::before{content:"";position:absolute;right:24px;bottom:28px;
+  width:44%;max-width:190px;height:26px;
+  background:repeating-linear-gradient(180deg,rgba(110,104,90,.42) 0 1px,transparent 1px 12px);
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 26%,#000 100%);
+  mask-image:linear-gradient(90deg,transparent,#000 26%,#000 100%)}
+/* 封口（上三角）：闭合时压在信纸上，开门时绕上边翻起 */
+#knowledgeGate .env-flap{position:absolute;left:0;right:0;top:0;height:52%;z-index:4;
+  transform-origin:top center;transform:rotateX(0deg);
+  background:linear-gradient(180deg,#f8f2e5,#e8ddc4);
+  border:1px solid rgba(176,138,62,.34);border-top:0;
+  -webkit-clip-path:polygon(0 0,100% 0,50% 100%);clip-path:polygon(0 0,100% 0,50% 100%);
+  transition:transform .68s cubic-bezier(.22,.9,.24,1) .26s,z-index 0s .6s}
+/* 信纸：密码表单在这一层。
+   ⚠️ 宽度**必须窄于信封**（84%）—— 否则抽出来时会把翻起的封口整片盖住，
+     看着就只是"一个盒子上面放了张纸"，读不出"信是从信封里抽出来的"。 */
+#knowledgeGate .mail-card{position:absolute;left:10%;right:10%;
+  bottom:calc((var(--envH) - var(--cardH)) / 2);
+  height:var(--cardH);z-index:1;overflow:hidden;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:12px 16px;border-radius:2px;
+  background:linear-gradient(170deg,#fffdf7,#f8f1e2);
+  border:1px solid rgba(176,138,62,.3);
+  box-shadow:0 10px 26px rgba(47,93,80,.16);
+  transform:translateY(0);
+  transition:transform .92s cubic-bezier(.2,.9,.2,1) .46s,z-index 0s .6s}
+/* 徽记 / 题词 / 落款：都镶在信封前片的下缘（避开封口的三角区） */
+#knowledgeGate .env-front .gcrest{position:absolute;left:22px;bottom:22px;
+  width:56px;height:56px;display:flex;align-items:center;justify-content:center;color:#2f5d50}
 #knowledgeGate .gcrest::before{content:"";position:absolute;inset:0;border-radius:50%;
-  border:1.5px solid rgba(47,93,80,.55)}
-#knowledgeGate .gcrest::after{content:"";position:absolute;inset:7px;border-radius:50%;
-  background:radial-gradient(circle at 50% 36%,rgba(176,138,62,.34),rgba(176,138,62,.06) 72%,transparent)}
-#knowledgeGate .gcrest svg{position:relative;z-index:1;width:27px;height:27px}
-
-/* ④ 拉丁题词（学院味最省地方的一笔）＋ 下缘落款线 */
-#knowledgeGate .glatin{margin-top:14px;font-family:var(--serif);
-  font-size:clamp(9.5px,1.05vw,11px);letter-spacing:.36em;text-indent:.36em;
-  color:rgba(138,109,43,.8);text-transform:uppercase}
-#knowledgeGate .gseal{display:flex;align-items:center;justify-content:center;
-  margin-top:24px;width:min(320px,66vw)}
+  border:1.5px solid rgba(47,93,80,.5)}
+#knowledgeGate .gcrest::after{content:"";position:absolute;inset:6px;border-radius:50%;
+  background:radial-gradient(circle at 50% 36%,rgba(176,138,62,.32),rgba(176,138,62,.05) 72%,transparent)}
+#knowledgeGate .gcrest svg{position:relative;z-index:1;width:24px;height:24px}
+#knowledgeGate .glatin{position:absolute;left:22px;bottom:6px;margin:0;font-family:var(--serif);
+  font-size:10px;letter-spacing:.3em;color:rgba(138,109,43,.72);text-transform:uppercase}
+#knowledgeGate .gseal{margin-top:22px;width:min(300px,62vw);
+  display:flex;align-items:center;justify-content:center}
 #knowledgeGate .gseal::before,#knowledgeGate .gseal::after{content:"";flex:1;height:1px;
   background:linear-gradient(90deg,transparent,rgba(176,138,62,.5),transparent)}
-#knowledgeGate .gseal span{padding:0 12px;font-size:10px;letter-spacing:.32em;
-  text-indent:.32em;color:rgba(110,104,90,.7);text-transform:uppercase}
+#knowledgeGate .gseal span{padding:0 12px;font-size:10px;letter-spacing:.32em;text-indent:.32em;
+  color:rgba(110,104,90,.7);text-transform:uppercase}
+
+/* 邮戳：解锁后"咚"地盖上去（双圆环 + 环形文字 + 书卷纹章） */
+#knowledgeGate .postmark{position:absolute;right:18px;top:16px;width:102px;height:102px;z-index:8;
+  color:#2f5d50;opacity:0;pointer-events:none;transform-origin:center;
+  transform:rotate(-13deg) scale(1.8);
+  transition:opacity .26s ease-out 1.16s,transform .34s cubic-bezier(.2,1.5,.4,1) 1.16s}
+#knowledgeGate .postmark svg{width:100%;height:100%;display:block;opacity:.8}
+
+/* 抽出态：封口翻起 + 信纸升起（并把前片提到信纸之上，留在信封里的那段才藏得住） */
+#knowledgeGate.open .env-flap{transform:rotateX(-177deg);z-index:0}
+#knowledgeGate.open .mail-card{transform:translateY(var(--openY));z-index:5}
+#knowledgeGate.open .env-front{z-index:6}
+
+/* 合上态：信收回 → 封口合上 → 邮戳落下 → 按钮出现（延迟依次是 0 / .58 / 1.16 / 1.46s） */
+#knowledgeGate.unlocked .mail-card{transform:translateY(0);z-index:1;
+  transition:transform .62s cubic-bezier(.5,0,.6,1) 0s,z-index 0s .5s}
+#knowledgeGate.unlocked .env-front{z-index:3}
+#knowledgeGate.unlocked .env-flap{transform:rotateX(0deg);z-index:4;
+  transition:transform .6s cubic-bezier(.3,.7,.3,1) .58s,z-index 0s .58s}
+#knowledgeGate.unlocked .mail-env{animation:knThud .5s cubic-bezier(.3,1.35,.5,1) 1.14s both}
+@keyframes knThud{0%{transform:translateY(0)}32%{transform:translateY(3px)}100%{transform:translateY(0)}}
+/* 邮戳落下：从放大 1.8 倍"盖"到原大，与 knThud 的抖动同时（1.14s）——像真的"咚"一下 */
+#knowledgeGate.unlocked .postmark{opacity:1;transform:rotate(-13deg) scale(1)}
+/* 解锁后不再"把输入行收拢成一条线"（那是旅游攻略门的手法）——这里由信纸收回承担 */
+#knowledgeGate.unlocked .gfield{opacity:1;transform:none;filter:none;pointer-events:none}
+#knowledgeGate.unlocked .gok{opacity:1;pointer-events:none}
+/* 输错：抖的是整封信，不是单独一行输入。
+   ⚠️ 不能直接套共享的 gshake —— 它的关键帧只写了 translateX，会把信纸的
+      `translateY(-0.88envH)` 抹掉，结果是信纸"掉回信封里再抖"。这里必须把
+      位移写进每一帧。 */
+#knowledgeGate.wrong .gfield{animation:none}
+#knowledgeGate.wrong .mail-card{animation:knShake .44s cubic-bezier(.36,.07,.19,.97) both}
+@keyframes knShake{
+  0%,100%{transform:translateY(var(--openY))}
+  12%,88%{transform:translateY(var(--openY)) translateX(-2px)}
+  24%,76%{transform:translateY(var(--openY)) translateX(4px)}
+  36%,64%{transform:translateY(var(--openY)) translateX(-6px)}
+  46%,56%{transform:translateY(var(--openY)) translateX(6px)}
+}
+/* 按钮：等邮戳盖完再出现 */
+#knowledgeGate.unlocked .genter{animation:gentIn .5s cubic-bezier(.2,1.02,.3,1) 1.46s backwards}
+#knowledgeGate .genter{margin-top:24px}
+#knowledgeGate .gfield{width:min(320px,100%)}
+/* 信纸上的大字：信纸比原来的整屏窄，标题必须**不换行**（否则「密码」两字掉到第二行很难看），
+   字号也随之收一档 */
+#knowledgeGate .gtitle{white-space:nowrap;font-size:clamp(18px,2.6vw,27px)}
+/* 说明行也不换行：信纸窄，换行会把眉标挤到 overflow:hidden 之外（都被回归里的裁剪断言量过） */
+#knowledgeGate .gsub{white-space:nowrap;font-size:clamp(11px,1.4vw,14px)}
+#knowledgeGate .gstage{padding:4px 20px 2px}
+@media (max-height:640px){
+  #knowledgeGate .mail{--envH:clamp(160px,26vh,220px)}
+  #knowledgeGate .gseal{margin-top:12px}
+}
+@media (max-width:600px){
+  #knowledgeGate .postmark{width:84px;height:84px;right:12px;top:12px}
+  #knowledgeGate .env-front .gcrest{width:46px;height:46px;left:16px;bottom:20px}
+  #knowledgeGate .glatin{left:16px;font-size:9px;letter-spacing:.24em}
+  #knowledgeGate .env-front::before{right:16px;bottom:26px;width:40%}
+}
 @media (max-width:600px){
   #knowledgeGate .gcrest{width:54px;height:54px;margin-bottom:16px}
   #knowledgeGate .gseal{margin-top:20px}
@@ -2018,25 +2127,59 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
       <div class="gframe" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
       <div class="tscrim" aria-hidden="true"></div>
       <div class="gstage">
-        <div class="gcrest" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35"
-               stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.2c3-1 5.5-.4 8 1.4 2.5-1.8 5-2.4 8-1.4v10.4c-3-1-5.5-.4-8 1.4-2.5-1.8-5-2.4-8-1.4z"/><path d="M12 7.6v10.4"/></svg>
-        </div>
-        <div class="geyebrow">知识文档</div>
-        <h2 class="gtitle">请输入访问密码</h2>
-        <p class="gsub">本栏目受密码保护 · 该密码仅对本栏目有效</p>
-        <p class="glatin">Scientia · Sapientia · Veritas</p>
-        <div class="gsync">
-          <div class="gfield" id="knowledgeGateField">
-            <input type="password" id="knowledgeGatePwd" placeholder="密码" autocomplete="off"
-                   aria-label="知识文档栏目密码" enterkeyhint="go" spellcheck="false">
-            <button type="button" class="gok" id="knowledgeGateOk" aria-label="确认密码">&#8629;</button>
+        <!-- 中央＝「一封信」（2026-09-20 用户提案：信封打开 → 信抽出 → 密码展在信上 →
+             输对后信收回、封口合上、盖邮戳 → 出现「拆阅」按钮）。与画面里的送信猫头鹰同一条叙事。
+             ⚠️ 层级：.mail-env(3) 压住 .mail-card(1) 才能"藏在信封里"；
+                开门时 .mail-card 提到 5（信抽出来是**浮在翻开的封口之上**的，物理上也如此）；
+                合上时降到 1（信回到信封里）。z-index 的变化都带延时，避免跳变。
+         -->
+        <div class="mail" id="knMail">
+          <!-- 信纸：密码表单在这一层 -->
+          <div class="mail-card" id="knLetter">
+            <div class="geyebrow">知识文档</div>
+            <h2 class="gtitle">请输入访问密码</h2>
+            <p class="gsub">本栏目受密码保护 · 该密码仅对本栏目有效</p>
+            <div class="gsync">
+              <div class="gfield" id="knowledgeGateField">
+                <input type="password" id="knowledgeGatePwd" placeholder="密码" autocomplete="off"
+                       aria-label="知识文档栏目密码" enterkeyhint="go" spellcheck="false">
+                <button type="button" class="gok" id="knowledgeGateOk" aria-label="确认密码">&#8629;</button>
+              </div>
+            </div>
+            <div class="err" id="knowledgeGateErr" role="status" aria-live="polite"></div>
           </div>
-          <button type="button" class="genter" id="knowledgeGateEnter" hidden>
-            <span class="genter-in">进入知识文档</span>
-          </button>
+          <!-- 信封本体：内里 + 前片（含地址行与题词）+ 封口 + 邮戳 -->
+          <div class="mail-env" aria-hidden="true">
+            <div class="env-back"></div>
+            <div class="env-front">
+              <span class="gcrest">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35"
+                     stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.2c3-1 5.5-.4 8 1.4 2.5-1.8 5-2.4 8-1.4v10.4c-3-1-5.5-.4-8 1.4-2.5-1.8-5-2.4-8-1.4z"/><path d="M12 7.6v10.4"/></svg>
+              </span>
+              <span class="glatin">Scientia · Sapientia · Veritas</span>
+            </div>
+            <div class="env-flap"></div>
+            <!-- 邮戳：解锁后"咚"地盖上去（圆环 + 环形文字 + 书卷纹章） -->
+            <div class="postmark" id="knPostmark">
+              <svg viewBox="0 0 120 120" aria-hidden="true">
+                <defs><path id="knPmArc" d="M60,60 m-45,0 a45,45 0 1,1 90,0 a45,45 0 1,1 -90,0"/></defs>
+                <circle cx="60" cy="60" r="55" fill="none" stroke="currentColor" stroke-width="2.4"/>
+                <circle cx="60" cy="60" r="42" fill="none" stroke="currentColor" stroke-width="1.1"/>
+                <text font-size="12.5" letter-spacing="2.4" fill="currentColor" font-family="Georgia,serif">
+                  <textPath href="#knPmArc" startOffset="0">KNOWLEDGE &#183; ARCHIVE &#183; &#21494;&#12398;&#25991;&#24235; &#183; </textPath>
+                </text>
+                <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M40 52c7-2.6 13-1 19 3.4 6-4.4 12-6 19-3.4v25c-7-2.6-13-1-19 3.4-6-4.4-12-6-19-3.4z"/>
+                  <path d="M59 55.4v25"/>
+                </g>
+              </svg>
+            </div>
+          </div>
         </div>
-        <div class="err" id="knowledgeGateErr" role="status" aria-live="polite"></div>
+        <!-- 解锁后出现的按钮（在信封下方，像一枚拆信刀） -->
+        <button type="button" class="genter" id="knowledgeGateEnter" hidden>
+          <span class="genter-in">拆阅 · 进入知识文库</span>
+        </button>
         <div class="gseal" aria-hidden="true"><span>Ex Libris</span></div>
       </div>
     </div>

@@ -266,7 +266,7 @@ var knowledgeWave = (function () {
       x: dir > 0 ? -W * .14 : W * 1.14,
       y: H * (band[0] + Math.random() * (band[1] - band[0])),
       dir: dir,
-      s: Math.min(W, H) * (.06 + Math.random() * .025),
+      s: Math.min(W, H) * (.075 + Math.random() * .03),
       // ⚠️ 速度别太慢：0.00052W/帧 ≈ 45px/s，横穿要 40s —— 用户会觉得它"卡在边上"。
       //    现在约 100~150px/s，横穿 13~16s，正好是一只慢悠悠飞过的猫头鹰。
       v: (W * .00105 + Math.random() * W * .0004) * dir,
@@ -279,57 +279,95 @@ var knowledgeWave = (function () {
   function drawOwl(o) {
     var s = o.s, x = o.x, y = o.y + Math.sin(o.t * .0022 + o.ph) * s * .5;
     var flap = Math.sin(o.t * .0075 + o.ph);            // -1..1：翼尖上下扇
-    var cs = "36,80,68", a = .58, d = o.dir;
-    ctx.strokeStyle = "rgba(" + cs + "," + a + ")";
-    ctx.lineWidth = Math.max(1, s * .055);
+    var cs = "36,80,68", a = .6, d = o.dir;
+    function ink(al) { return "rgba(" + cs + "," + (a * al) + ")"; }
+    ctx.lineWidth = Math.max(1, s * .05);
     ctx.lineJoin = "round";
     ctx.lineCap = "round";
+    ctx.strokeStyle = ink(1);
+    ctx.fillStyle = ink(1);
+
     // 尾羽：从身体后下方拖出的三根短线
     ctx.beginPath();
     for (var tf = 0; tf < 3; tf++) {
-      var ty = y + s * (.52 + tf * .16);
-      ctx.moveTo(x - d * s * .18, ty);
-      ctx.lineTo(x - d * s * (1.15 - tf * .12), ty + s * (.3 - tf * .1));
+      var ty = y + s * (.5 + tf * .15);
+      ctx.moveTo(x - d * s * .14, ty);
+      ctx.lineTo(x - d * s * (1.05 - tf * .1), ty + s * (.26 - tf * .09));
     }
     ctx.stroke();
-    // ⚠️ 头要**大**（猫头鹰的头几乎与身体同宽，画小了就像别的动物）
-    var hx = x + d * s * .72, hy = y - s * .48, hr = s * .56;
-    ctx.beginPath(); ctx.arc(hx, hy, hr, 0, 6.2832); ctx.stroke();      // 头
-    ctx.beginPath(); ctx.arc(hx + d * hr * .1, hy + hr * .06, hr * .62, 0, 6.2832); ctx.stroke();  // 脸盘
-    // 耳簇（两撮）
-    ctx.beginPath();
-    ctx.moveTo(hx - hr * .74, hy - hr * .6); ctx.lineTo(hx - hr * .5, hy - hr * 1.42);
-    ctx.lineTo(hx - hr * .1, hy - hr * .94);
-    ctx.moveTo(hx + hr * .42, hy - hr * .78); ctx.lineTo(hx + hr * .6, hy - hr * 1.52);
-    ctx.lineTo(hx + hr * .92, hy - hr * .78);
-    ctx.stroke();
-    // 眼（两颗实心点）+ 喙（小三角）
-    ctx.fillStyle = "rgba(" + cs + "," + a + ")";
-    ctx.beginPath(); ctx.arc(hx - d * hr * .3, hy - hr * .04, hr * .17, 0, 6.2832); ctx.fill();
-    ctx.beginPath(); ctx.arc(hx + d * hr * .34, hy - hr * .1, hr * .17, 0, 6.2832); ctx.fill();
-    ctx.beginPath();
-    ctx.moveTo(hx + d * hr * .72, hy + hr * .12);
-    ctx.lineTo(hx + d * hr * 1.02, hy + hr * .3);
-    ctx.lineTo(hx + d * hr * .62, hy + hr * .42);
-    ctx.closePath(); ctx.fill();
-    // 身体（蛋形，头在身体前半侧）
-    ctx.beginPath();
-    ctx.ellipse(x, y + s * .12, s * .42, s * .62, d * .12, 0, 6.2832);
-    ctx.stroke();
-    // 双翼：**向后**扫出（原来画成左右对称，结果左翼被头挡住、看着像"飞猫"）。
-    // 近翼低一点、远翼高一点，翼尖随 flap 上下 → 就是"扇翅"。
-    var tip = flap * s * .5;
-    ctx.fillStyle = "rgba(" + cs + "," + (a * .26) + ")";
+
+    // 双翼：**向后**扫出（⚠️ 别画成左右对称——那样左翼被头挡住，整只会像"飞猫"）
+    var tip = flap * s * .48;
+    ctx.fillStyle = ink(.24);
     ctx.beginPath();                                     // 近翼
     ctx.moveTo(x + d * s * .3, y - s * .05);
-    ctx.quadraticCurveTo(x - d * s * .35, y - s * .55 + tip, x - d * s * 1.38, y - s * .56 + tip);
-    ctx.quadraticCurveTo(x - d * s * .72, y + s * .12, x - d * s * .02, y + s * .36);
+    ctx.quadraticCurveTo(x - d * s * .35, y - s * .6 + tip, x - d * s * 1.5, y - s * .62 + tip);
+    ctx.quadraticCurveTo(x - d * s * .78, y + s * .1, x - d * s * .02, y + s * .34);
     ctx.closePath(); ctx.fill(); ctx.stroke();
     ctx.beginPath();                                     // 远翼
-    ctx.moveTo(x + d * s * .3, y - s * .24);
-    ctx.quadraticCurveTo(x - d * s * .28, y - s * .86 + tip, x - d * s * 1.06, y - s * 1.0 + tip);
-    ctx.quadraticCurveTo(x - d * s * .58, y - s * .34, x + d * s * .02, y + s * .14);
+    ctx.moveTo(x + d * s * .3, y - s * .26);
+    ctx.quadraticCurveTo(x - d * s * .26, y - s * .95 + tip, x - d * s * 1.15, y - s * 1.1 + tip);
+    ctx.quadraticCurveTo(x - d * s * .6, y - s * .4, x + d * s * .02, y + s * .12);
     ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.strokeStyle = ink(.8);                           // 翼尖三根飞羽
+    ctx.beginPath();
+    for (var wf = 0; wf < 3; wf++) {
+      var fx = x - d * s * (.95 + wf * .16), fy = y - s * (.52 - wf * .05) + tip;
+      ctx.moveTo(fx, fy);
+      ctx.lineTo(fx - d * s * (.34 - wf * .06), fy - s * (.16 - wf * .05));
+    }
+    ctx.stroke();
+
+    // ⚠️ 头要**大**（猫头鹰的头几乎与身体同宽，画小了就像别的动物）
+    var hx = x + d * s * .78, hy = y - s * .44, hr = s * .54;
+    ctx.strokeStyle = ink(1);
+    ctx.beginPath(); ctx.arc(hx, hy, hr, 0, 6.2832); ctx.stroke();      // 头
+    ctx.beginPath(); ctx.arc(hx + d * hr * .1, hy + hr * .06, hr * .6, 0, 6.2832); ctx.stroke();  // 脸盘
+    ctx.beginPath();                                     // 双耳簇
+    ctx.moveTo(hx - hr * .74, hy - hr * .62); ctx.lineTo(hx - hr * .5, hy - hr * 1.42);
+    ctx.lineTo(hx - hr * .1, hy - hr * .94);
+    ctx.moveTo(hx + hr * .42, hy - hr * .8); ctx.lineTo(hx + hr * .6, hy - hr * 1.52);
+    ctx.lineTo(hx + hr * .92, hy - hr * .8);
+    ctx.stroke();
+    // 眼：外圈 + 实心瞳（"大眼"是猫头鹰最好认的一笔）
+    var ey = hy - hr * .06, e1 = hx - d * hr * .3, e2 = hx + d * hr * .34;
+    ctx.beginPath(); ctx.arc(e1, ey, hr * .22, 0, 6.2832); ctx.stroke();
+    ctx.beginPath(); ctx.arc(e2, ey, hr * .22, 0, 6.2832); ctx.stroke();
+    ctx.beginPath(); ctx.arc(e1, ey, hr * .1, 0, 6.2832); ctx.fill();
+    ctx.beginPath(); ctx.arc(e2, ey, hr * .1, 0, 6.2832); ctx.fill();
+    ctx.beginPath();                                     // 喙
+    ctx.moveTo(hx + d * hr * .62, hy + hr * .14);
+    ctx.lineTo(hx + d * hr * .98, hy + hr * .36);
+    ctx.lineTo(hx + d * hr * .56, hy + hr * .48);
+    ctx.closePath(); ctx.fill();
+
+    // 身体 + 胸前两道羽纹
+    var by = y + s * .12;
+    ctx.beginPath();
+    ctx.ellipse(x, by, s * .42, s * .62, d * .1, 0, 6.2832);
+    ctx.stroke();
+    ctx.strokeStyle = ink(.45);
+    ctx.beginPath();
+    ctx.moveTo(x - s * .16, by + s * .08); ctx.quadraticCurveTo(x, by + s * .28, x + s * .18, by + s * .08);
+    ctx.moveTo(x - s * .13, by + s * .28); ctx.quadraticCurveTo(x, by + s * .46, x + s * .15, by + s * .28);
+    ctx.stroke();
+
+    // ⭐ 爪下抓着一封小信 —— "送信猫头鹰"，与中央那封信是同一条叙事
+    var lx = x - d * s * .05, ly = y + s * .84, ew = s * .64, eh = s * .46;
+    ctx.strokeStyle = ink(.85);
+    ctx.lineWidth = Math.max(.8, s * .04);
+    ctx.beginPath();
+    ctx.moveTo(x - s * .17, y + s * .62); ctx.lineTo(lx - s * .1, ly - s * .02);
+    ctx.moveTo(x + s * .17, y + s * .62); ctx.lineTo(lx + s * .1, ly - s * .02);
+    ctx.stroke();
+    ctx.fillStyle = "rgba(252,247,236,.94)";
+    ctx.fillRect(lx - ew / 2, ly, ew, eh);
+    ctx.strokeStyle = ink(.85);
+    ctx.strokeRect(lx - ew / 2, ly, ew, eh);
+    ctx.beginPath();
+    ctx.moveTo(lx - ew / 2, ly); ctx.lineTo(lx, ly + eh * .58); ctx.lineTo(lx + ew / 2, ly);
+    ctx.stroke();
+    ctx.lineWidth = Math.max(1, s * .05);
   }
 
   // 飘浮蜡烛：烛身 + 会抖的火苗 + 一圈暖光（用缓存贴图做光晕，省一次 createRadialGradient）
@@ -690,13 +728,17 @@ function showKnowledgeGate() {
   var inp = document.getElementById("knowledgeGatePwd");
   if (inp) inp.value = "";
   setKnowledgeGateUnlocked(false);
-  g.classList.remove("enter", "leaving", "ok", "wrong");
+  // 每次开门都从"信封合着"起手：先清掉 open / 动画态，再强制回流后加 open，
+  // 否则 transition 不会从闭合态开始播（`.open` 会一次性把封口翻开 + 把信纸抽出来）。
+  g.classList.remove("enter", "leaving", "ok", "wrong", "open");
   g.hidden = false;
   void g.offsetWidth;
   g.classList.add("enter");
+  void g.offsetWidth;
+  g.classList.add("open");                 // 封口翻起 →（延时）信纸抽出
   document.body.style.overflow = "hidden";
   knowledgeWave.start();
-  setTimeout(function () { if (inp) inp.focus(); }, 980);
+  setTimeout(function () { if (inp) inp.focus(); }, 1480);   // 等信纸抽到位再落焦点
 }
 
 function tryKnowledgeUnlock() {
