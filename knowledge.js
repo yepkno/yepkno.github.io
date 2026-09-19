@@ -6,14 +6,22 @@
 // setDocWallUnlocked / makeSimplex3D / escapeHtml / getDocCover / cleanTags / buildToc /
 // isDocVisible / switchCategory。
 
-// ---------- 1. 波纹背景（独立实例，指向 #knowledgeGateWave）----------
-// 与 app.js 的 gateWave 同源（3D simplex 噪声 + 5 条蓝族横带），只换 canvas 目标。
+// ---------- 1. 门的背景动效：学院风「墨韵」（**不复用** app.js 的蓝族波纹）----------
+// 暖纸底 + 数团墨色（墨绿 / 鎏金 / 淡墨）在纸上缓慢晕开、漂移，读作宣纸上的淡墨；
+// 再撒一层极淡的纸颗粒（纤维感）。算法与配色都与旅游攻略的 gateWave 无关 —— 用户要求不照搬。
 var knowledgeWave = (function () {
   var cv = null, ctx = null, noise = null, raf = 0, running = false;
-  var W = 0, H = 0, nt = 0, ready = false, cssBlur = false;
+  var W = 0, H = 0, nt = 0, ready = false, grain = null;
+  var ripples = [], rippleTick = 0;     // 滴墨：落在纸上的墨点缓缓晕开、淡去
   var REDUCE = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
-  var COLORS = ["#2f7bff", "#5aa9ff", "#22d3ee", "#1d4ed8", "#0b2a6b"];
-  var BLUR = 10, LINE_W = 50, LINE_N = 5, OPACITY = 0.5, SPEED = 0.002, MAXW = 1440, FILL = "#040714";
+  var MAXW = 1440, FILL = "#f8f3e8";   // 与 #knowledgeGate 底色一致（canvas 铺底 + CSS 兜底）
+  // 墨团：c=基色 / a=峰值不透明度 / x,y=基准位置(比例) / r=半径系数 / s=漂移速度 / p=呼吸幅度
+  var INK = [
+    { c: [47, 93, 80], a: .20, x: .20, y: .28, r: .42, s: 1.0, p: .18 },   // 墨绿 · 左上
+    { c: [176, 138, 62], a: .18, x: .78, y: .36, r: .34, s: 1.25, p: .15 }, // 鎏金 · 右上
+    { c: [72, 82, 92], a: .13, x: .50, y: .74, r: .48, s: 0.8, p: .20 },    // 淡墨 · 下中
+    { c: [47, 93, 80], a: .13, x: .10, y: .80, r: .34, s: 1.45, p: .14 }    // 墨绿 · 左下
+  ];
 
   function setup() {
     if (ready) return true;
@@ -22,13 +30,11 @@ var knowledgeWave = (function () {
     ctx = cv.getContext("2d");
     if (!ctx) return false;
     noise = makeSimplex3D();
-    try { ctx.filter = "blur(2px)"; cssBlur = (ctx.filter !== "blur(2px)"); ctx.filter = "none"; }
-    catch (e) { cssBlur = true; }
-    if (cssBlur) cv.style.filter = "blur(" + BLUR + "px)";
     ready = true;
     window.addEventListener("resize", function () {
       if (!cv) return;
       size();
+      grain = null;                    // 尺寸变了 → 颗粒重新生成
       if (REDUCE) step();
     });
     return true;
@@ -43,21 +49,82 @@ var knowledgeWave = (function () {
     cv.style.height = vh + "px";
   }
 
+  // 纸颗粒：极淡的暖灰小点（一次生成、每帧重画），给纸一点纤维感；不是网格，避免"装饰性网格"味
+  function makeGrain() {
+    var n = Math.min(900, Math.round(W * H / 4200)), arr = [];
+    for (var i = 0; i < n; i++) {
+      arr.push([
+        Math.random() * W,
+        Math.random() * H,
+        Math.random() * .6 + .3,        // 边长（px）
+        Math.random() * .045 + .012     // 不透明度
+      ]);
+    }
+    return arr;
+  }
+
   function step() {
-    if (!cssBlur) ctx.filter = "none";
-    ctx.globalAlpha = OPACITY;
+    // 1) 铺纸底
+    ctx.clearRect(0, 0, W, H);
     ctx.fillStyle = FILL;
     ctx.fillRect(0, 0, W, H);
-    if (!cssBlur) ctx.filter = "blur(" + BLUR + "px)";
-    nt += SPEED;
-    for (var i = 0; i < LINE_N; i++) {
+
+    // 2) 纸颗粒
+    if (!grain) grain = makeGrain();
+    ctx.fillStyle = "rgba(122,112,92,1)";
+    for (var i = 0; i < grain.length; i++) {
+      var g = grain[i];
+      ctx.globalAlpha = g[3];
+      ctx.fillRect(g[0], g[1], g[2], g[2]);
+    }
+    ctx.globalAlpha = 1;
+
+    // 3) 墨晕：位置随噪声漂移、半径呼吸式涨落（径向渐变自带柔边，无需 blur）
+    nt += 1;
+    for (var k = 0; k < INK.length; k++) {
+      var b = INK[k], t = nt * .0018 * b.s;
+      var nx = noise(k * 5.1 + 1.7, 0.3, t);
+      var ny = noise(k * 5.1 + 8.3, 1.1, t);
+      var nr = noise(k * 5.1 + 3.9, 2.7, t * .8);
+      var x = (b.x + nx * .10) * W;
+      var y = (b.y + ny * .09) * H;
+      var rad = Math.max(20, b.r * Math.min(W, H) * (1 + nr * b.p));
+      var gd = ctx.createRadialGradient(x, y, 0, x, y, rad);
+      gd.addColorStop(0, "rgba(" + b.c[0] + "," + b.c[1] + "," + b.c[2] + "," + b.a + ")");
+      gd.addColorStop(1, "rgba(" + b.c[0] + "," + b.c[1] + "," + b.c[2] + ",0)");
+      ctx.fillStyle = gd;
       ctx.beginPath();
-      ctx.lineWidth = LINE_W;
-      ctx.strokeStyle = COLORS[i % COLORS.length];
-      for (var x = 0; x < W; x += 5)
-        ctx.lineTo(x, noise(x / 800, 0.3 * i, nt) * 100 + H * 0.5 + (i - 2) * 14);
-      ctx.stroke();
-      ctx.closePath();
+      ctx.arc(x, y, rad, 0, 6.2832);
+      ctx.fill();
+    }
+
+    // 4) 滴墨涟漪：每隔约 2.5s 在纸上落一滴墨，晕开成两圈后淡去（宣纸滴墨的手感）
+    rippleTick++;
+    if (rippleTick > 118 && ripples.length < 6) {
+      rippleTick = 0;
+      ripples.push({
+        x: (.14 + Math.random() * .72) * W,
+        y: (.14 + Math.random() * .72) * H,
+        life: 0
+      });
+    }
+    for (var r = ripples.length - 1; r >= 0; r--) {
+      var rp = ripples[r];
+      rp.life += .0042;
+      if (rp.life >= 1) { ripples.splice(r, 1); continue; }
+      var fade = 1 - rp.life;
+      var r1 = 6 + rp.life * Math.min(W, H) * .16;
+      ctx.strokeStyle = "rgba(47,93,80," + (.17 * fade) + ")";
+      ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.arc(rp.x, rp.y, r1, 0, 6.2832); ctx.stroke();
+      // 外圈：错开 1/3 生命周期，形成"晕开的一层水痕"
+      if (rp.life > .28) {
+        var l2 = (rp.life - .28) / .72;
+        ctx.strokeStyle = "rgba(176,138,62," + (.13 * (1 - l2)) + ")";
+        ctx.beginPath();
+        ctx.arc(rp.x, rp.y, 6 + l2 * Math.min(W, H) * .22, 0, 6.2832);
+        ctx.stroke();
+      }
     }
   }
 
@@ -66,7 +133,9 @@ var knowledgeWave = (function () {
   function start() {
     if (!setup()) return;
     size();
-    if (REDUCE) { nt = 0.35; step(); return; }
+    grain = null;
+    ripples = []; rippleTick = 0;              // 每次开门都从"干净的纸"开始
+    if (REDUCE) { nt = 40; step(); return; }   // 尊重"减少动效"：只画一帧静态墨
     if (running) return;
     running = true;
     nt = 0;

@@ -258,6 +258,42 @@ img{display:block}
   border-color:rgba(47,93,80,.28);clip-path:none}
 #knowledgeStage.kn-home-on .ttop .texit:hover{color:#fff;background:#2f5d50;border-color:#2f5d50}
 
+/* ===== 知识文档 · 密码门（学院风 · 墨韵）=====
+   与旅游攻略的深色波纹门**刻意不同**：同一套「大字 + 无框输入」骨架，但底色换成暖纸、
+   动效换成「宣纸淡墨缓慢晕开」（canvas 由 knowledge.js 的 knowledgeWave 绘制）。
+   落笔是墨绿与鎏金，与门户的学院风同源；旅游攻略仍用它的蓝族波纹门（互不影响）。
+   ⚠️ 全部以 `#knowledgeGate` 前缀覆盖共享的 `.gatewall` 规则（id 优先级高于 class）。 */
+#knowledgeGate{background:#f8f3e8}
+/* 上下柔光：原来是"压暗的暗场"，这里改成纸面的呼吸感 + 顶部一道窗光 */
+#knowledgeGate .tscrim{background:
+  radial-gradient(ellipse 72% 52% at 50% -8%,rgba(255,252,242,.92),transparent 62%),
+  linear-gradient(180deg,rgba(246,240,228,.5) 0%,rgba(246,240,228,0) 28%,
+                  rgba(246,240,228,0) 66%,rgba(238,229,211,.72) 100%)}
+/* 大字背后的"暗雾"改成纸色柔晕（让字从纸里浮出来，而不是从暗场里） */
+#knowledgeGate .gstage::before{background:
+  radial-gradient(closest-side,rgba(251,247,238,.88),rgba(251,247,238,.46) 62%,transparent 100%)}
+#knowledgeGate .geyebrow{color:#8a6d2b;letter-spacing:.5em;text-indent:.5em}
+#knowledgeGate .gtitle{color:#2b2a26;
+  text-shadow:0 1px 0 rgba(255,255,255,.75),0 3px 20px rgba(176,138,62,.2)}
+#knowledgeGate .gsub{color:#6f6a5c;text-shadow:none}
+#knowledgeGate .gfield input{color:#2b2a26;caret-color:#2f5d50}
+#knowledgeGate .gfield input::placeholder{color:rgba(92,86,74,.42)}
+#knowledgeGate .gfield::after{background:linear-gradient(90deg,transparent,
+  rgba(176,138,62,.65) 24%,rgba(47,93,80,.9) 50%,rgba(176,138,62,.65) 76%,transparent)}
+#knowledgeGate .gfield:focus-within::after{background:linear-gradient(90deg,transparent,
+  #b08a3e 20%,#2f5d50 50%,#b08a3e 80%,transparent)}
+#knowledgeGate .gok{color:rgba(92,86,74,.58)}
+#knowledgeGate .gok:hover{color:#2f5d50}
+#knowledgeGate .err{color:#a33b2a;text-shadow:none}
+/* 解锁后长出的「进入」按钮：墨绿→鎏金渐变 + 纸色内芯（hover 亮起） */
+#knowledgeGate .genter::before{background:linear-gradient(100deg,#2f5d50,#3f7a68 52%,#b08a3e)}
+#knowledgeGate .genter .genter-in{background:#fbf7ee;color:#2b2a26}
+#knowledgeGate .genter:hover .genter-in{background:transparent;color:#fbf7ee}
+#knowledgeGate .genter::after{background:
+  radial-gradient(38% 74% at 16% 50%,rgba(47,93,80,.85),transparent 72%),
+  radial-gradient(34% 68% at 52% 50%,rgba(176,138,62,.78),transparent 74%),
+  radial-gradient(40% 74% at 86% 50%,rgba(63,122,104,.72),transparent 72%)}
+
 /* ---- Banner：一张"藏书票"式的抬头 ---- */
 .pt-banner{position:relative;overflow:hidden;display:grid;
   grid-template-columns:minmax(0,1fr) auto;gap:28px;align-items:center;
@@ -2030,6 +2066,6 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 
 <script src="docs.js?v=20260920c"></script>
 <script src="app.js?v=20260920f"></script>
-<script src="knowledge.js?v=20260920d"></script>
+<script src="knowledge.js?v=20260920e"></script>
 </body>
 </html>
