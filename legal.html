@@ -11,8 +11,9 @@
 <meta name="robots" content="index, follow">
 <style>
 /* ===== 设计令牌（与 index.html 同一套，改一处两处都要跟着改）=====
-   2026-09-19：原来 `:root`=「白天」（其实是深得少一点的深色）、`[data-theme="dark"]`=夜间；
-   现改为 `:root` 兜底=夜间，`[data-theme="light"]`=真正的浅色主题。主色朱红两套一致。 */
+   ⚠️ 2026-09-20 定稿：**:root 兜底 = 夜间**，`[data-theme="light"]` = **「白天」＝较亮的夜间**
+   （`#161b24` 体系，遮罩 .74 vs 夜间 .82）。**两套都是暗色** —— 曾一度被做成真浅色，已按要求还原。
+   主色朱红两套一致。 */
 :root{
   --accent:#ff461f;
   --accent-strong:#ff6a42;
@@ -39,18 +40,21 @@
   --vignette:rgba(4,6,10,.40);
 }
 [data-theme="light"]{
-  --bg:#eef1f5; --card:rgba(255,255,255,.90); --border:rgba(18,28,42,.13);
-  --text:#18212c; --muted:#4d5a68; --faint:#3f4a57;
-  --accent-text:#b02f0d;
-  --accent-soft:rgba(255,70,31,.10);
-  --tag-bg:rgba(18,28,42,.05); --field:rgba(18,28,42,.045);
-  --shadow:0 1px 2px rgba(16,26,40,.10),0 4px 12px rgba(16,26,40,.08);
-  --shadow-lift:0 2px 4px rgba(16,26,40,.12),0 9px 14px rgba(16,26,40,.10);
-  --code-inline:#c0340e;
-  --sel:rgba(255,70,31,.24);
-  --veil:rgba(240,243,247,.76);
-  --light-wash:rgba(255,70,31,.05);
-  --vignette:rgba(206,215,227,.44);
+  /* ⭐ 2026-09-20：与 index.html 同步 —— 「白天」= **较亮的夜间**（`#161b24` 体系），
+     不是浅色主题（用户明确要求"换成之前那种暗色的"）。遮罩 `.80` vs 夜间 `.82`。
+     **字色一律与夜间共用** —— 这里是"浅字压深底"，字越暗对比度越差（照搬最初 `.72` 时页脚只有 3.50）。 */
+  --bg:#161b24; --card:rgba(30,37,48,.84); --border:rgba(255,255,255,.10);
+  --text:#e8edf3; --muted:#b6c1cc; --faint:#9aa6b3;
+  --accent-text:#ff6a45;
+  --accent-soft:rgba(255,70,31,.14);
+  --tag-bg:rgba(255,255,255,.06); --field:rgba(255,255,255,.05);
+  --shadow:0 1px 2px rgba(0,0,0,.30),0 4px 12px rgba(0,0,0,.22);
+  --shadow-lift:0 2px 4px rgba(0,0,0,.32),0 9px 14px rgba(0,0,0,.26);
+  --code-inline:#ff8a65;
+  --sel:rgba(255,70,31,.34);
+  --veil:rgba(14,18,26,.80);
+  --light-wash:rgba(255,70,31,.11);
+  --vignette:rgba(4,6,10,.42);
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
