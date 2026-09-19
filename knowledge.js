@@ -13,6 +13,7 @@ var knowledgeWave = (function () {
   var cv = null, ctx = null, noise = null, raf = 0, running = false;
   var W = 0, H = 0, nt = 0, ready = false, grain = null;
   var ripples = [], rippleTick = 0;     // 滴墨：落在纸上的墨点缓缓晕开、淡去
+  var specks = [];                      // 浮尘：极小的墨点/金点缓缓上浮（让画面有生气）
   var REDUCE = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   var MAXW = 1440, FILL = "#f8f3e8";   // 与 #knowledgeGate 底色一致（canvas 铺底 + CSS 兜底）
   // 墨团：c=基色 / a=峰值不透明度 / x,y=基准位置(比例) / r=半径系数 / s=漂移速度 / p=呼吸幅度
@@ -20,7 +21,8 @@ var knowledgeWave = (function () {
     { c: [47, 93, 80], a: .20, x: .20, y: .28, r: .42, s: 1.0, p: .18 },   // 墨绿 · 左上
     { c: [176, 138, 62], a: .18, x: .78, y: .36, r: .34, s: 1.25, p: .15 }, // 鎏金 · 右上
     { c: [72, 82, 92], a: .13, x: .50, y: .74, r: .48, s: 0.8, p: .20 },    // 淡墨 · 下中
-    { c: [47, 93, 80], a: .13, x: .10, y: .80, r: .34, s: 1.45, p: .14 }    // 墨绿 · 左下
+    { c: [47, 93, 80], a: .13, x: .10, y: .80, r: .34, s: 1.45, p: .14 },   // 墨绿 · 左下
+    { c: [176, 138, 62], a: .11, x: .88, y: .80, r: .30, s: 1.1, p: .16 }   // 鎏金 · 右下（补右下角的空）
   ];
 
   function setup() {
@@ -35,6 +37,7 @@ var knowledgeWave = (function () {
       if (!cv) return;
       size();
       grain = null;                    // 尺寸变了 → 颗粒重新生成
+      specks = [];                     // 浮尘的基准位置也按旧尺寸算的，一并重来
       if (REDUCE) step();
     });
     return true;
@@ -59,6 +62,25 @@ var knowledgeWave = (function () {
         Math.random() * .6 + .3,        // 边长（px）
         Math.random() * .045 + .012     // 不透明度
       ]);
+    }
+    return arr;
+  }
+
+  // 浮尘：极小墨点/金点在纸上缓缓上浮、轻摆、明灭 —— 书页间扬起的一点尘。
+  // 空纸上"一点不动"会显得死，这几颗尘是让门"活着"的最低成本。
+  function makeSpecks() {
+    var n = Math.min(48, Math.max(16, Math.round(W * H / 24000))), arr = [];
+    for (var i = 0; i < n; i++) {
+      arr.push({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        r: Math.random() * 1.5 + .6,      // 半径
+        v: Math.random() * .22 + .08,     // 上浮速度
+        a: Math.random() * .15 + .06,     // 峰值不透明度
+        ph: Math.random() * 6.2832,       // 摆动/明灭相位
+        sw: Math.random() * .7 + .3,      // 摆动幅度
+        gold: Math.random() < .42         // 约四成是鎏金
+      });
     }
     return arr;
   }
@@ -98,7 +120,24 @@ var knowledgeWave = (function () {
       ctx.fill();
     }
 
-    // 4) 滴墨涟漪：每隔约 2.5s 在纸上落一滴墨，晕开成两圈后淡去（宣纸滴墨的手感）
+    // 4) 浮尘：缓缓上浮的小点（越顶回到底部），横向轻摆 + 明灭
+    if (!specks.length) specks = makeSpecks();
+    for (var s = 0; s < specks.length; s++) {
+      var sp = specks[s];
+      sp.y -= sp.v;
+      if (sp.y < -6) { sp.y = H + 6; sp.x = Math.random() * W; }
+      sp.ph += .012;
+      var sx = sp.x + Math.sin(sp.ph) * sp.sw * 14;
+      var pulse = .55 + .45 * Math.sin(sp.ph * 1.7);
+      ctx.fillStyle = sp.gold
+        ? "rgba(176,138,62," + (sp.a * pulse) + ")"
+        : "rgba(47,93,80," + (sp.a * pulse) + ")";
+      ctx.beginPath();
+      ctx.arc(sx, sp.y, sp.r, 0, 6.2832);
+      ctx.fill();
+    }
+
+    // 5) 滴墨涟漪：每隔约 2.5s 在纸上落一滴墨，晕开成两圈后淡去（宣纸滴墨的手感）
     rippleTick++;
     if (rippleTick > 118 && ripples.length < 6) {
       rippleTick = 0;
@@ -134,6 +173,7 @@ var knowledgeWave = (function () {
     if (!setup()) return;
     size();
     grain = null;
+    specks = [];
     ripples = []; rippleTick = 0;              // 每次开门都从"干净的纸"开始
     if (REDUCE) { nt = 40; step(); return; }   // 尊重"减少动效"：只画一帧静态墨
     if (running) return;
