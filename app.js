@@ -124,29 +124,25 @@ var activeCategory = "主页";
 var searchKeyword = "";
 
 // ===== 主题切换 =====
-var THEME_KEY = "site_theme_v2";   // ⚠️ 键名带版本，见下方"偏好作废"说明
+// ⚠️⚠️ 2026-09-20 第四次修订（用户："**把进站模式调成默认是黑夜**"）：
+//    **不再持久化主题偏好** —— 每次进站（= 每次加载）一律从**黑夜**开始；切换只在**当次访问内**有效。
+//    ⭐ 为什么必须撤掉持久化：之前三次修订都在"记住用户选过的主题"这条路上打转，代价是
+//    **只要点过一次「白天」，之后每次进来都是白天** —— 而"默认黑夜"和"记住偏好"本质互斥，
+//    只能二选一。用户要的是前者，所以把 localStorage 的**读与写整条拿掉**。
+//    ⚠️ 两个历史键一并清掉（`site_theme` 老键 / `site_theme_v2`）——不读还留着，
+//    只会在日后被重新读到、把"白纸事故"再引回来一次。
+//    ⚠️ 想恢复"记住偏好"前，先回答：默认到底是黑还是"上次那个"？两者不可兼得。
+var THEME_KEY = "site_theme_v2";   // 仅用于清理历史键，**不再读写**
 function initTheme() {
   function apply(t) { document.documentElement.setAttribute("data-theme", t); }
-  // ⚠️ 默认 = **夜间**。
-  // 原为 `saved === "dark"`（默认白天），且 initTheme 只在**点过**主题按钮时才写入偏好 ——
-  // 所以一旦 localStorage 丢失（清站点数据 / 换设备 / 手机首次访问）主题就"跳回白天"，
-  // 表现为"主站背景光强度和以前不一样了"（用户 2026-09-19 报）。现改为「除显式选过白天外，一律夜间」。
-  // 2026-09-19 二次修订：改为**显式写 data-theme="light"**（不再靠"删属性"表示白天）。
-  //
-  // ⚠️⚠️ 2026-09-19 第三次修订 = **偏好作废一次**（`site_theme` → `site_theme_v2`，**有意不迁移**）。
-  // 原因不是洁癖，是那条老键里存着一个**已经不该生效的值**：老版浅色主题把背景压成了近乎纯白，
-  // 点过一次主题按钮的访客浏览器里就存着 "light"，于是**每次进来都是那张白纸**
-  // （用户原话："主站背景全白"，并明确要求"风格切回原来那种暗黑科技风"）。
-  // 老键**直接删除、不读不迁**：老访客回到**默认夜间**；想用浅色点一下右上角按钮即可。
-  try { localStorage.removeItem("site_theme"); } catch (e) {}
-  var saved = null;
-  try { saved = localStorage.getItem(THEME_KEY); } catch (e) {}
-  apply(saved === "light" ? "light" : "dark");
+  apply("dark");                                   // ← 进站一律黑夜（:root 兜底也是夜间，故不会闪）
+  try {
+    localStorage.removeItem("site_theme");         // 老键：历史上把背景压成近乎纯白的那档，不迁移
+    localStorage.removeItem(THEME_KEY);            // 新键：既然不读，就别留着误导
+  } catch (e) {}
   document.getElementById("themeToggle").addEventListener("click", function () {
     var cur = document.documentElement.getAttribute("data-theme");
-    var next = cur === "dark" ? "light" : "dark";
-    apply(next);
-    try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
+    apply(cur === "dark" ? "light" : "dark");      // 当次访问内有效；刷新 / 重进即回到黑夜
   });
 }
 

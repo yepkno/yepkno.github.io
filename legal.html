@@ -185,17 +185,15 @@ hr{border:none;border-top:1px solid var(--border);margin:30px 0}
 
 <script>
 (function () {
-  // 与 app.js 的 initTheme() 同一口径：除显式存过 "light" 外一律夜间；
-  // 2026-09-19 起改为**显式写 light**（浅色已是独立令牌，不再靠"删属性"）。
-  // 2026-09-19 第三次修订：偏好键 `site_theme` → `site_theme_v2`，**老键有意不迁移**：
-  // 老键里可能存着"那次点过的浅色"，而老版浅色把背景压成近乎纯白 → 老访客每次进来都是白纸。
+  // 与 app.js `initTheme()` **同一口径**（2026-09-20 第四次修订，用户："把进站模式调成默认是黑夜"）：
+  // **不再读 localStorage** —— 每次进站一律黑夜，主题切换只在当次访问内有效。
+  // 两个历史键（老键 `site_theme` / 新键 `site_theme_v2`）一并清掉：不读还留着，
+  // 只会在日后被重新读到、把"每次进来都是白纸"那次事故再引回来。
+  document.documentElement.setAttribute("data-theme", "dark");
   try {
     localStorage.removeItem("site_theme");
-    var saved = localStorage.getItem("site_theme_v2");
-    document.documentElement.setAttribute("data-theme", saved === "light" ? "light" : "dark");
-  } catch (e) {
-    document.documentElement.setAttribute("data-theme", "dark");
-  }
+    localStorage.removeItem("site_theme_v2");
+  } catch (e) {}
 })();
 </script>
 </body>
