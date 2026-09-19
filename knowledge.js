@@ -193,14 +193,30 @@ function knPortalClock(on) {
   }
 }
 
-// 门户按钮 → 沉浸阅读。按钮 data-doc 是知识文档列表里的下标（占位按钮超界时给提示，不打开）
+// 按知识库实际篇数同步门户条目状态：有对应文档 → 启用；无 → 禁用（灰化）。
+// 内容增加后条目自动启用，不必手改 HTML（HTML 里只写死 data-doc 下标与文案）。
+function knSyncPortal() {
+  var n = knowledgeDocs().length;
+  var items = document.querySelectorAll("#knowledgeHome .pt-item");
+  [].forEach.call(items, function (it) {
+    var i = parseInt(it.getAttribute("data-doc") || "0", 10);
+    if (i < n) it.removeAttribute("disabled");
+    else it.setAttribute("disabled", "disabled");
+  });
+}
+
+// 门户条目 → 沉浸阅读（data-doc 是知识文档列表里的下标；超界 = 该条目暂无内容，直接忽略）
 function knOpenByIndex(i) {
   var docs = knowledgeDocs();
-  if (i >= 0 && i < docs.length) { openKnowledge(docs[i]); return; }
-  // 占位按钮：还没有对应文档，轻提示（不打断，不弹框）
-  var err = document.getElementById("knowledgeGateErr");
-  // 借门的 err 位做提示不优雅，改在按钮下临时提示 —— 这里用 alert 太粗暴，静默 + 控制台即可
-  if (window.console) console.log("[知识文档] 该板块内容整理中");
+  if (i >= 0 && i < docs.length) openKnowledge(docs[i]);
+}
+
+// 「随机一读」：从知识库里随机翻一篇（只有一篇时就是它）—— 替代原来名不副实的「听书台」
+//（那个只是打开右下角音乐播放器，与"听书"无关；播放器本身在右下角随时可点）。
+function knRandomRead() {
+  var docs = knowledgeDocs();
+  if (!docs.length) return;
+  openKnowledge(docs[Math.floor(Math.random() * docs.length)]);
 }
 
 function openKnowledgeStage() {
@@ -215,7 +231,7 @@ function openKnowledgeStage() {
   if (kh) { kh.hidden = false; kh.scrollTop = 0; }
   var dl = document.getElementById("docList");
   if (dl) dl.style.display = "none";
-  // 顶栏统计：显示知识文档库的文档数
+  // 顶栏统计 + 条目启用/禁用（按知识库实际篇数）
   var stat = document.getElementById("knStats");
   if (stat) {
     var n = knowledgeDocs().length;
@@ -223,6 +239,7 @@ function openKnowledgeStage() {
       "<span>ENTRIES <b>" + String(n).padStart(3, "0") + "</b></span>" +
       "<span>BASE <b>KB</b></span>";
   }
+  knSyncPortal();
   knPortalClock(true);
 }
 
@@ -283,14 +300,11 @@ function openKnowledge(d) {
   });
   if (kb) kb.addEventListener("click", knBackToHome);
 
-  // 门户点击：导航卡按钮 → 打开对应文档；「叶の电台」胶囊 → 展开播放器
+  // 门户点击：书目条目 → 打开对应文档；「随机一读」→ 随机翻一篇
   if (kh) kh.addEventListener("click", function (e) {
+    if (e.target.closest("#knRandom")) { knRandomRead(); return; }
     var item = e.target.closest(".pt-item");
-    if (item) { knOpenByIndex(parseInt(item.getAttribute("data-doc") || "0", 10)); return; }
-    if (e.target.closest("#knRadio")) {
-      var disc = document.getElementById("pDisc");
-      if (disc) disc.click();
-    }
+    if (item) { knOpenByIndex(parseInt(item.getAttribute("data-doc") || "0", 10)); }
   });
 
   if (gok) gok.addEventListener("click", tryKnowledgeUnlock);

@@ -268,17 +268,13 @@ img{display:block}
 /* 细金线框（藏书票的装饰边） */
 .pt-banner::before{content:"";position:absolute;inset:10px;pointer-events:none;
   border:1px solid rgba(176,138,62,.35)}
-/* 学院纹章：一枚大而淡的"水印章记"（墨绿环 + 金芯 + 十字），压在 Banner 中部偏右、
-   置于文字层**后面** —— 装饰不与内容抢位（上一版放在时钟正后方，圆环穿过了时间大字）。 */
+/* 圆形头像框（Banner 中部）：金环 + 头像 + 外圈柔光，像藏书票上的肖像。
+   ⚠️ 原来这里是 CSS 画的三件套纹章（圆环+金芯+十字），2026-09-20 换成站点头像。 */
 .pt-art{position:absolute;left:56%;top:50%;transform:translate(-50%,-50%);
-  width:190px;height:190px;pointer-events:none;opacity:.42;z-index:0}
-.pt-art::before{content:"";position:absolute;inset:0;border-radius:50%;
-  border:2px solid rgba(47,93,80,.55)}
-.pt-art::after{content:"";position:absolute;inset:22px;border-radius:50%;
-  background:radial-gradient(circle at 50% 42%,rgba(176,138,62,.75),rgba(176,138,62,.12) 70%,transparent)}
-.pt-art i{position:absolute;background:rgba(47,93,80,.5)}
-.pt-art i:nth-child(1){left:50%;top:22%;width:2px;height:56%;margin-left:-1px}
-.pt-art i:nth-child(2){left:22%;top:50%;width:56%;height:2px;margin-top:-1px}
+  width:136px;height:136px;border-radius:50%;overflow:hidden;z-index:1;pointer-events:none;
+  border:3px solid rgba(176,138,62,.8);
+  box-shadow:0 0 0 9px rgba(176,138,62,.12),0 10px 26px rgba(47,93,80,.22)}
+.pt-art img{width:100%;height:100%;object-fit:cover;display:block}
 .pt-title{position:relative;z-index:1;min-width:0}
 .pt-h1{margin:0;font-family:var(--serif);font-weight:700;
   font-size:clamp(34px,5vw,56px);line-height:1.14;letter-spacing:.01em;color:#2b2a26}
@@ -300,7 +296,8 @@ img{display:block}
   font-size:13px;font-weight:600;font-family:inherit;color:#f7f0e1;background:#2f5d50;
   border:1px solid #2f5d50;cursor:pointer;letter-spacing:.08em;
   transition:.22s}
-.pt-pill svg{width:11px;height:11px;fill:currentColor;flex-shrink:0}
+.pt-pill svg{width:12px;height:12px;flex-shrink:0;
+  fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .pt-pill:hover{background:#26493f;border-color:#26493f}
 
 /* ---- 导航卡：一张"目录页/索引卡" ---- */
@@ -329,15 +326,21 @@ img{display:block}
 .pt-tx i{font-style:normal;font-size:13px;letter-spacing:.02em;color:#8a8371}
 .pt-arrow{flex:none;font-size:18px;color:#b8b09b;transition:color .2s,transform .2s}
 .pt-item:hover .pt-arrow{color:#8a6d2b;transform:translateX(4px)}
-/* 占位条目（暂无内容）弱化：墨绿图标换成灰，书名降为次级色 */
-.pt-item[data-doc]:not([data-doc="0"]) .pt-ic{background:rgba(138,131,113,.06);border-color:rgba(138,131,113,.2)}
-.pt-item[data-doc]:not([data-doc="0"]) .pt-ic svg{stroke:#b8b09b}
-.pt-item[data-doc]:not([data-doc="0"]) .pt-tx b{color:#8a8371;font-weight:600}
+/* 暂无内容的条目：禁用态（灰 + 不抬起 + 不显箭头）——由 JS 按知识库实际篇数自动切换，
+   内容到位后条目自动启用，不必手改 HTML。 */
+.pt-item[disabled]{cursor:default;opacity:.58}
+.pt-item[disabled]:hover{background:transparent;transform:none}
+.pt-item[disabled] .pt-ic{background:rgba(138,131,113,.06);border-color:rgba(138,131,113,.2)}
+.pt-item[disabled] .pt-ic svg{stroke:#b8b09b}
+.pt-item[disabled] .pt-tx b{color:#8a8371;font-weight:600}
+.pt-item[disabled] .pt-arrow{display:none}
 
 @media (max-width:900px){
   .kn-inner{padding:80px 20px 56px}
   .pt-banner{grid-template-columns:1fr;gap:20px;padding:32px 28px}
-  .pt-art{left:auto;right:-46px;top:-46px;transform:none;width:150px;height:150px;opacity:.3}
+  /* 竖排后中部无位可放 → 头像缩到右上角 */
+  .pt-art{left:auto;right:22px;top:22px;transform:none;width:92px;height:92px;
+    border-width:2px;box-shadow:0 0 0 6px rgba(176,138,62,.12)}
   .pt-clock{align-items:flex-start;text-align:left}
 }
 @media (max-width:600px){
@@ -940,6 +943,9 @@ body.map-dragging{-webkit-user-select:none;user-select:none;cursor:grabbing}
   #tdP3 .tcombo{min-width:660px}
   .stagewall .ttop{padding:0 16px;gap:12px}
   .stagewall .stats{display:none}
+  /* ⚠️ stats 在窄屏被隐藏后，它原本的 margin-left:auto 也没了 → 「返回站点」会紧贴品牌。
+     这里给按钮自己补一个 auto，让它继续贴右。 */
+  .stagewall .texit{margin-left:auto}
   .stagewall .detailview,.stagewall .detailview{padding:18px 14px 48px}
   .tgr{grid-template-columns:repeat(2,1fr)}
   .ts3{padding:8px 13px;font-size:12px}
@@ -1842,7 +1848,10 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
     <div id="knowledgeHome" class="kn-home">
       <div class="kn-inner">
         <div class="pt-banner">
-          <div class="pt-art" aria-hidden="true"><i></i><i></i></div>
+          <!-- 圆形头像框（原为 CSS 纹章水印，2026-09-20 换成站点头像） -->
+          <div class="pt-art" aria-hidden="true">
+            <img src="assets/avatar.jpg?v=20260920b" alt="" loading="lazy" decoding="async">
+          </div>
           <div class="pt-title">
             <h1 class="pt-h1">知识<em>文库</em></h1>
             <p class="pt-sub">Knowledge Archive</p>
@@ -1852,9 +1861,11 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
             <span class="pt-clock-label">Reading Time · 阅读时分</span>
             <div class="pt-time" id="knTime">--:-- <small>--</small></div>
             <div class="pt-date" id="knDate">—</div>
-            <button class="pt-pill" id="knRadio" type="button" title="打开右下角播放器">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
-              听书台
+            <!-- 「随机一读」= 从知识库里随机翻一篇（原「听书台」名不副实：点开的是音乐播放器，
+                 已挪回右下角的悬浮播放器；这里改成真正与阅读相关的动作）。 -->
+            <button class="pt-pill" id="knRandom" type="button" title="随机打开一篇文档">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 3h5v5"/><path d="M4 20 21 3"/><path d="M21 16v5h-5"/><path d="m15 15 6 6"/><path d="m4 4 5 5"/></svg>
+              随机一读
             </button>
           </div>
         </div>
@@ -1865,22 +1876,22 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
           <div class="pt-list">
             <button class="pt-item" data-doc="0" type="button">
               <span class="pt-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>
-              <span class="pt-tx"><b>OpenCode 使用教程</b><i>从零上手 AI 编程代理 · 完整讲义</i></span>
+              <span class="pt-tx"><b>入门教程</b><i>从零开始的系统讲义 · 完整走一遍</i></span>
               <span class="pt-arrow" aria-hidden="true">&#8594;</span>
             </button>
             <button class="pt-item" data-doc="1" type="button">
-              <span class="pt-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M9 9h6M9 13h6"/></svg></span>
-              <span class="pt-tx"><b>卷二（占位）</b><i>内容整理中，敬请期待</i></span>
+              <span class="pt-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 6a2 2 0 0 1 2-2h3l2 2h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M9 13h6"/></svg></span>
+              <span class="pt-tx"><b>速查手册</b><i>工具、命令与配置的备忘速查</i></span>
               <span class="pt-arrow" aria-hidden="true">&#8594;</span>
             </button>
             <button class="pt-item" data-doc="2" type="button">
-              <span class="pt-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M9 9h6M9 13h6"/></svg></span>
-              <span class="pt-tx"><b>卷三（占位）</b><i>内容整理中，敬请期待</i></span>
+              <span class="pt-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg></span>
+              <span class="pt-tx"><b>实战案例</b><i>项目记录与踩坑复盘</i></span>
               <span class="pt-arrow" aria-hidden="true">&#8594;</span>
             </button>
             <button class="pt-item" data-doc="3" type="button">
-              <span class="pt-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M9 9h6M9 13h6"/></svg></span>
-              <span class="pt-tx"><b>卷四（占位）</b><i>内容整理中，敬请期待</i></span>
+              <span class="pt-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 16 15 6l3 3L8 19H5z"/><path d="M4 20h16"/></svg></span>
+              <span class="pt-tx"><b>碎片笔记</b><i>零散心得与阅读摘录</i></span>
               <span class="pt-arrow" aria-hidden="true">&#8594;</span>
             </button>
           </div>
@@ -2016,6 +2027,6 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 
 <script src="docs.js?v=20260920b"></script>
 <script src="app.js?v=20260920f"></script>
-<script src="knowledge.js?v=20260920b"></script>
+<script src="knowledge.js?v=20260920c"></script>
 </body>
 </html>
