@@ -859,14 +859,18 @@ function setGateUnlocked(on) {
   //    Chromium 会因为"上一步是键盘操作（回车提交）"把 `:focus-visible` 判成**成立** ——
   //    后果一：按钮一露面就带上 4px 红焦点环，和按钮自带的渐变环叠成"双环"；
   //    后果二（用户实际报的）：连亮态判定也被带偏，鼠标移上去"没有变化"。
-  //    亮态已改成只认 `:hover`；焦点环则用 `genter-quiet` 压掉，**用户自己按键盘就摘掉**，
-  //    所以键盘用户 Tab 回来时焦点环照常出现（可达性没丢）。
+  //    亮态已改成只认 `:hover`（见 index.html）；焦点环用 `genter-quiet` 压掉，
+  //    **用户自己按键盘就摘掉** → 键盘用户 Tab 回来时焦点环照常出现（可达性没丢）。
   if (en) {
     if (on) {
       en.classList.add("genter-quiet");
       var dropQuiet = function () { en.classList.remove("genter-quiet"); };
-      document.addEventListener("keydown", dropQuiet, { once: true });
-      en.addEventListener("pointerdown", dropQuiet, { once: true });
+      // ⚠️ 监听器必须**延后一个 tick 再挂**：解锁这一下本身就是 `keydown`（用户按的回车），
+      //    若当场 `addEventListener`，同一个事件冒泡到 document 时会立刻把刚加上的
+      //    `genter-quiet` 摘掉 → 按钮一露面还是"双环"（2026-09-20 冒烟护栏当场抓到，别改回来）。
+      setTimeout(function () {
+        document.addEventListener("keydown", dropQuiet, { once: true });
+      }, 0);
     } else {
       en.classList.remove("genter-quiet");
     }
