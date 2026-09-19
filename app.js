@@ -2537,9 +2537,42 @@ function filteredDocs() {
   });
 }
 
+// ===== 主页门户（仿知识站首页版式：Banner ＋ 导航卡）=====
+// 显隐原则：只在「纯主页状态」（activeCategory=主页 且无标签筛选、无搜索词）出现 ——
+// 搜索结果页 / 标签跨分类视图里摆一块大 Banner 很怪。renderCards 每次都会调这里。
+var _portalClock = null;
+function portalTick() {
+  var t = document.getElementById("ptTime");
+  if (!t) return;
+  var d = new Date();
+  var h = d.getHours(), ap = h >= 12 ? "PM" : "AM";
+  var h12 = h % 12 || 12;
+  function p2(n) { return (n < 10 ? "0" : "") + n; }
+  t.innerHTML = p2(h12) + ":" + p2(d.getMinutes()) + " <small>" + ap + "</small>";
+  var dd = document.getElementById("ptDate");
+  if (dd) {
+    var wk = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"][d.getDay()];
+    dd.textContent = d.getFullYear() + "-" + p2(d.getMonth() + 1) + "-" + p2(d.getDate()) + " · " + wk;
+  }
+}
+function setPortalVisible(on) {
+  var pt = document.getElementById("portal");
+  if (!pt) return;
+  var was = !pt.hidden;
+  pt.hidden = !on;
+  if (on && !was) {
+    portalTick();
+    if (_portalClock) clearInterval(_portalClock);
+    _portalClock = setInterval(portalTick, 15000);   // 15s 级联新足够（分钟精度显示）
+  }
+}
+
 function renderCards() {
   var list = document.getElementById("docList");
   var docs = filteredDocs();
+
+  // 主页门户：只在「纯主页状态」（无标签筛选、无搜索词）显示 Banner ＋ 导航卡
+  setPortalVisible(activeCategory === "主页" && !activeTag && !searchKeyword);
 
   // 旅游攻略：走「可拖动卡片墙」（点卡片 → 三卡详情），不用通栏卡片列表
   var isTour = (activeCategory === "旅游攻略" && !activeTag);
@@ -2781,5 +2814,26 @@ function escapeHtml(str) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
 }
+
+// ===== 主页门户 · 点击绑定 =====
+// 导航按钮点击 = **模拟点左侧导航对应项** —— 密码墙 / 全屏门 / 独立页跳转等
+// 全部复用导航既有逻辑，不另写一份（一份逻辑两处维护必然分叉）。
+(function bindPortal() {
+  var pt = document.getElementById("portal");
+  if (!pt) return;
+  pt.addEventListener("click", function (e) {
+    var item = e.target.closest(".pt-item");
+    if (item) {
+      var nav = document.querySelector('#mainNav a[data-cat="' + item.getAttribute("data-cat") + '"]');
+      if (nav) nav.click();
+      return;
+    }
+    // 「叶の电台」胶囊 = 展开右下角悬浮播放器（对应参考站的电台按钮位）
+    if (e.target.closest("#ptRadio")) {
+      var disc = document.getElementById("pDisc");
+      if (disc) disc.click();
+    }
+  });
+})();
 
 
