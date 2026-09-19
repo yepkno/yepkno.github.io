@@ -237,9 +237,16 @@ img{display:block}
      按钮 / 提示 / 仪表全部撤走），密码信息改由**大字**承担；输入做成**没有框的一行**，只有下划线；
    · "**密码墙和背景不是重叠，而是完美融合**" → 融合靠三件事：① 大字后方一层**径向暗雾**
      （让字"坐进"波纹里，同时保住白字的对比度）；② 大字中线与波纹带**同高**；
-     ③ 下划线与按钮光晕**全用波纹同族的颜色**。
-   原来那套"卡片半透明取样波纹 + 渐变描边"的写法、以及 `.thorizon` 地平线元素，都不再需要。 */
-#tourGate{position:fixed;inset:0;z-index:120;overflow:hidden;background:#05070d}
+     ③ 输入行的下划线、按钮的光晕：**保持朱红不动**。
+        ⚠️ 2026-09-20 波纹改蓝族后，这一条从"同族"改成了"**刻意的对比色**"，并非漏改 ——
+        下划线收拢后**长出来的就是那个朱红按钮**，两者必须同色（否则 morph 会跳色）；
+        而"动作色不参与装饰"也正是配色通则：朱红是本站唯一的动作色，蓝带子只是氛围。
+        真要连按钮一起换色，得先动品牌主色，那是另一件事。
+   原来那套"卡片半透明取样波纹 + 渐变描边"的写法、以及 `.thorizon` 地平线元素，都不再需要。
+   · ⚠️ **暗场底色跟波纹走**：2026-09-20 波纹从暖色换成蓝族（用户要求"以蓝色为主色"），
+     底色也一并从 `#05070d`（暖墨）挪到 `#040714`（蓝墨），否则蓝带子落在暖墨上会"发脏"。
+     底色与 `app.js` 里 canvas 的 `FILL` **必须一致**（canvas 铺底 + 这层 div 兜底）。 */
+#tourGate{position:fixed;inset:0;z-index:120;overflow:hidden;background:#040714}
 #tourGate[hidden]{display:none}
 .tpanel{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
   padding:20px;will-change:transform}
@@ -251,8 +258,8 @@ img{display:block}
    正是用户给的参考图（黑底 ＋ 一条彩带 ＋ 压在上面的大字）的形态。
    ⚠️ 别把中间也压暗 —— 一压就又回到"背景看不见"。 */
 .tscrim{position:absolute;inset:0;z-index:1;pointer-events:none;
-  background:linear-gradient(180deg,rgba(4,6,11,.94) 0%,rgba(4,6,11,.34) 24%,
-             rgba(4,6,11,0) 40%,rgba(4,6,11,0) 60%,rgba(4,6,11,.38) 78%,rgba(4,6,11,.95) 100%)}
+  background:linear-gradient(180deg,rgba(3,6,18,.94) 0%,rgba(3,6,18,.34) 24%,
+             rgba(3,6,18,0) 40%,rgba(3,6,18,0) 60%,rgba(3,6,18,.38) 78%,rgba(3,6,18,.95) 100%)}
 
 /* ===== 密码验证：**没有卡片、没有框** —— 就是压在波纹带上的一组大字 ＋ 一行无框输入 =====
    （用户原话："密码框不要存在……就像原生的这样几个大字，你把涉及密码的信息转换一下"）
@@ -260,12 +267,16 @@ img{display:block}
    ① 文字后方一层**径向暗雾**：大字"坐进"波纹里，不是浮在上面；同时把压在波峰上的
       那部分背景压下去，顺手保住白字的对比度；
    ② 大字的**中线与波纹带同高**（带子中线 = 文字中线）；
-   ③ 输入行的下划线、按钮的光晕**全用波纹同一族颜色** —— 边界自然消失。 */
+   ③ 输入行的下划线、按钮的光晕：**保持朱红不动**。
+      ⚠️ 2026-09-20 波纹改蓝族后，这一条从"同族"改成了"**刻意的对比色**"，并非漏改 ——
+      下划线收拢后**长出来的就是那个朱红按钮**，两者必须同色（否则 morph 会跳色）；
+      而"动作色不参与装饰"也正是配色通则：朱红是本站唯一的动作色，蓝带子只是氛围。
+      真要连按钮一起换色，得先动品牌主色，那是另一件事。 */
 #tourGate .gstage{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;
   text-align:center;padding:24px 20px;max-width:min(680px,92vw)}
 #tourGate .gstage::before{content:"";position:absolute;left:-18%;right:-18%;top:-26%;bottom:-30%;
   z-index:-1;pointer-events:none;
-  background:radial-gradient(closest-side,rgba(4,6,11,.80),rgba(4,6,11,.48) 60%,transparent 100%)}
+  background:radial-gradient(closest-side,rgba(3,6,18,.80),rgba(3,6,18,.48) 60%,transparent 100%)}
 #tourGate .geyebrow{font-size:12px;font-weight:600;letter-spacing:.44em;text-indent:.44em;
   color:rgba(255,255,255,.62);margin-bottom:15px}
 #tourGate .gtitle{font-family:var(--serif);font-weight:600;
@@ -274,9 +285,17 @@ img{display:block}
 /* 副标题字距收到 .04em：再宽会被检测器的 `wide-tracking` 判为"正文过度字距" */
 #tourGate .gsub{margin-top:15px;font-size:clamp(13px,1.5vw,15px);letter-spacing:.04em;
   color:rgba(255,255,255,.76);text-shadow:0 1px 12px rgba(0,0,0,.62)}
+/* ---- 「输入行 → 按钮」的**共用格** ----
+   两者叠在同一个 grid 单元里，所以「收拢成一条线 → 从这条线长出按钮」是真的同一条线，
+   而不是"上面留一个看不见的输入框、按钮被顶到下面去"。
+   ⚠️ 这也顺手把间隔收回来了：原来 `.gfield` 只做视觉收拢（scaleY .06），**布局盒仍在**，
+   副标题到按钮之间实测空 ≈106px（32 阶梯 + 46 输入行 + 28 按钮边距），用户报"有点丑"。
+   现在间隔 = 这里的 `margin-top` 一处说了算，**改间距只改这一个数**。 */
+#tourGate .gsync{display:grid;place-items:center;margin-top:30px}
+#tourGate .gsync > *{grid-area:1/1}
 /* 输入行：**没有框**，只有一条与波纹同色的下划线（"框"这个概念在这里被删掉了） */
 #tourGate .gfield{position:relative;display:flex;align-items:center;justify-content:center;
-  margin-top:32px;width:min(340px,74vw);transform-origin:center;
+  width:min(340px,74vw);transform-origin:center;
   transition:opacity .24s ease,transform .32s cubic-bezier(.4,0,.2,1),filter .24s}
 #tourGate .gfield input{width:100%;padding:10px 30px 12px;border:0;background:transparent;outline:none;
   color:#fff;font-family:var(--sans);font-size:clamp(17px,2.4vw,22px);text-align:center;
@@ -336,7 +355,7 @@ img{display:block}
    不用"零偏移彩色 box-shadow"（那是检测器 `dark-glow` 抓的生成式签名）。
    颜色仍走站内暖色族（朱红/橙/玫红），不是上游 NoiseBackgroundDemo 的 indigo/purple。 */
 .genter{position:relative;display:inline-flex;padding:3px;border:0;cursor:pointer;
-  margin-top:28px;background:transparent;border-radius:calc(var(--r-action) + 3px);
+  background:transparent;border-radius:calc(var(--r-action) + 3px);
   transform-origin:center}
 .genter[hidden]{display:none}
 .genter::before{content:"";position:absolute;inset:0;border-radius:inherit;
@@ -1631,16 +1650,22 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
         <div class="geyebrow">旅游攻略</div>
         <h2 class="gtitle">请输入访问密码</h2>
         <p class="gsub">本栏目受密码保护 · 该密码仅对本栏目有效</p>
-        <div class="gfield" id="tourGateField">
-          <input type="password" id="tourGatePwd" placeholder="密码" autocomplete="off"
-                 aria-label="旅游攻略栏目密码" enterkeyhint="go" spellcheck="false">
-          <button type="button" class="gok" id="tourGateOk" aria-label="确认密码">&#8629;</button>
+        <!-- ⚠️ `.gsync` = **同一个 grid 单元**：输入行与按钮叠在同一格里。
+             输入行"收拢成一条线"只是视觉（scaleY），布局盒不再占位，
+             所以按钮正好长在输入行原来的位置上，副标题到按钮之间不会凭空多出
+             上百像素的空当（原来没有这层，实测间隔 ≈106px —— 用户："间距有点丑"）。 -->
+        <div class="gsync">
+          <div class="gfield" id="tourGateField">
+            <input type="password" id="tourGatePwd" placeholder="密码" autocomplete="off"
+                   aria-label="旅游攻略栏目密码" enterkeyhint="go" spellcheck="false">
+            <button type="button" class="gok" id="tourGateOk" aria-label="确认密码">&#8629;</button>
+          </div>
+          <!-- 密码正确后：上面那行输入**收拢成一条线**，这个按钮从同一条线长出来
+               （NoiseBackground 的噪光底 ＋ Lit up borders 的渐变描边） -->
+          <button type="button" class="genter" id="tourGateEnter" hidden>
+            <span class="genter-in">进入旅游攻略</span>
+          </button>
         </div>
-        <!-- 密码正确后：上面那行输入**收拢成一条线**，这个按钮从同一条线长出来
-             （NoiseBackground 的噪光底 ＋ Lit up borders 的渐变描边） -->
-        <button type="button" class="genter" id="tourGateEnter" hidden>
-          <span class="genter-in">进入旅游攻略</span>
-        </button>
         <div class="err" id="tourGateErr" role="status" aria-live="polite"></div>
       </div>
     </div>
@@ -1735,6 +1760,6 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 </div>
 
 <script src="docs.js?v=20260920b"></script>
-<script src="app.js?v=20260920d"></script>
+<script src="app.js?v=20260920e"></script>
 </body>
 </html>

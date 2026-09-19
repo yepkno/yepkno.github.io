@@ -765,11 +765,14 @@ var gateWave = (function () {
   var cv = null, ctx = null, noise = null, raf = 0, running = false;
   var W = 0, H = 0, nt = 0, ready = false, cssBlur = false;
   var REDUCE = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
-  // 站内暖色族（上游默认是 #38bdf8/#818cf8/#c084fc/#e879f9/#22d3ee —— 那套紫蓝正是"AI 配色"）。
-  // ⚠️ 五条必须**色相各不相同**：全用朱红的深浅同色，模糊后会糊成一根橙棒、失去层次
-  //（这正是上一版"只有一条橙带"的第二个成因）。现在是 朱红 → 橙 → 琥珀 → 玫红 → 深栗。
-  var COLORS = ["#ff461f", "#ff8a3d", "#ffc061", "#e0475f", "#8a2410"];
-  var BLUR = 10, LINE_W = 50, LINE_N = 5, OPACITY = 0.5, SPEED = 0.002, MAXW = 1440, FILL = "#05070d";
+  // ⚠️ 2026-09-20 用户要求："背景的这个·束带换成**以蓝色为主色**，并且不去除渐变、波动
+  // 等任何其他运动变化形式" → **只换色相，几何/动效一行不动**
+  //（5 条仍绕 `H*0.5` 叠成一条横带、仍是 3D simplex 噪声驱动、blur/线宽/速度/透明度全保持）。
+  // ⚠️ 五条必须**色相各不相同**：同色深浅模糊后会糊成一根棒、失去层次（上一版就栽在这）。
+  // 蓝族取"以蓝为主 + 一支青做冷色点缀"：亮蓝 → 天蓝 → 青 → 宝蓝 → 极深蓝（暗头给厚度）。
+  // ⚠️ 刻意**不碰靛紫/品红**那一档 —— 那是通用"AI 配色"，也是本站在 `.genter` 处明令避开的。
+  var COLORS = ["#2f7bff", "#5aa9ff", "#22d3ee", "#1d4ed8", "#0b2a6b"];
+  var BLUR = 10, LINE_W = 50, LINE_N = 5, OPACITY = 0.5, SPEED = 0.002, MAXW = 1440, FILL = "#040714";
 
   function setup() {
     if (ready) return true;
