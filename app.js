@@ -762,8 +762,8 @@ var gateWave = (function () {
   var W = 0, H = 0, nt = 0, ready = false, cssBlur = false;
   var REDUCE = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   // 站内朱红体系（上游默认是 #38bdf8/#818cf8/#c084fc/#e879f9/#22d3ee —— 那套紫蓝正是"AI 配色"）
-  var COLORS = ["#ff461f", "#ff8a65", "#c73310", "#ff9d6e", "#7a2410"];
-  var BLUR = 10, LINE_W = 50, LINE_N = 5, OPACITY = 0.5, SPEED = 0.002, MAXW = 1440, FILL = "#080b10";
+  var COLORS = ["#e03a17", "#ff6a3d", "#a82c0c", "#ff8f5e", "#6d2008"];
+  var BLUR = 10, LINE_W = 50, LINE_N = 5, OPACITY = 0.42, SPEED = 0.002, MAXW = 1440, FILL = "#070a12";
 
   function setup() {
     if (ready) return true;
@@ -801,11 +801,19 @@ var gateWave = (function () {
     ctx.fillRect(0, 0, W, H);
     if (!cssBlur) ctx.filter = "blur(" + BLUR + "px)";
     nt += SPEED;
+    // ⚠️⚠️ 2026-09-20 关键改动：**每条波纹给自己的中线**。
+    // 上游（以及本文件上一版）把 5 条**全画在 `H*0.5`** 上，各自只有 ±100 的振幅、
+    // 线宽又有 50 —— 结果是 5 条**完全糊成一根带子**，整屏只剩中间那一条，
+    // 用户看到的就是"背景看不见，只有一条橙带"（他原话：我要的是直接在我提供的背景上加一个密码验证）。
+    // 现在按 `0.13 + 0.185*i` 纵向铺开（0.13 / 0.315 / 0.50 / 0.685 / 0.87），
+    // 振幅随画布高走 —— 5 条叠起来刚好**填满整屏**，这才读作"背景"。
+    var amp = Math.max(64, H * 0.105);
     for (var i = 0; i < LINE_N; i++) {
+      var cy = H * (0.13 + 0.185 * i);
       ctx.beginPath();
       ctx.lineWidth = LINE_W;
       ctx.strokeStyle = COLORS[i % COLORS.length];
-      for (var x = 0; x < W; x += 5) ctx.lineTo(x, noise(x / 800, 0.3 * i, nt) * 100 + H * 0.5);
+      for (var x = 0; x < W; x += 5) ctx.lineTo(x, noise(x / 800, 0.3 * i, nt) * amp + cy);
       ctx.stroke();
       ctx.closePath();
     }
