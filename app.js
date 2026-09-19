@@ -124,22 +124,29 @@ var activeCategory = "主页";
 var searchKeyword = "";
 
 // ===== 主题切换 =====
+var THEME_KEY = "site_theme_v2";   // ⚠️ 键名带版本，见下方"偏好作废"说明
 function initTheme() {
-  var saved = localStorage.getItem("site_theme");
   function apply(t) { document.documentElement.setAttribute("data-theme", t); }
-  // ⚠️ 默认 = **夜间**（2026-09-19 改）。
-  // 原为 `saved === "dark"`，即默认白天；而 initTheme 只在**点过**主题按钮时才写入
-  // site_theme —— 所以一旦 localStorage 丢失（清除站点数据 / 换设备 / 手机端首次访问），
-  // 主题就"跳回白天"，表现为"主站背景光强度和以前不一样了"（用户 2026-09-19 报）。
-  // 现改为「除显式选过白天外，一律夜间」。
-  // 2026-09-19 二次修订：改为**显式写 data-theme="light"**（不再靠"删掉属性"表示白天）——
-  // 因为浅色已重做成一套独立令牌 [data-theme="light"]，:root 的兜底值现在是夜间。
+  // ⚠️ 默认 = **夜间**。
+  // 原为 `saved === "dark"`（默认白天），且 initTheme 只在**点过**主题按钮时才写入偏好 ——
+  // 所以一旦 localStorage 丢失（清站点数据 / 换设备 / 手机首次访问）主题就"跳回白天"，
+  // 表现为"主站背景光强度和以前不一样了"（用户 2026-09-19 报）。现改为「除显式选过白天外，一律夜间」。
+  // 2026-09-19 二次修订：改为**显式写 data-theme="light"**（不再靠"删属性"表示白天）。
+  //
+  // ⚠️⚠️ 2026-09-19 第三次修订 = **偏好作废一次**（`site_theme` → `site_theme_v2`，**有意不迁移**）。
+  // 原因不是洁癖，是那条老键里存着一个**已经不该生效的值**：老版浅色主题把背景压成了近乎纯白，
+  // 点过一次主题按钮的访客浏览器里就存着 "light"，于是**每次进来都是那张白纸**
+  // （用户原话："主站背景全白"，并明确要求"风格切回原来那种暗黑科技风"）。
+  // 老键**直接删除、不读不迁**：老访客回到**默认夜间**；想用浅色点一下右上角按钮即可。
+  try { localStorage.removeItem("site_theme"); } catch (e) {}
+  var saved = null;
+  try { saved = localStorage.getItem(THEME_KEY); } catch (e) {}
   apply(saved === "light" ? "light" : "dark");
   document.getElementById("themeToggle").addEventListener("click", function () {
     var cur = document.documentElement.getAttribute("data-theme");
     var next = cur === "dark" ? "light" : "dark";
     apply(next);
-    localStorage.setItem("site_theme", next);
+    try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
   });
 }
 
@@ -826,17 +833,31 @@ var gateWave = (function () {
 function setGateUnlocked(on) {
   var g = document.getElementById("tourGate");
   var en = document.getElementById("tourGateEnter");
-  if (g) g.classList.toggle("unlocked", !!on);
+  if (g) {
+    g.classList.toggle("unlocked", !!on);
+    // ② 密码正确的那一下：**打一次**扩散光晕（CSS `okPulse`，不是循环呼吸动画）。
+    // 先移除、强制回流、再加 —— 保证"输错→输对"或"连点两次"都能重放，不会因为
+    // 类名没变而整段动画被浏览器跳过（这是重放 CSS 动画的标准手法）。
+    if (on) { g.classList.remove("ok"); void g.offsetWidth; g.classList.add("ok"); }
+    else { g.classList.remove("ok"); }
+  }
   if (en) en.hidden = !on;
 }
 
 // 点「进入旅游攻略」才真正进场（密码只负责解锁，不再一步跳走）
+// ③ 出场过场：整块 `.tpanel` 向左滑出；门后的舞台**先**打开（z-index 更低，本来就在门后面），
+//    门滑走时正好露出来 → 读作"点击即入"。波纹**滑完再停**（滑出过程中仍在动，画面不"死"）。
 function enterTourGate() {
   var g = document.getElementById("tourGate");
-  if (g) g.hidden = true;
-  gateWave.stop();
+  if (!g || g.classList.contains("leaving")) return;   // 防连点重复触发
+  g.classList.add("leaving");
   document.body.style.overflow = "";
   switchCategory("旅游攻略", document.querySelector('#mainNav a[data-cat="旅游攻略"]'));
+  setTimeout(function () {
+    g.hidden = true;
+    g.classList.remove("leaving", "enter", "ok");
+    gateWave.stop();
+  }, 430);
 }
 
 function showTourGate() {
@@ -852,10 +873,16 @@ function showTourGate() {
   var inp = document.getElementById("tourGatePwd");
   if (inp) inp.value = "";
   setGateUnlocked(false);                 // 每次进来都回到"未解锁"形态
+  // ① 入场过场（PPT 换页感）：先清掉过场类、强制回流、再加 `.enter`，
+  //    这样**每次**进来都能从头播一遍（连点导航 / 从舞台退出再进，都不例外）。
+  g.classList.remove("enter", "leaving", "ok");
   g.hidden = false;
+  void g.offsetWidth;
+  g.classList.add("enter");
   document.body.style.overflow = "hidden";
   gateWave.start();                       // 波纹只在门开着的时候跑
-  setTimeout(function () { if (inp) inp.focus(); }, 60);
+  // 密码卡在 CSS 里延后 260ms 才浮出（"呼出"），聚焦也等到它到位 —— 别在滑动中抢焦点
+  setTimeout(function () { if (inp) inp.focus(); }, 560);
 }
 
 function tryTourUnlock() {
@@ -918,7 +945,13 @@ function closeTourStage() {
   document.addEventListener("keydown", function (e) {
     if (e.key !== "Escape") return;
     var g = document.getElementById("tourGate");
-    if (g && !g.hidden) { g.hidden = true; gateWave.stop(); document.body.style.overflow = ""; return; }
+    if (g && !g.hidden) {
+      g.hidden = true;
+      g.classList.remove("enter", "leaving", "ok");
+      gateWave.stop();
+      document.body.style.overflow = "";
+      return;
+    }
     var st = document.getElementById("tourStage");
     if (st && !st.hidden) {
       var td = document.getElementById("tourDetail");
