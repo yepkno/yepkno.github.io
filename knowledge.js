@@ -29,17 +29,17 @@ var knowledgeWave = (function () {
   var bloomGap = 0, flourishGap = 0, flourishIdx = 0;
   var mx = -9999, my = -9999, ax = -9999, ay = -9999, aura = 0, trailGap = 0, lastMx = -9999, lastMy = -9999;
 
-  var INK_C = [47, 93, 80];              // 墨绿
-  var GOLD_C = [176, 138, 62];           // 鎏金
-  var GREY_C = [96, 86, 70];             // 淡墨（暖褐灰；原来是偏蓝的灰，压在暖纸上发脏）
+  var INK_C = [36, 80, 68];              // 墨绿（2026-09-20 加深：#2f5d50 在暖纸上偏灰）
+  var GOLD_C = [162, 122, 46];           // 鎏金（加深）
+  var GREY_C = [74, 66, 54];             // 淡墨（暖褐灰；原来是偏蓝的灰，压在暖纸上发脏）
 
   // 底色墨团：c=基色 / a=峰值不透明度 / x,y=基准位置(比例) / r=半径系数 / s=漂移速度 / p=呼吸幅度
   var INK = [
-    { c: INK_C, a: .26, x: .20, y: .28, r: .42, s: 1.0, p: .18 },
-    { c: GOLD_C, a: .22, x: .78, y: .36, r: .34, s: 1.25, p: .15 },
-    { c: GREY_C, a: .17, x: .50, y: .74, r: .48, s: 0.8, p: .20 },
-    { c: INK_C, a: .17, x: .10, y: .80, r: .34, s: 1.45, p: .14 },
-    { c: GOLD_C, a: .15, x: .88, y: .80, r: .30, s: 1.1, p: .16 }
+    { c: INK_C, a: .34, x: .20, y: .28, r: .42, s: 1.0, p: .18 },
+    { c: GOLD_C, a: .28, x: .78, y: .36, r: .34, s: 1.25, p: .15 },
+    { c: GREY_C, a: .23, x: .50, y: .74, r: .48, s: 0.8, p: .20 },
+    { c: INK_C, a: .23, x: .10, y: .80, r: .34, s: 1.45, p: .14 },
+    { c: GOLD_C, a: .20, x: .88, y: .80, r: .30, s: 1.1, p: .16 }
   ];
 
   // ⚠️ 贴图一律用**固定基准半径**（CANON），需要多大就 drawImage 缩放到多大。
@@ -98,9 +98,11 @@ var knowledgeWave = (function () {
     for (var i = 0; i < m; i++) {
       tend.push({
         a: i / m * 6.2832 + Math.random() * .5,
-        l: (.9 + Math.random() * 2.2) * rad,   // 墨丝要明显伸出墨缘，才算"渗开"
+        // 墨丝：别抽太长太直，否则一朵墨花会变成"海胆/病毒"（已踩过）——
+        // 长度收到 0.55~1.9 倍半径，弯度加大，读作"渗进纸纤维"而不是"放射线"
+        l: (.55 + Math.random() * 1.35) * rad,
         w: .6 + Math.random() * 1.2,
-        cv: (Math.random() - .5) * 1.4
+        cv: (Math.random() - .5) * 1.9
       });
     }
     blooms.push({ x: x, y: y, rad: rad, c: color, t: 0, seed: Math.random() * 900, tend: tend });
@@ -142,10 +144,10 @@ var knowledgeWave = (function () {
     //    ⚠️ 内圈还要**足够淡**：大半径 + 内圈偏浓 = 一块"淡绿气球"（已踩过），
     //    所以 0→.70 段压得很低，只让边界那圈显形。
     var gd = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, rad);
-    gd.addColorStop(0, "rgba(" + cs + "," + (.03 * life) + ")");
-    gd.addColorStop(.32, "rgba(" + cs + "," + (.04 * life) + ")");
-    gd.addColorStop(.70, "rgba(" + cs + "," + (.075 * life) + ")");
-    gd.addColorStop(.90, "rgba(" + cs + "," + (.24 * life) + ")");   // 湿边
+    gd.addColorStop(0, "rgba(" + cs + "," + (.06 * life) + ")");
+    gd.addColorStop(.32, "rgba(" + cs + "," + (.075 * life) + ")");
+    gd.addColorStop(.70, "rgba(" + cs + "," + (.135 * life) + ")");
+    gd.addColorStop(.90, "rgba(" + cs + "," + (.40 * life) + ")");   // 湿边
     gd.addColorStop(1, "rgba(" + cs + ",0)");
     ctx.fillStyle = gd;
     ctx.fill();
@@ -155,7 +157,7 @@ var knowledgeWave = (function () {
       for (var rg = 0; rg < 2; rg++) {
         var rt = (t - .10 - rg * .11) / .42;
         if (rt <= 0 || rt >= 1) continue;
-        ctx.strokeStyle = "rgba(" + cs + "," + (.16 * (1 - rt) * life) + ")";
+        ctx.strokeStyle = "rgba(" + cs + "," + (.24 * (1 - rt) * life) + ")";
         ctx.lineWidth = 1.3;
         ringPath(1 + rt * (.55 + rg * .45));
         ctx.stroke();
@@ -171,7 +173,7 @@ var knowledgeWave = (function () {
         var x0 = b.x + Math.cos(tn.a) * b.rad * .18, y0 = b.y + Math.sin(tn.a) * b.rad * .18;
         var x1 = b.x + Math.cos(tn.a) * L, y1 = b.y + Math.sin(tn.a) * L;
         var qx = b.x + Math.cos(tn.a + tn.cv) * L * .6, qy = b.y + Math.sin(tn.a + tn.cv) * L * .6;
-        ctx.strokeStyle = "rgba(" + cs + "," + (.18 * fad * len) + ")";
+        ctx.strokeStyle = "rgba(" + cs + "," + (.28 * fad * len) + ")";
         ctx.lineWidth = tn.w;
         ctx.beginPath();
         ctx.moveTo(x0, y0);
@@ -183,7 +185,7 @@ var knowledgeWave = (function () {
     // 墨心：刚落下那一下的实心点（别太重，否则像"糊了一坨"）
     if (t < .26) {
       var core = Math.max(6, b.rad * (.14 + .18 * (1 - t / .26)));
-      ctx.globalAlpha = .34 * (1 - t / .26);
+      ctx.globalAlpha = .45 * (1 - t / .26);
       ctx.drawImage(sprite("core" + cs, b.c, 64), b.x - core, b.y - core, core * 2, core * 2);
       ctx.globalAlpha = 1;
     }
@@ -245,6 +247,162 @@ var knowledgeWave = (function () {
                            p[0], p[1]);
       ctx.fill();
     }
+  }
+
+  // ---- 魔法学院小物：猫头鹰 / 飘浮蜡烛 / 星尘 ----
+  // 2026-09-20 用户："能不能再加入一点哈利波特的元素，比如猫头鹰啥的"。
+  // ⚠️ 只做**通用的魔法学院意象**（猫头鹰、飘浮烛火、星尘），**不复刻任何影视作品的美术、
+  //    徽标或字体** —— 公开站点上照搬他人 IP 的具体形象有版权风险，"学院味"靠意象就够。
+  // 猫头鹰用**线描**（与页面那张学院简绘同一种笔法），比填色剪影更像这页的东西。
+  var owls = [], candles = [], stars = [], dust = [];
+  var owlGap = 0, candleGap = 0;
+
+  function spawnOwl() {
+    var dir = Math.random() < .5 ? 1 : -1;
+    // ⚠️ 飞行高度要**让开中间那块文字**：窄屏文字块几乎占满横向，
+    //    所以窄屏把航道压到最上面（.05~.19H），宽屏留一条 .10~.28H 的带。
+    var band = W < 900 ? [.05, .19] : [.10, .28];
+    owls.push({
+      x: dir > 0 ? -W * .14 : W * 1.14,
+      y: H * (band[0] + Math.random() * (band[1] - band[0])),
+      dir: dir,
+      s: Math.min(W, H) * (.06 + Math.random() * .025),
+      // ⚠️ 速度别太慢：0.00052W/帧 ≈ 45px/s，横穿要 40s —— 用户会觉得它"卡在边上"。
+      //    现在约 100~150px/s，横穿 13~16s，正好是一只慢悠悠飞过的猫头鹰。
+      v: (W * .00105 + Math.random() * W * .0004) * dir,
+      ph: Math.random() * 6.2832,
+      t: 0
+    });
+    if (owls.length > 1) owls.shift();
+  }
+
+  function drawOwl(o) {
+    var s = o.s, x = o.x, y = o.y + Math.sin(o.t * .0022 + o.ph) * s * .5;
+    var flap = Math.sin(o.t * .0075 + o.ph);            // -1..1：翼尖上下扇
+    var cs = "36,80,68", a = .58, d = o.dir;
+    ctx.strokeStyle = "rgba(" + cs + "," + a + ")";
+    ctx.lineWidth = Math.max(1, s * .055);
+    ctx.lineJoin = "round";
+    ctx.lineCap = "round";
+    // 尾羽：从身体后下方拖出的三根短线
+    ctx.beginPath();
+    for (var tf = 0; tf < 3; tf++) {
+      var ty = y + s * (.52 + tf * .16);
+      ctx.moveTo(x - d * s * .18, ty);
+      ctx.lineTo(x - d * s * (1.15 - tf * .12), ty + s * (.3 - tf * .1));
+    }
+    ctx.stroke();
+    // ⚠️ 头要**大**（猫头鹰的头几乎与身体同宽，画小了就像别的动物）
+    var hx = x + d * s * .72, hy = y - s * .48, hr = s * .56;
+    ctx.beginPath(); ctx.arc(hx, hy, hr, 0, 6.2832); ctx.stroke();      // 头
+    ctx.beginPath(); ctx.arc(hx + d * hr * .1, hy + hr * .06, hr * .62, 0, 6.2832); ctx.stroke();  // 脸盘
+    // 耳簇（两撮）
+    ctx.beginPath();
+    ctx.moveTo(hx - hr * .74, hy - hr * .6); ctx.lineTo(hx - hr * .5, hy - hr * 1.42);
+    ctx.lineTo(hx - hr * .1, hy - hr * .94);
+    ctx.moveTo(hx + hr * .42, hy - hr * .78); ctx.lineTo(hx + hr * .6, hy - hr * 1.52);
+    ctx.lineTo(hx + hr * .92, hy - hr * .78);
+    ctx.stroke();
+    // 眼（两颗实心点）+ 喙（小三角）
+    ctx.fillStyle = "rgba(" + cs + "," + a + ")";
+    ctx.beginPath(); ctx.arc(hx - d * hr * .3, hy - hr * .04, hr * .17, 0, 6.2832); ctx.fill();
+    ctx.beginPath(); ctx.arc(hx + d * hr * .34, hy - hr * .1, hr * .17, 0, 6.2832); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(hx + d * hr * .72, hy + hr * .12);
+    ctx.lineTo(hx + d * hr * 1.02, hy + hr * .3);
+    ctx.lineTo(hx + d * hr * .62, hy + hr * .42);
+    ctx.closePath(); ctx.fill();
+    // 身体（蛋形，头在身体前半侧）
+    ctx.beginPath();
+    ctx.ellipse(x, y + s * .12, s * .42, s * .62, d * .12, 0, 6.2832);
+    ctx.stroke();
+    // 双翼：**向后**扫出（原来画成左右对称，结果左翼被头挡住、看着像"飞猫"）。
+    // 近翼低一点、远翼高一点，翼尖随 flap 上下 → 就是"扇翅"。
+    var tip = flap * s * .5;
+    ctx.fillStyle = "rgba(" + cs + "," + (a * .26) + ")";
+    ctx.beginPath();                                     // 近翼
+    ctx.moveTo(x + d * s * .3, y - s * .05);
+    ctx.quadraticCurveTo(x - d * s * .35, y - s * .55 + tip, x - d * s * 1.38, y - s * .56 + tip);
+    ctx.quadraticCurveTo(x - d * s * .72, y + s * .12, x - d * s * .02, y + s * .36);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.beginPath();                                     // 远翼
+    ctx.moveTo(x + d * s * .3, y - s * .24);
+    ctx.quadraticCurveTo(x - d * s * .28, y - s * .86 + tip, x - d * s * 1.06, y - s * 1.0 + tip);
+    ctx.quadraticCurveTo(x - d * s * .58, y - s * .34, x + d * s * .02, y + s * .14);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+  }
+
+  // 飘浮蜡烛：烛身 + 会抖的火苗 + 一圈暖光（用缓存贴图做光晕，省一次 createRadialGradient）
+  function spawnCandle(init) {
+    candles.push({
+      x: (.08 + Math.random() * .84) * W,
+      y: init ? H * (.18 + Math.random() * .74) : H + 40,
+      s: Math.min(W, H) * (.018 + Math.random() * .012),
+      v: .14 + Math.random() * .16,
+      ph: Math.random() * 6.2832
+    });
+  }
+  function drawCandle(c) {
+    var s = c.s, x = c.x + Math.sin(c.ph) * s * 2.2, y = c.y;
+    var fl = s * (.95 + Math.sin(c.ph * 9.1) * .16);          // 火苗长度抖动
+    var gr = s * 3.6;
+    ctx.globalAlpha = .5 + Math.sin(c.ph * 5.3) * .12;
+    ctx.drawImage(sprite("candleGlow", [216, 168, 74], CANON), x - gr, y - s * .5 - gr, gr * 2, gr * 2);
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = "rgba(222,208,176,.9)";                    // 烛身
+    ctx.fillRect(x - s * .3, y - s * .15, s * .6, s * 1.7);
+    ctx.strokeStyle = "rgba(96,86,70,.45)";
+    ctx.lineWidth = Math.max(.7, s * .06);
+    ctx.strokeRect(x - s * .3, y - s * .15, s * .6, s * 1.7);
+    ctx.beginPath();                                           // 火苗
+    ctx.moveTo(x, y - s * .15 - fl);
+    ctx.quadraticCurveTo(x + s * .32, y - s * .15 - fl * .3, x, y - s * .15 + s * .12);
+    ctx.quadraticCurveTo(x - s * .32, y - s * .15 - fl * .3, x, y - s * .15 - fl);
+    ctx.fillStyle = "rgba(238,190,86,.92)";
+    ctx.fill();
+  }
+
+  // 星尘：定点闪烁的四芒星（相位驱动，不移动）
+  function makeStars() {
+    var n = Math.min(18, Math.max(8, Math.round(W * H / 90000))), arr = [];
+    for (var i = 0; i < n; i++) {
+      arr.push({
+        x: Math.random() * W, y: Math.random() * H,
+        s: Math.random() * 5 + 3.5, ph: Math.random() * 6.2832,
+        sp: .008 + Math.random() * .014
+      });
+    }
+    return arr;
+  }
+  function drawStars() {
+    for (var i = 0; i < stars.length; i++) {
+      var st = stars[i];
+      st.ph += st.sp;
+      var p = Math.sin(st.ph);
+      if (p <= .3) continue;
+      var a = (p - .3) / .7, s = st.s * (.45 + a * .55);
+      ctx.strokeStyle = "rgba(176,138,62," + (.55 * a) + ")";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(st.x - s, st.y); ctx.lineTo(st.x + s, st.y);
+      ctx.moveTo(st.x, st.y - s); ctx.lineTo(st.x, st.y + s);
+      ctx.stroke();
+      ctx.fillStyle = "rgba(212,178,104," + (.7 * a) + ")";
+      ctx.beginPath(); ctx.arc(st.x, st.y, Math.max(.8, s * .15), 0, 6.2832); ctx.fill();
+    }
+  }
+
+  // 尾迹金尘：猫头鹰飞过留下的一串极淡金点
+  function drawDust() {
+    for (var i = dust.length - 1; i >= 0; i--) {
+      var d = dust[i];
+      d.a -= .0055;
+      d.x -= d.vx; d.y -= .12;
+      if (d.a <= 0) { dust.splice(i, 1); continue; }
+      ctx.fillStyle = "rgba(176,138,62," + d.a + ")";
+      ctx.beginPath(); ctx.arc(d.x, d.y, d.r, 0, 6.2832); ctx.fill();
+    }
+    if (dust.length > 90) dust.splice(0, dust.length - 90);
   }
 
   // ---- 沿金框游走的一道描金流光 ----
@@ -342,6 +500,7 @@ var knowledgeWave = (function () {
     k = W / Math.max(1, vw);
     buildPaper();                        // 尺寸变了 → 颗粒贴图重做
     specks = [];                         // 浮尘按旧尺寸算的，一并重来
+    stars = makeStars();                 // 星尘的落点也是按旧尺寸算的
     flourishes = [];                     // 藤蔓位置也是按旧尺寸算的
   }
 
@@ -401,6 +560,30 @@ var knowledgeWave = (function () {
     flourishGap++;
     if (flourishGap > 330) { flourishGap = 0; spawnFlourish(); }
 
+    // 魔法学院小物：飘浮蜡烛（常驻 2 支，缓缓上浮）→ 猫头鹰（偶尔飞过，带一串金尘）→ 星尘
+    candleGap++;
+    if (candles.length < 2 && candleGap > 150) { candleGap = 0; spawnCandle(false); }
+    for (var ci = candles.length - 1; ci >= 0; ci--) {
+      var cd = candles[ci];
+      cd.ph += .014;
+      cd.y -= cd.v;
+      if (cd.y < -60) { candles.splice(ci, 1); continue; }
+      drawCandle(cd);
+    }
+    owlGap++;
+    if (owlGap > 380) { owlGap = 0; spawnOwl(); }          // 约 6.3s 飞过一只
+    for (var oi = owls.length - 1; oi >= 0; oi--) {
+      var ow = owls[oi];
+      ow.t++; ow.x += ow.v;
+      if (ow.x < -W * .3 || ow.x > W * 1.3) { owls.splice(oi, 1); continue; }
+      drawOwl(ow);
+      if (ow.t % 7 === 0)                                  // 尾迹金尘（跟在尾羽后面）
+        dust.push({ x: ow.x - ow.dir * ow.s * 1.1, y: ow.y + ow.s * .7,
+                    r: Math.random() * 1.4 + .5, a: .22, vx: ow.v * 3 });
+    }
+    drawStars();
+    drawDust();
+
     // 描金流光（沿证书内框绕行；"减少动效"时不动，静帧靠墨与藤撑着）
     if (!REDUCE) {
       if (!frameRect) measureFrame();   // 门刚显示时可能量到 0，这里补量；量到就不再来
@@ -433,8 +616,11 @@ var knowledgeWave = (function () {
     measureFrame();                        // 量一次金框的实际位置（给描金流光用）
     gilt = 0;
     blooms = []; flourishes = []; specks = [];
+    owls = []; candles = []; dust = [];
+    owlGap = 150; candleGap = 0;           // 蜡烛开场就来，猫头鹰约 2.5s 后掠过
     bloomGap = 60; flourishGap = 210;      // 开门后很快就有第一滴墨、第一枝藤
     mx = my = ax = ay = -9999; aura = 0; lastMx = lastMy = -9999; trailGap = 0;
+    spawnCandle(true); spawnCandle(true);  // 常驻两支飘浮蜡烛
     // 开门第一拍：先落一滴墨（不等计时器），门一露面就有动的东西
     spawnBloom(W * (.5 + (Math.random() < .5 ? -.24 : .24) * 1.6), H * .62,
                Math.min(W, H) * .07, INK_C);
