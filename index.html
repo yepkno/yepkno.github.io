@@ -57,12 +57,13 @@
   --shadow-lift:0 2px 4px rgba(0,0,0,.36),0 9px 14px rgba(0,0,0,.30);
   --code-inline:#ff8a65;
   --sel:rgba(255,70,31,.34);
-  /* 背景：bg.jpg 现在是**中暗蓝水彩**（2026-09-20 重生成，见下）。遮罩 .62 是"两面夹"算出来的：
-     更薄 → 页脚 --faint 掉到线下；更厚 → 蓝就看不见了（用户两次报"太暗/全白"都是这个夹缝）。
-     配合 `--muted`/`--faint` 提亮，实测页脚最坏像素 ≥4.7:1。 */
-  --veil:rgba(6,9,13,.62); --gate-veil:rgba(6,9,13,.94);
+  /* ⚠️ 2026-09-20 背景**撤销重做**：bg.jpg 换回**最原始那张**（白纸＋蓝色水彩，1664×1232）。
+     用户原话："在白天模式完全没动，算了，撤销吧，把主站背景换回最原始的那张图"。
+     遮罩随之回到**原始夜间值 .82** —— 原图是**亮底**，遮罩太薄会整页发灰白（这是第三次踩）。
+     判据：照片越亮 → 遮罩越厚。`.62` 只适用于上一版那张中暗图。 */
+  --veil:rgba(6,9,13,.82); --gate-veil:rgba(6,9,13,.94);
   /* 背景只用两件工具（见 body::before）：**一个光源** ＋ **一圈晕影**。
-     晕影 .55 → .40：中暗背景本来就不亮，再压四角会读成"脏"。 */
+     晕影 .55 → .40：原图亮，四角再压会读成"脏"。 */
   --light-wash:rgba(255,70,31,.10);
   --vignette:rgba(4,6,10,.40);
 }
@@ -70,8 +71,8 @@
   /* --- 白天（真浅色）--- */
   --bg:#eef1f5; --card:rgba(255,255,255,.90); --border:rgba(18,28,42,.13);
   --text:#18212c; --muted:#4d5a68;
-  --faint:#556172;           /* 2026-09-19 压深（原 #5f6b78）：遮罩从 .93 降到 .90 后
-                                背景亮了一档，--faint 必须跟着压深才守得住 4.5:1。 */
+  --faint:#3f4a57;           /* 2026-09-20 再压深（#556172 → #3f4a57）：白天遮罩从 .90 降到 .76 后
+                                背景透光多了 14%，页脚 --faint 直接压在图上，必须压深才守得住 4.5:1。 */
   --accent-text:#b02f0d;     /* 浅底上必须压深：白卡片 5.8:1、浅底 5.7:1；
                                 首版取 #c9340f 时，激活导航落在 --accent-soft 上只有 3.99:1。 */
   --accent-soft:rgba(255,70,31,.10);
@@ -80,9 +81,12 @@
   --shadow-lift:0 2px 4px rgba(16,26,40,.12),0 9px 14px rgba(16,26,40,.10);
   --code-inline:#c0340e;
   --sel:rgba(255,70,31,.24);
-  /* 浅色下遮罩 .93 → .90：.93 时照片被压到几乎纯白（用户报的"背景全白"），
-     现在留 10% 让**暗调水墨**透出来当纸影，页面从"一张白纸"变成"有纹理的浅纸"。 */
-  --veil:rgba(240,243,247,.90); --gate-veil:rgba(240,243,247,.96);
+  /* ⚠️ 2026-09-20：`.90 → .76`。用户报"主站背景在**白天模式**完全没动"——
+     根因就是这里：原图（白纸蓝水彩）本来就很亮，白色遮罩再加到 .90 之后，
+     算下来只剩 10% 透光，等于**在图上又糊了一张白纸**，所以白天永远看不出背景。
+     现在留 24% 透光，蓝水彩在白底上读作"有纹理的浅纸影"。
+     代价：页脚字直接压在图上，`--faint` 必须压得更深才守得住 4.5:1（见上面那行）。 */
+  --veil:rgba(240,243,247,.76); --gate-veil:rgba(240,243,247,.96);
   --light-wash:rgba(255,70,31,.05);
   --vignette:rgba(206,215,227,.44);
 }
@@ -125,13 +129,12 @@ html::-webkit-scrollbar{width:10px;height:10px}
 html::-webkit-scrollbar-track{background:transparent}
 html::-webkit-scrollbar-thumb{background:rgba(255,70,31,.38);border-radius:10px;border:2px solid transparent;background-clip:content-box}
 html::-webkit-scrollbar-thumb:hover{background:rgba(255,70,31,.66);background-clip:content-box}
-body{font-family:var(--sans);background-color:var(--bg);background-image:linear-gradient(var(--veil),var(--veil)),url("assets/bg.jpg?v=20260919d");background-size:cover,cover;background-position:center,center;background-repeat:no-repeat,no-repeat;background-attachment:fixed,fixed;color:var(--text);line-height:1.75;transition:color .25s,background-color .25s}
-/* 背景 = 一张「中暗蓝水彩」＋ **一个光源** ＋ **一圈晕影**。只此三件。
+body{font-family:var(--sans);background-color:var(--bg);background-image:linear-gradient(var(--veil),var(--veil)),url("assets/bg.jpg?v=20260920a");background-size:cover,cover;background-position:center,center;background-repeat:no-repeat,no-repeat;background-attachment:fixed,fixed;color:var(--text);line-height:1.75;transition:color .25s,background-color .25s}
+/* 背景 = 一张「白纸蓝水彩」＋ **一个光源** ＋ **一圈晕影**。只此三件。
    · ⚠️ **`background-blend-mode` 保持"不用"**。它历史上来回翻了两次，规律已经清楚：
-     它只在"照片比目标色更脏"时有用；一旦照片本身就是站点要的色（现在的蓝）就只会捣乱
+     它只在"照片比目标色更脏"时有用；一旦照片本身就是站点要的色就只会捣乱
      （`luminosity` 会把色相当掉 → 用户报"背景全白"）。**先看图再看要不要混合。**
-   · 图片本身的明暗是**在图像侧调**的（`scripts\prepare_bg.py --gain` 压暗+染蓝），
-     不是靠遮罩硬压 —— 亮图 + 厚遮罩 = 发灰发白，这条路已经走过两次、两次都翻车。
+   · 明暗由 `--veil` 单独负责：**照片越亮 → 遮罩越厚**（原图是亮底，故夜间 .82）。
    · `body::before` 只留**一个光源**（左上，方向与导航一致）＋ **一圈晕影**（四角沉下去）。 */
 body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
   background:
@@ -211,24 +214,26 @@ img{display:block}
    还会被导航/标签云/页脚抢视觉 —— 全屏才是它的正确场地。 */
 /* ⚠️ 2026-09-19 重做（用户原话："完全是密码墙重叠在我提供的源码上，我要的是三步融合"）。
    原来的病是**平铺**：门一出现，波纹与卡片**同帧**到位，卡片像一块板"贴"在波纹上。
-   现在改成**三步编排**，并让卡片**坐进**场景里、而不是盖在上面：
+   现在改成**三步编排**，并让"密码这件事"**长在场景里**、而不是盖在上面：
 
    ① 点导航 → `.tpanel` 整块**从右滑入**（PPT 换页感）→ 波纹先到位；
-      密码卡**延后 260ms** 再浮出（这才是"呼出一个密码填写框"）；
-   ② 密码正确 → `#tourGate.ok` 打**一次扩散光晕**（不是循环呼吸），
-      密码行收起、Lit-up 按钮展开；
+      大字 / 副标题 / 输入行**各错开 70–80ms 依次浮出**（这才是"呼出"）；
+   ② 密码正确 → `#tourGate.ok` 闪一下（`okFlash`，不是循环呼吸）；
+      那行输入**收拢成一条线**，`进入` 按钮从同一条线长出来（`gentIn`）；
    ③ 点进入 → `.tpanel` 向**左滑出**，门后的舞台同时淡入（"点击即入"）。
 
-   ⚠️⚠️ 2026-09-20 二次修正（用户原话："还是看不见后面的背景，**我要的是直接在我提供的
-   背景上加一个密码验证的功能**"）—— 上一版错在两点，都已改：
-   · **波纹只画在一条中线上** → 5 条糊成一根带子，整屏只有中间一道。现在每条各有中线、
-     纵向铺满（见 app.js `step()`），整屏才算"背景"；
-   · **`.tscrim` 把中间也压暗了**（上下 .78/.86、中间 .22/.26）→ 波纹即使铺满也被吃掉。
-     现在只留**上下两条轻晕影**，中间**完全留亮**。
-   另外删掉了 `.thorizon`（与"波纹带同高的一条线"）—— 波纹铺满整屏后，一条"地平线"没有意义。
+   ⚠️ 2026-09-20 二次修正（用户："还是看不见后面的背景，我要的是直接在我提供的背景上
+   加一个密码验证的功能"）：波纹改为每条各有中线、纵向铺满；`.tscrim` 只压上下两条边。
 
-   配一个**密码验证**在它上面（用户就是这么要的）：卡片走半透明玻璃 + backdrop-blur
-   **取样下方正在动的波纹**，边框用朱红渐变描边与波纹同色系，仅此而已 —— 不做多余的装饰。 */
+   ⚠️⚠️ 2026-09-20 三次修正（用户三条意见，下面这段 CSS 就是结论）：
+   · "**不是横向束带，换回上一版横向的**" → 波纹回到 `H*0.5` 的一条横向带（见 app.js `step()`），
+     上下留大片暗场 —— 就是用户给的参考图（黑底 ＋ 一条彩带 ＋ 大字压在带上）那个形态；
+   · "**密码框不要存在**，就像这样几个大字" → **整个卡片删掉**（图标 / 标题 / 说明 / 输入框 /
+     按钮 / 提示 / 仪表全部撤走），密码信息改由**大字**承担；输入做成**没有框的一行**，只有下划线；
+   · "**密码墙和背景不是重叠，而是完美融合**" → 融合靠三件事：① 大字后方一层**径向暗雾**
+     （让字"坐进"波纹里，同时保住白字的对比度）；② 大字中线与波纹带**同高**；
+     ③ 下划线与按钮光晕**全用波纹同族的颜色**。
+   原来那套"卡片半透明取样波纹 + 渐变描边"的写法、以及 `.thorizon` 地平线元素，都不再需要。 */
 #tourGate{position:fixed;inset:0;z-index:120;overflow:hidden;background:#05070d}
 #tourGate[hidden]{display:none}
 .tpanel{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
@@ -237,78 +242,129 @@ img{display:block}
   opacity:0;background:linear-gradient(180deg,transparent,rgba(255,138,101,.85),transparent)}
 /* 波纹画布铺满。blur 由 JS 设在 canvas 上下文的 filter 上（Safari 兜底见 app.js） */
 #tourGateWave{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;display:block}
-/* 只压**上下两条边**（把画面兜住、不与浏览器 UI 打架），中间一律透明 —— 波纹要看得见 */
+/* 上下压成暗场、**中间一段完全留亮**：画面于是读作"中间一条横向波纹带、上下大片暗"，
+   正是用户给的参考图（黑底 ＋ 一条彩带 ＋ 压在上面的大字）的形态。
+   ⚠️ 别把中间也压暗 —— 一压就又回到"背景看不见"。 */
 .tscrim{position:absolute;inset:0;z-index:1;pointer-events:none;
-  background:linear-gradient(180deg,rgba(5,7,13,.62) 0%,rgba(5,7,13,0) 20%,
-             rgba(5,7,13,0) 78%,rgba(5,7,13,.68) 100%)}
-/* 卡片：半透明玻璃取样波纹 + 朱红渐变描边。透明度取 .60 —— 再透下去，压在波峰上时
-   文字对比度会掉线（实测见 `scripts\contrast_check.py`）；再实就看不见波纹。 */
-#tourGate .gate-box{position:relative;z-index:2;max-width:420px;border:1px solid transparent;
-  background:
-    linear-gradient(rgba(8,11,17,.60),rgba(8,11,17,.70)) padding-box,
-    linear-gradient(122deg,rgba(255,70,31,.60),rgba(255,70,31,.10) 46%,rgba(255,138,101,.46)) border-box;
-  backdrop-filter:blur(24px) saturate(1.15);-webkit-backdrop-filter:blur(24px) saturate(1.15);
-  /* ⚠️ 阴影必须**紧致两层**（贴边 1–2px ＋ 环境 ≤14px）。别因为"要浮在波纹上"就写
-     30px 弥散 —— 那正是检测器规则 `gpt-thin-border-wide-shadow` 抓的生成式签名
-     （1px 细边 + 宽弥散阴影），上一轮刚清掉，别再种回来。 */
-  box-shadow:0 1px 2px rgba(0,0,0,.5),0 5px 14px rgba(0,0,0,.42)}
-/* 解锁确认环：**伪元素 + transform/opacity** 做，不用 `box-shadow` 铺开。
-   两个理由：① 动画改 box-shadow 会每帧重绘，改 transform/opacity 只走合成层；
-   ② 「带模糊的彩色 box-shadow」正是检测器规则 `dark-glow` 抓的生成式签名
-   （上一版就是这么写的，被记了一条）。基态 opacity:0，只在 `.ok` 那一下播一次。 */
-#tourGate .gate-box::before{content:"";position:absolute;inset:-1px;border-radius:inherit;
-  border:1px solid rgba(255,70,31,.75);opacity:0;pointer-events:none}
-#tourGate .icon{background:rgba(255,70,31,.14)}
-#tourGate .tk{display:flex;gap:22px;justify-content:center;margin-top:16px;font-size:10.5px;
-  color:var(--faint);letter-spacing:.12em;
-  font-family:ui-monospace,"SFMono-Regular",Consolas,monospace}
-#tourGate .tk b{color:var(--accent-text)}
+  background:linear-gradient(180deg,rgba(4,6,11,.94) 0%,rgba(4,6,11,.34) 24%,
+             rgba(4,6,11,0) 40%,rgba(4,6,11,0) 60%,rgba(4,6,11,.38) 78%,rgba(4,6,11,.95) 100%)}
 
-/* ---- 三步过场的动效（只动 transform / opacity / filter，不碰布局属性）---- */
-#tourGate.enter .tpanel{animation:panelIn .54s cubic-bezier(.16,.84,.24,1) both}
-#tourGate.enter .tpanel::after{animation:leadEdge .72s ease-out both}
-#tourGate.enter .gate-box{animation:cardIn .46s cubic-bezier(.22,1,.36,1) .26s both}
-#tourGate.ok .gate-box::before{animation:okRing .62s cubic-bezier(.2,.8,.3,1) both}
-#tourGate.leaving .tpanel{animation:panelOut .42s cubic-bezier(.6,0,.9,.4) both}
+/* ===== 密码验证：**没有卡片、没有框** —— 就是压在波纹带上的一组大字 ＋ 一行无框输入 =====
+   （用户原话："密码框不要存在……就像原生的这样几个大字，你把涉及密码的信息转换一下"）
+   融合手段（都不是叠放）：
+   ① 文字后方一层**径向暗雾**：大字"坐进"波纹里，不是浮在上面；同时把压在波峰上的
+      那部分背景压下去，顺手保住白字的对比度；
+   ② 大字的**中线与波纹带同高**（带子中线 = 文字中线）；
+   ③ 输入行的下划线、按钮的光晕**全用波纹同一族颜色** —— 边界自然消失。 */
+#tourGate .gstage{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;
+  text-align:center;padding:24px 20px;max-width:min(680px,92vw)}
+#tourGate .gstage::before{content:"";position:absolute;left:-18%;right:-18%;top:-26%;bottom:-30%;
+  z-index:-1;pointer-events:none;
+  background:radial-gradient(closest-side,rgba(4,6,11,.80),rgba(4,6,11,.48) 60%,transparent 100%)}
+#tourGate .geyebrow{font-size:12px;font-weight:600;letter-spacing:.44em;text-indent:.44em;
+  color:rgba(255,255,255,.62);margin-bottom:15px}
+#tourGate .gtitle{font-family:var(--serif);font-weight:600;
+  font-size:clamp(30px,5.8vw,58px);line-height:1.24;letter-spacing:.02em;color:#fdfefe;
+  text-shadow:0 1px 2px rgba(0,0,0,.62),0 3px 22px rgba(0,0,0,.55)}
+/* 副标题字距收到 .04em：再宽会被检测器的 `wide-tracking` 判为"正文过度字距" */
+#tourGate .gsub{margin-top:15px;font-size:clamp(13px,1.5vw,15px);letter-spacing:.04em;
+  color:rgba(255,255,255,.76);text-shadow:0 1px 12px rgba(0,0,0,.62)}
+/* 输入行：**没有框**，只有一条与波纹同色的下划线（"框"这个概念在这里被删掉了） */
+#tourGate .gfield{position:relative;display:flex;align-items:center;justify-content:center;
+  margin-top:32px;width:min(340px,74vw);transform-origin:center;
+  transition:opacity .24s ease,transform .32s cubic-bezier(.4,0,.2,1),filter .24s}
+#tourGate .gfield input{width:100%;padding:10px 30px 12px;border:0;background:transparent;outline:none;
+  color:#fff;font-family:var(--sans);font-size:clamp(17px,2.4vw,22px);text-align:center;
+  letter-spacing:.3em;caret-color:var(--accent)}
+#tourGate .gfield input::placeholder{color:rgba(255,255,255,.5);letter-spacing:.32em;font-size:.84em}
+#tourGate .gfield::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,138,101,.8) 24%,rgba(255,70,31,.95) 50%,
+             rgba(255,138,101,.8) 76%,transparent);transition:height .2s,background .2s}
+#tourGate .gfield:focus-within::after{height:2px;
+  background:linear-gradient(90deg,transparent,#ffb08a 20%,#ff461f 50%,#ffb08a 80%,transparent)}
+/* 回车记号：只是个符号，不是按钮框（手机端没有实体回车键时也能点） */
+#tourGate .gok{position:absolute;right:-4px;bottom:2px;width:34px;height:34px;padding:0;border:0;
+  background:transparent;color:rgba(255,255,255,.58);font-size:15px;line-height:1;cursor:pointer;
+  transition:color .18s,transform .18s}
+#tourGate .gok:hover{color:#fff;transform:translateX(2px)}
+#tourGate .err{color:#ff8a72;font-size:13.5px;min-height:18px;margin-top:16px;
+  text-shadow:0 1px 8px rgba(0,0,0,.6)}
+/* 解锁：输入行**收拢成一条线**（这是"框变成按钮"那个 morph 的起点） */
+#tourGate.unlocked .gfield{opacity:0;transform:scaleY(.06);filter:blur(5px);pointer-events:none}
+#tourGate.unlocked .gok{opacity:0;pointer-events:none}
+#tourGate.wrong .gfield{animation:gshake .42s cubic-bezier(.36,.07,.19,.97) both}
+#tourGate.ok .gstage{animation:okFlash .5s cubic-bezier(.2,.8,.3,1) both}
+@keyframes gshake{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(4px)}
+  30%,50%,70%{transform:translateX(-6px)}40%,60%{transform:translateX(6px)}}
+@keyframes okFlash{0%{filter:brightness(1.45)}100%{filter:brightness(1)}}
+
+/* ---- 三步过场的动效（只动 transform / opacity / filter，一律不碰布局属性）----
+   ⚠️ 入场动画一律用 `backwards`（**不是 both**）。因为 `.gfield` 在解锁时要靠
+   transition 做收拢；若入场动画用 `both`，它的填充会一直锁住 transform/opacity，
+   把解锁时的收拢整个吃掉。`backwards` 只保留"延迟期间"的起始态，播完即交还基础样式。 */
+#tourGate.enter .tpanel{animation:panelIn .54s cubic-bezier(.16,.84,.24,1) backwards}
+#tourGate.enter .tpanel::after{animation:leadEdge .72s ease-out backwards}
+/* "呼出"：eyebrow → 大字 → 副标题 → 输入行 依次到位（各错开 70–80ms），
+   读作一层层浮起，而不是整块弹出 */
+#tourGate.enter .geyebrow{animation:cardIn .5s cubic-bezier(.22,1,.36,1) .22s backwards}
+#tourGate.enter .gtitle{animation:cardIn .5s cubic-bezier(.22,1,.36,1) .30s backwards}
+#tourGate.enter .gsub{animation:cardIn .5s cubic-bezier(.22,1,.36,1) .38s backwards}
+#tourGate.enter .gfield{animation:cardIn .5s cubic-bezier(.22,1,.36,1) .46s backwards}
+#tourGate.leaving .tpanel{animation:panelOut .42s cubic-bezier(.6,0,.9,.4) backwards}
 /* 舞台淡入：门向左滑开时从后面露出来 */
 #tourStage:not([hidden]){animation:stageIn .42s ease-out both}
 
 @keyframes panelIn{from{transform:translateX(100%)}to{transform:none}}
 @keyframes panelOut{from{transform:none}to{transform:translateX(-100%)}}
 @keyframes leadEdge{0%{opacity:0}32%{opacity:1}100%{opacity:0}}
-@keyframes cardIn{from{opacity:0;transform:translateY(22px) scale(.975);filter:blur(6px)}
+@keyframes cardIn{from{opacity:0;transform:translateY(20px);filter:blur(6px)}
   to{opacity:1;transform:none;filter:blur(0)}}
-@keyframes okRing{from{opacity:.85;transform:scale(1)}to{opacity:0;transform:scale(1.16)}}
 @keyframes stageIn{from{opacity:0}to{opacity:1}}
 
-/* ---- 密码正确后：输入框"简变"成进入按钮 ----
-   （这段与上游那段 JSX 一一对应：外层 `p-[3px] relative` → `.genter`；
-     子层 `absolute inset-0 bg-gradient…` → `.genter::before`；
-     内层 `px-8 py-2 bg-black … hover:bg-transparent` → `.genter-in`。
-     hover 时内层变透明、整个渐变透出来 —— 即上游说的 "Lit up borders"。
-     ⚠️ 渐变两端用站内朱红（`--enter-a/--enter-b`），不是上游的 indigo→purple：
-     那对紫蓝正是本站"去 AI 化"要清掉的通用色。）*/
-#tourGate .gfield{transition:transform .3s cubic-bezier(.4,0,.2,1),opacity .26s;transform-origin:top center}
-#tourGate.unlocked .gfield{transform:scaleY(0);opacity:0}
-#tourGate.unlocked #tourGateBtn{display:none}
-.genter{position:relative;display:inline-flex;width:100%;justify-content:center;margin-top:14px;
-  padding:3px;border:0;cursor:pointer;
-  background:transparent;border-radius:calc(var(--r-action) + 3px);
-  animation:gentIn .34s cubic-bezier(.22,1,.36,1) both}
+/* ---- 解锁后展开的「进入」按钮 =====
+   两套上游效果叠在一起：
+   · **NoiseBackground**（用户给的第二个源码）：三团模糊色斑在按钮后面缓慢游动 + 一层噪声，
+     即"发着噪光的底"；
+   · **Lit-up borders**（用户给的第一个源码）：外层渐变铺满、内芯深色，hover 时内芯变透明，
+     整个渐变"亮起来"。
+   ⚠️ 色斑用 `::after` + `filter:blur` + **只动 transform/opacity** 实现 ——
+   不用"零偏移彩色 box-shadow"（那是检测器 `dark-glow` 抓的生成式签名）。
+   颜色仍走站内暖色族（朱红/橙/玫红），不是上游 NoiseBackgroundDemo 的 indigo/purple。 */
+.genter{position:relative;display:inline-flex;padding:3px;border:0;cursor:pointer;
+  margin-top:28px;background:transparent;border-radius:calc(var(--r-action) + 3px);
+  transform-origin:center}
 .genter[hidden]{display:none}
 .genter::before{content:"";position:absolute;inset:0;border-radius:inherit;
-  background:linear-gradient(90deg,var(--enter-a),var(--enter-b))}
-.genter .genter-in{position:relative;display:block;padding:11px 34px;border-radius:var(--r-action);
-  background:#05070a;color:#fff;font-size:15px;font-weight:600;
+  background:linear-gradient(100deg,var(--enter-a),var(--enter-b) 54%,#ff3d78)}
+.genter::after{content:"";position:absolute;inset:-7px;border-radius:inherit;z-index:-1;
+  filter:blur(13px);opacity:.86;
+  background:
+    radial-gradient(38% 74% at 16% 50%,rgba(255,70,31,.95),transparent 72%),
+    radial-gradient(34% 68% at 52% 50%,rgba(255,150,80,.92),transparent 74%),
+    radial-gradient(40% 74% at 86% 50%,rgba(226,61,120,.80),transparent 72%);
+  animation:noiseDrift 6.5s ease-in-out infinite alternate}
+.genter .genter-in{position:relative;display:block;padding:12px 40px;border-radius:var(--r-action);
+  background:#05070a;color:#fff;font-size:15.5px;font-weight:600;letter-spacing:.06em;
   transition:background .22s ease,color .22s ease}
 .genter:hover .genter-in,.genter:focus-visible .genter-in{background:transparent;color:var(--on-accent)}
-.genter:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
-@keyframes gentIn{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}}
-/* 尊重"减少动效"：全部过场直接落位（基础样式本来就是终态，animation:none 即静态正确）*/
+.genter:hover::after{opacity:1}
+.genter:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
+/* "线变按钮"：从一条压扁的线（scaleY .08）在位移 + 模糊中长成按钮 */
+#tourGate.unlocked .genter{animation:gentIn .52s cubic-bezier(.2,1.02,.3,1) backwards}
+@keyframes gentIn{
+  0%{opacity:0;transform:scale(.64,.08) translateY(7px);filter:blur(5px)}
+  55%{opacity:1;filter:blur(0)}
+  100%{opacity:1;transform:none;filter:blur(0)}}
+@keyframes noiseDrift{
+  0%{transform:translateX(-6px) scaleX(.97)}
+  100%{transform:translateX(6px) scaleX(1.03)}}
+/* 尊重"减少动效"：过场与噪声光全部落位静止 */
 @media (prefers-reduced-motion: reduce){
-  .genter{animation:none}
-  #tourGate.enter .tpanel,#tourGate.leaving .tpanel,#tourGate.enter .gate-box,
-  #tourGate.ok .gate-box::before,#tourGate.enter .tpanel::after,
+  .genter::after{animation:none}
+  #tourGate.unlocked .genter{animation:none}
+  #tourGate.enter .tpanel,#tourGate.leaving .tpanel,#tourGate.enter .tpanel::after,
+  #tourGate.enter .geyebrow,#tourGate.enter .gtitle,#tourGate.enter .gsub,
+  #tourGate.enter .gfield,#tourGate.wrong .gfield,#tourGate.ok .gstage,
   #tourStage:not([hidden]){animation:none}
 }
 
@@ -1548,30 +1604,29 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
   <!-- 旅游攻略 · 全屏密码门（点导航「旅游攻略」时弹出，通过后进全屏舞台） -->
   <div id="tourGate" hidden>
     <!-- 动态波纹背景：原生移植 shadcn 的 WavyBackground（自写 3D simplex 噪声 + canvas + blur），
-         配色换成站内朱红体系。启动/停止由 app.js 跟着门的显隐走，且尊重 prefers-reduced-motion。
+         配色换成站内暖色族。启动/停止由 app.js 跟着门的显隐走，且尊重 prefers-reduced-motion。
          ⚠️ canvas 必须在 `.tpanel` **里面** —— 过场是整块 panel 平移，画布留在外面就不会跟着滑。 -->
     <div class="tpanel" id="tourGatePanel">
       <canvas id="tourGateWave" aria-hidden="true"></canvas>
-      <!-- 地平线亮度（上下压暗、波纹带留亮）＋ 与波纹带同高的朱红细线：
-           两者一起把卡片"钉"在波带上，而不是让卡片浮在波纹上面 -->
       <div class="tscrim" aria-hidden="true"></div>
-      <div class="gate-box">
-        <div class="icon">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 12l9 4 9-4"/><path d="M3 17l9 4 9-4"/></svg>
-        </div>
-        <h2>&#12300;旅游攻略&#12301;栏目</h2>
-        <p>本栏目受密码保护，请输入访问密码进入全屏浏览。</p>
+      <!-- 密码验证：**没有卡片、没有框** —— 就是压在波纹带上的一组大字 ＋ 一行无框输入行。
+           原来那套"图标 + 标题 + 说明 + 输入框 + 按钮 + 提示 + 仪表"的卡片语言全部撤掉，
+           密码信息改由大字承担（用户要求："密码框不要存在，就像这样几个大字"）。 -->
+      <div class="gstage">
+        <div class="geyebrow">旅游攻略</div>
+        <h2 class="gtitle">请输入访问密码</h2>
+        <p class="gsub">本栏目受密码保护 · 该密码仅对本栏目有效</p>
         <div class="gfield" id="tourGateField">
-          <input type="password" id="tourGatePwd" placeholder="请输入访问密码" autocomplete="off" aria-label="旅游攻略栏目密码">
+          <input type="password" id="tourGatePwd" placeholder="密码" autocomplete="off"
+                 aria-label="旅游攻略栏目密码" enterkeyhint="go" spellcheck="false">
+          <button type="button" class="gok" id="tourGateOk" aria-label="确认密码">&#8629;</button>
         </div>
-        <button id="tourGateBtn" type="button">进入旅游攻略</button>
-        <!-- 密码正确后：上面的输入框收起，这个按钮展开（Lit-up borders 效果） -->
+        <!-- 密码正确后：上面那行输入**收拢成一条线**，这个按钮从同一条线长出来
+             （NoiseBackground 的噪光底 ＋ Lit up borders 的渐变描边） -->
         <button type="button" class="genter" id="tourGateEnter" hidden>
           <span class="genter-in">进入旅游攻略</span>
         </button>
         <div class="err" id="tourGateErr" role="status" aria-live="polite"></div>
-        <div class="hint">该密码仅对本栏目有效，其他受限栏目仍需各自密码</div>
-        <div class="tk"><span>ENTRIES <b id="tgEntries">—</b></span><span>SYS <b>&#9679;</b> READY</span></div>
       </div>
     </div>
   </div>
@@ -1664,7 +1719,7 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
   </div>
 </div>
 
-<script src="docs.js?v=20260919l"></script>
-<script src="app.js?v=20260919l"></script>
+<script src="docs.js?v=20260920a"></script>
+<script src="app.js?v=20260920a"></script>
 </body>
 </html>

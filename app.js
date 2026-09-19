@@ -761,9 +761,11 @@ var gateWave = (function () {
   var cv = null, ctx = null, noise = null, raf = 0, running = false;
   var W = 0, H = 0, nt = 0, ready = false, cssBlur = false;
   var REDUCE = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
-  // 站内朱红体系（上游默认是 #38bdf8/#818cf8/#c084fc/#e879f9/#22d3ee —— 那套紫蓝正是"AI 配色"）
-  var COLORS = ["#e03a17", "#ff6a3d", "#a82c0c", "#ff8f5e", "#6d2008"];
-  var BLUR = 10, LINE_W = 50, LINE_N = 5, OPACITY = 0.42, SPEED = 0.002, MAXW = 1440, FILL = "#070a12";
+  // 站内暖色族（上游默认是 #38bdf8/#818cf8/#c084fc/#e879f9/#22d3ee —— 那套紫蓝正是"AI 配色"）。
+  // ⚠️ 五条必须**色相各不相同**：全用朱红的深浅同色，模糊后会糊成一根橙棒、失去层次
+  //（这正是上一版"只有一条橙带"的第二个成因）。现在是 朱红 → 橙 → 琥珀 → 玫红 → 深栗。
+  var COLORS = ["#ff461f", "#ff8a3d", "#ffc061", "#e0475f", "#8a2410"];
+  var BLUR = 10, LINE_W = 50, LINE_N = 5, OPACITY = 0.5, SPEED = 0.002, MAXW = 1440, FILL = "#05070d";
 
   function setup() {
     if (ready) return true;
@@ -801,19 +803,18 @@ var gateWave = (function () {
     ctx.fillRect(0, 0, W, H);
     if (!cssBlur) ctx.filter = "blur(" + BLUR + "px)";
     nt += SPEED;
-    // ⚠️⚠️ 2026-09-20 关键改动：**每条波纹给自己的中线**。
-    // 上游（以及本文件上一版）把 5 条**全画在 `H*0.5`** 上，各自只有 ±100 的振幅、
-    // 线宽又有 50 —— 结果是 5 条**完全糊成一根带子**，整屏只剩中间那一条，
-    // 用户看到的就是"背景看不见，只有一条橙带"（他原话：我要的是直接在我提供的背景上加一个密码验证）。
-    // 现在按 `0.13 + 0.185*i` 纵向铺开（0.13 / 0.315 / 0.50 / 0.685 / 0.87），
-    // 振幅随画布高走 —— 5 条叠起来刚好**填满整屏**，这才读作"背景"。
-    var amp = Math.max(64, H * 0.105);
+    // ⚠️⚠️ 2026-09-20 三次修正（用户原话："**不是横向束带，换回上一版横向的**"）。
+    // 上一版为了让"整屏都有波纹"把 5 条各给了一条中线（0.13/0.315/0.5/0.685/0.87）→
+    // 铺满倒是铺满了，但画面变成一片斜向条带、没有焦点。用户要的是参考图那种形态：
+    // **中间一条有厚度的横向带，上下大片暗场，大字压在带上**。
+    // 所以回到上游 `WavyBackground` 的构图：5 条都围绕 `H*0.5`，各自形状不同 → 叠成一条带。
+    // 加一点静态错位（`(i-2)*14`）让带子更饱满，避免 5 条完全重合。
     for (var i = 0; i < LINE_N; i++) {
-      var cy = H * (0.13 + 0.185 * i);
       ctx.beginPath();
       ctx.lineWidth = LINE_W;
       ctx.strokeStyle = COLORS[i % COLORS.length];
-      for (var x = 0; x < W; x += 5) ctx.lineTo(x, noise(x / 800, 0.3 * i, nt) * amp + cy);
+      for (var x = 0; x < W; x += 5)
+        ctx.lineTo(x, noise(x / 800, 0.3 * i, nt) * 100 + H * 0.5 + (i - 2) * 14);
       ctx.stroke();
       ctx.closePath();
     }
@@ -863,7 +864,7 @@ function enterTourGate() {
   switchCategory("旅游攻略", document.querySelector('#mainNav a[data-cat="旅游攻略"]'));
   setTimeout(function () {
     g.hidden = true;
-    g.classList.remove("leaving", "enter", "ok");
+    g.classList.remove("leaving", "enter", "ok", "wrong");
     gateWave.stop();
   }, 430);
 }
@@ -871,11 +872,6 @@ function enterTourGate() {
 function showTourGate() {
   var g = document.getElementById("tourGate");
   if (!g) return;
-  var en = document.getElementById("tgEntries");
-  if (en) {
-    var n = (window.DOCS || []).filter(function (d) { return d.category === "旅游攻略"; }).length;
-    en.textContent = String(n).padStart(3, "0");
-  }
   var err = document.getElementById("tourGateErr");
   if (err) err.textContent = "";
   var inp = document.getElementById("tourGatePwd");
@@ -883,38 +879,53 @@ function showTourGate() {
   setGateUnlocked(false);                 // 每次进来都回到"未解锁"形态
   // ① 入场过场（PPT 换页感）：先清掉过场类、强制回流、再加 `.enter`，
   //    这样**每次**进来都能从头播一遍（连点导航 / 从舞台退出再进，都不例外）。
-  g.classList.remove("enter", "leaving", "ok");
+  g.classList.remove("enter", "leaving", "ok", "wrong");
   g.hidden = false;
   void g.offsetWidth;
   g.classList.add("enter");
   document.body.style.overflow = "hidden";
   gateWave.start();                       // 波纹只在门开着的时候跑
-  // 密码卡在 CSS 里延后 260ms 才浮出（"呼出"），聚焦也等到它到位 —— 别在滑动中抢焦点
-  setTimeout(function () { if (inp) inp.focus(); }, 560);
+  // 大字/副标题/输入行是**依次**浮出的（CSS 里 220–460ms 的错开），
+  // 聚焦等输入行到位之后再抢，别在滑动中就把焦点塞进去。
+  setTimeout(function () { if (inp) inp.focus(); }, 980);
 }
 
 function tryTourUnlock() {
   var inp = document.getElementById("tourGatePwd");
   var err = document.getElementById("tourGateErr");
+  var g = document.getElementById("tourGate");
   var pwd = inp ? inp.value.trim() : "";
   pwd = pwd.replace(/[\uFF01-\uFF5E]/g, function (ch) {
     return String.fromCharCode(ch.charCodeAt(0) - 0xFEE0);
   });
-  if (!pwd) { if (err) err.textContent = "请输入密码"; return; }
+  if (!pwd) {
+    if (err) err.textContent = "请输入密码";
+    shakeGate(g);
+    return;
+  }
   if (sha256(pwd) === WALL_HASHES["旅游攻略"]) {
     setDocWallUnlocked("旅游攻略");
-    // ⚠️ 2026-09-19 改：不再"密码一过就跳走"。密码只负责**解锁**，
-    // 输入框收起、原地变形成一个「进入旅游攻略」按钮，由用户再点一次才进场。
+    // ⚠️ 2026-09-19 改：不再"密码一过就跳走"。密码只负责**解锁** ——
+    // 那行无框输入**收拢成一条线**，再由同一条线长出一个「进入旅游攻略」按钮，
+    // 由用户再点一次才进场（"点击即入"）。
     setGateUnlocked(true);
     if (err) err.textContent = "";
     var en = document.getElementById("tourGateEnter");
-    if (en) setTimeout(function () { en.focus(); }, 80);
+    if (en) setTimeout(function () { en.focus(); }, 620);
     return;
   }
-  {
-    if (err) err.textContent = "密码错误，请重试";
-    if (inp) { inp.value = ""; inp.focus(); }
-  }
+  if (err) err.textContent = "密码错误，请重试";
+  if (inp) { inp.value = ""; inp.focus(); }
+  shakeGate(g);
+}
+
+// 输错时抖一下（同时把上一次的 `wrong` 去掉、强制回流再加 —— 保证连错两次也重放动画）
+function shakeGate(g) {
+  if (!g) return;
+  g.classList.remove("wrong");
+  void g.offsetWidth;
+  g.classList.add("wrong");
+  setTimeout(function () { g.classList.remove("wrong"); }, 460);
 }
 
 function openTourStage() {
@@ -939,7 +950,7 @@ function closeTourStage() {
 
 (function bindTourStage() {
   var ex = document.getElementById("tourExit");
-  var gb = document.getElementById("tourGateBtn");
+  var gok = document.getElementById("tourGateOk");     // 输入行右侧那个「↵」记号（不是按钮框）
   var gp = document.getElementById("tourGatePwd");
   if (ex) ex.addEventListener("click", function () {
     closeTourStage();
@@ -947,7 +958,9 @@ function closeTourStage() {
     if (home) home.click();
   });
   var ge = document.getElementById("tourGateEnter");
-  if (gb) gb.addEventListener("click", tryTourUnlock);
+  // ⚠️ 2026-09-20：原来这里绑的是卡片上的 `#tourGateBtn`（已随卡片一起删除）。
+  // 现在**没有提交按钮** —— 回车即提交，右下角那个 `↵` 记号是给手机端的替代入口。
+  if (gok) gok.addEventListener("click", tryTourUnlock);
   if (gp) gp.addEventListener("keydown", function (e) { if (e.key === "Enter") tryTourUnlock(); });
   if (ge) ge.addEventListener("click", enterTourGate);
   document.addEventListener("keydown", function (e) {
@@ -955,7 +968,7 @@ function closeTourStage() {
     var g = document.getElementById("tourGate");
     if (g && !g.hidden) {
       g.hidden = true;
-      g.classList.remove("enter", "leaving", "ok");
+      g.classList.remove("enter", "leaving", "ok", "wrong");
       gateWave.stop();
       document.body.style.overflow = "";
       return;
