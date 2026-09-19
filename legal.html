@@ -10,52 +10,86 @@
 <meta name="keywords" content="免责声明,侵权投诉,版权声明,侵权投诉指引">
 <meta name="robots" content="index, follow">
 <style>
+/* ===== 设计令牌（与 index.html 同一套，改一处两处都要跟着改）=====
+   2026-09-19：原来 `:root`=「白天」（其实是深得少一点的深色）、`[data-theme="dark"]`=夜间；
+   现改为 `:root` 兜底=夜间，`[data-theme="light"]`=真正的浅色主题。主色朱红两套一致。 */
 :root{
-  --bg:#161b24; --card:rgba(30,37,48,.82); --border:rgba(255,255,255,.10);
-  --text:#e8edf3; --muted:#9aa7b4; --faint:#6b7684;
-  --accent:#ff461f; --accent-dark:#e03a17; --accent-soft:rgba(255,70,31,.15);
-  --tag-bg:rgba(255,255,255,.07); --shadow:0 8px 30px rgba(0,0,0,.35);
-  --glow:0 0 18px rgba(255,70,31,.45);
-  --veil:rgba(14,18,26,.72);
+  --accent:#ff461f;
+  --accent-strong:#ff6a42;
+  --on-accent:#0c0f14;      /* 压在朱红上的深墨字：5.64:1（白字只有 3.42:1） */
+  --accent-ring:rgba(255,70,31,.20);
+  --r-action:10px;          /* 动作（按钮/输入/小件）—— 与 index.html 同一套形状体系 */
+  --r-pill:999px;           /* 胶囊（开关/标签/徽章） */
   --serif:"Noto Serif SC","Source Han Serif SC",Georgia,"Songti SC",SimSun,serif;
   --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
 }
-[data-theme="dark"]{
+:root, [data-theme="dark"]{
   --bg:#0c0f14; --card:rgba(20,24,31,.85); --border:rgba(255,255,255,.08);
-  --text:#e8edf3; --muted:#8b97a3; --faint:#55606d;
-  --accent:#ff461f; --accent-dark:#e03a17; --accent-soft:rgba(255,70,31,.13);
-  --tag-bg:rgba(255,255,255,.05); --shadow:0 10px 34px rgba(0,0,0,.5);
-  --glow:0 0 22px rgba(255,70,31,.55);
-  --veil:rgba(6,9,13,.82);
+  --text:#e8edf3; --muted:#a6b2bf; --faint:#8e9aa8;
+  --accent-text:#ff6a45;     /* ⚠️ 2026-09-19 补：法务页原来缺这个 token，`a{color:var(--accent)}`
+                                直接拿 #ff461f 当正文链接色 —— 浅底上只有 3.09:1。 */
+  --accent-soft:rgba(255,70,31,.13);
+  --tag-bg:rgba(255,255,255,.05); --field:rgba(255,255,255,.05);
+  --shadow:0 1px 2px rgba(0,0,0,.34),0 4px 12px rgba(0,0,0,.24);
+  --shadow-lift:0 2px 4px rgba(0,0,0,.36),0 9px 14px rgba(0,0,0,.30);
+  --code-inline:#ff8a65;
+  --sel:rgba(255,70,31,.34);
+  --veil:rgba(6,9,13,.88);
+  --light-wash:rgba(255,70,31,.13);
+  --vignette:rgba(4,6,10,.62);
+}
+[data-theme="light"]{
+  --bg:#eef1f5; --card:rgba(255,255,255,.90); --border:rgba(18,28,42,.13);
+  --text:#18212c; --muted:#4d5a68; --faint:#5f6b78;
+  --accent-text:#b02f0d;
+  --accent-soft:rgba(255,70,31,.10);
+  --tag-bg:rgba(18,28,42,.05); --field:rgba(18,28,42,.045);
+  --shadow:0 1px 2px rgba(16,26,40,.10),0 4px 12px rgba(16,26,40,.08);
+  --shadow-lift:0 2px 4px rgba(16,26,40,.12),0 9px 14px rgba(16,26,40,.10);
+  --code-inline:#c0340e;
+  --sel:rgba(255,70,31,.24);
+  --veil:rgba(240,243,247,.93);
+  --light-wash:rgba(255,70,31,.06);
+  --vignette:rgba(206,215,227,.52);
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
-body{font-family:var(--sans);background-color:var(--bg);background-image:linear-gradient(var(--veil),var(--veil)),url("assets/bg.jpg");background-size:cover,cover;background-position:center,center;background-repeat:no-repeat,no-repeat;background-attachment:fixed,fixed;color:var(--text);line-height:1.85;transition:color .25s}
-body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 60% 50% at 15% 0%,rgba(255,70,31,.14),transparent 60%),radial-gradient(ellipse 50% 40% at 85% 100%,rgba(64,156,255,.10),transparent 60%)}
-a{color:var(--accent);text-decoration:none}
+body{font-family:var(--sans);background-color:var(--bg);background-image:linear-gradient(var(--veil),var(--veil)),url("assets/bg.jpg?v=20260919b");background-size:cover,cover;background-position:center,center;background-repeat:no-repeat,no-repeat;background-attachment:fixed,fixed;background-blend-mode:normal,luminosity;color:var(--text);line-height:1.85;transition:color .25s}
+/* 背景三件套与 index.html 完全一致：照片只当纸纹（luminosity）＋ 一个光源 ＋ 一圈晕影 */
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(122% 88% at 10% -14%,var(--light-wash),transparent 58%),
+    radial-gradient(128% 108% at 50% 46%,transparent 30%,var(--vignette) 100%)}
+a{color:var(--accent-text);text-decoration:none;text-underline-offset:3px}
 a:hover{text-decoration:underline}
 .wrap{max-width:860px;margin:0 auto;padding:40px 24px 70px;position:relative;z-index:1}
-.card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:38px 40px;box-shadow:var(--shadow);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
-h1{font-family:var(--serif);font-size:24px;font-weight:600;letter-spacing:1px;margin-bottom:6px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:38px 40px;box-shadow:var(--shadow);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+h1{font-family:var(--serif);font-size:26px;font-weight:600;letter-spacing:.5px;margin-bottom:6px}
 .sub{color:var(--faint);font-size:13px;margin-bottom:26px}
-h2{font-family:var(--serif);font-size:18px;font-weight:600;margin:34px 0 14px;padding-left:12px;border-left:3px solid var(--accent)}
-h2:first-of-type{margin-top:6px}
+/* 章节标题：**删掉 3px 朱红左边框**（craft floor `Refuse`：彩色 border-left 超过 1px
+   加在卡片/列表项/callout 上；检测器也判为 `side-tab`）。改用**上方一条 1px 细线**——
+   这是排版惯例里的"章节分栏"，比彩色竖条安静，也让层级靠字号与留白承担。
+   字号 18 → 19px：检测器另报 `flat-type-hierarchy`（最大相邻步 1.20 < 1.25 目标），
+   19/15 与 26/19 两步都过线。 */
+h2{font-family:var(--serif);font-size:19px;font-weight:600;margin:38px 0 14px;
+  padding-top:15px;border-top:1px solid var(--border)}
+h2:first-of-type{margin-top:8px;border-top:0;padding-top:0}
 h3{font-size:15px;font-weight:600;margin:20px 0 8px}
 p{margin-bottom:12px;font-size:14px;color:var(--text)}
 ul{margin:0 0 12px 22px}
 li{font-size:14px;margin-bottom:7px}
 strong{color:var(--text);font-weight:600}
 code{background:var(--tag-bg);padding:2px 7px;border-radius:5px;font-size:13px}
-.note{background:var(--accent-soft);border:1px solid rgba(255,70,31,.28);border-radius:12px;padding:16px 18px;margin:16px 0;font-size:13.5px}
+.note{background:var(--accent-soft);border:0;border-radius:var(--r-action);padding:16px 18px;margin:16px 0;font-size:13.5px}
 .toc{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px}
-.toc a{display:inline-block;padding:7px 16px;font-size:13px;background:var(--tag-bg);border:1px solid var(--border);border-radius:8px;color:var(--text)}
-.toc a:hover{border-color:var(--accent);color:var(--accent);text-decoration:none}
+.toc a{display:inline-block;padding:7px 16px;font-size:13px;background:var(--tag-bg);border:1px solid var(--border);border-radius:var(--r-action);color:var(--text)}
+.toc a:hover{border-color:var(--accent);color:var(--accent-text);text-decoration:none}
 .top{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:22px}
-.back{font-size:13px;padding:7px 16px;background:var(--tag-bg);border:1px solid var(--border);border-radius:8px;color:var(--text)}
-.back:hover{border-color:var(--accent);color:var(--accent);text-decoration:none}
+.back{font-size:13px;padding:7px 16px;background:var(--tag-bg);border:1px solid var(--border);border-radius:var(--r-action);color:var(--text)}
+.back:hover{border-color:var(--accent);color:var(--accent-text);text-decoration:none}
 hr{border:none;border-top:1px solid var(--border);margin:30px 0}
 .foot{margin-top:26px;padding-top:20px;border-top:1px solid var(--border);color:var(--faint);font-size:12.5px;text-align:center;line-height:1.9}
-@media (max-width:640px){.card{padding:26px 20px}.wrap{padding:24px 16px 50px}h1{font-size:20px}}
+@media (max-width:640px){.card{padding:26px 20px}.wrap{padding:24px 16px 50px}h1{font-size:24px}}
 </style>
 </head>
 <body>
@@ -143,11 +177,14 @@ hr{border:none;border-top:1px solid var(--border);margin:30px 0}
 
 <script>
 (function () {
+  // 与 app.js 的 initTheme() 同一口径：除显式存过 "light" 外一律夜间；
+  // 2026-09-19 起改为**显式写 light**（浅色已是独立令牌，不再靠"删属性"）。
   try {
-    if (localStorage.getItem("site_theme") === "dark") {
-      document.documentElement.setAttribute("data-theme", "dark");
-    }
-  } catch (e) {}
+    var saved = localStorage.getItem("site_theme");
+    document.documentElement.setAttribute("data-theme", saved === "light" ? "light" : "dark");
+  } catch (e) {
+    document.documentElement.setAttribute("data-theme", "dark");
+  }
 })();
 </script>
 </body>

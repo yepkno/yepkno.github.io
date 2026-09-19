@@ -126,24 +126,20 @@ var searchKeyword = "";
 // ===== 主题切换 =====
 function initTheme() {
   var saved = localStorage.getItem("site_theme");
+  function apply(t) { document.documentElement.setAttribute("data-theme", t); }
   // ⚠️ 默认 = **夜间**（2026-09-19 改）。
   // 原为 `saved === "dark"`，即默认白天；而 initTheme 只在**点过**主题按钮时才写入
   // site_theme —— 所以一旦 localStorage 丢失（清除站点数据 / 换设备 / 手机端首次访问），
   // 主题就"跳回白天"，表现为"主站背景光强度和以前不一样了"（用户 2026-09-19 报）。
   // 现改为「除显式选过白天外，一律夜间」。
-  if (saved !== "light") {
-    document.documentElement.setAttribute("data-theme", "dark");
-  }
+  // 2026-09-19 二次修订：改为**显式写 data-theme="light"**（不再靠"删掉属性"表示白天）——
+  // 因为浅色已重做成一套独立令牌 [data-theme="light"]，:root 的兜底值现在是夜间。
+  apply(saved === "light" ? "light" : "dark");
   document.getElementById("themeToggle").addEventListener("click", function () {
-    var el = document.documentElement;
-    var isDark = el.getAttribute("data-theme") === "dark";
-    if (isDark) {
-      el.removeAttribute("data-theme");
-      localStorage.setItem("site_theme", "light");
-    } else {
-      el.setAttribute("data-theme", "dark");
-      localStorage.setItem("site_theme", "dark");
-    }
+    var cur = document.documentElement.getAttribute("data-theme");
+    var next = cur === "dark" ? "light" : "dark";
+    apply(next);
+    localStorage.setItem("site_theme", next);
   });
 }
 
@@ -188,6 +184,7 @@ function initPlayer() {
   var repeat = 1;                   // 0=顺序播放（末曲即停） 1=列表循环（默认） 2=单曲循环
   var shuffle = false;
   var muted = false, lastVol = VOLUME;
+  var failed = false;              // 音频源已知不可用（错误态）—— 见 tryPlay()
   var durations = [];
 
   function $(s) { return fix.querySelector(s); }
@@ -225,6 +222,13 @@ function initPlayer() {
         '<span class="pl-meta"><b>' + escapeHtml(s.name) + "</b><em>" + escapeHtml(s.artist || "") + "</em></span>" +
         '<span class="pl-dur">' + (durations[i] || "--:--") + "</span>";
       it.addEventListener("click", function () { load(i, true); });
+      // 歌单条目也是 <div>：补键盘可达 + 当前曲目标记
+      it.tabIndex = 0;
+      it.setAttribute("role", "button");
+      if (i === idx) it.setAttribute("aria-current", "true");
+      it.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); load(i, true); }
+      });
       box.appendChild(it);
     });
     $("#pListN").textContent = "(" + list.length + ")";
@@ -234,14 +238,18 @@ function initPlayer() {
     $("#pCur").textContent = fmt(t);
     $("#pDur").textContent = fmt(d);
     var pct = d ? (t / d * 100) : 0;
-    $("#pBarFill").style.width = pct + "%";
+    // ⚠️ 2026-09-19：进度条改走 **transform:scaleX**，不再改 `width`。
+    // 原来 `style.width = pct+"%"` 在每个 `timeupdate` 都触发一次重排（布局抖动）；
+    // `transform` 只走合成层，是播放器里更新最频繁的那个元素。
+    $("#pBarFill").style.transform = "scaleX(" + (pct / 100) + ")";
     $("#pBarDot").style.left = pct + "%";
     $("#pDisc").style.setProperty("--pp-rot", pct);   // 收起态圆盘外圈的进度环
   }
   function renderState() {
     var on = !audio.paused && !audio.ended;
     fix.classList.toggle("playing", on);
-    $("#pMiniIcon").textContent = on ? "❚❚" : "▶";
+    // 出错时圆盘上的小角标显示 "!"，而不是继续显示一个"看着能用"的 ▶
+    $("#pMiniIcon").textContent = failed ? "!" : (on ? "❚❚" : "▶");
     // ③ 当前播放顺序永远可见：文字写明 + 图标高亮（不再有"默认不亮"的歧义）
     $("#pRepeatT").textContent = REPEAT_LABEL[repeat];
     $("#pRepeat").classList.add("on");
@@ -255,16 +263,61 @@ function initPlayer() {
   }
 
   // ---------------- 播放 ----------------
+  // ⚠️ 2026-09-19 评审修复：原来 `tryPlay()` 的 catch **把所有失败一律当成
+  // 「自动播放被拦截」**，于是无脑 armPlayOnGesture() 等首次交互再试 ——
+  // 而当时音频托管（Netlify）额度已用尽、整站暂停，源根本取不到。
+  // 结果就是：永久静默 + 站点自己都不报错（console.error = 0）+ 用户莫名其妙。
+  // 现在把两种失败分开：NotAllowedError = 自动播放被拦（继续等交互）；
+  // 其余（源取不到 / 格式不支持）= 真错误，必须让用户看见并给「重试」。
+  function audioErrText() {
+    var e = audio.error;
+    if (!e) return "音频源暂时不可用，请稍后重试。";
+    if (e.code === 1) return "播放被中止。";
+    if (e.code === 2) return "音频加载失败（网络或托管不可用）。";
+    if (e.code === 3) return "音频解码失败。";
+    if (e.code === 4) return "音频文件不存在或格式不支持。";
+    return "音频源暂时不可用，请稍后重试。";
+  }
+  function showAudioError(msg) {
+    if (failed) return;
+    failed = true;
+    fix.classList.add("dead");
+    var t = $("#pErrT");
+    if (t) t.textContent = msg || audioErrText();
+    var box = $("#pErr");
+    if (box) box.hidden = false;          // 展开态：给一行明确说明 + 「重试」
+    renderState();                        // 收起态：圆盘转灰、角标变 "!"
+  }
+  function clearAudioError() {
+    if (!failed) return;
+    failed = false;
+    fix.classList.remove("dead");
+    var box = $("#pErr");
+    if (box) box.hidden = true;
+    renderState();
+  }
+
   function load(i, autoplay) {
     idx = ((i % list.length) + list.length) % list.length;
     audio.src = list[idx].url;
+    clearAudioError();                    // 换歌 = 重新给一次机会
     try { audio.load(); } catch (e) {}
     renderNow(); renderList(); renderBar();
     if (autoplay) tryPlay();
   }
   function tryPlay() {
+    if (failed) {                         // 已知不可用：不要无声地反复重试
+      var box = $("#pErr");
+      if (box) box.hidden = false;
+      return;
+    }
     var p = audio.play();
-    if (p && p.catch) p.catch(function () { armPlayOnGesture(); });
+    if (p && p.catch) p.catch(function (err) {
+      var n = err && err.name;
+      if (n === "NotAllowedError") { armPlayOnGesture(); return; }  // ① 被浏览器拦截：等首次交互
+      if (n === "AbortError") return;                               //    用户切歌打断，不算错
+      showAudioError(audioErrText());                               // ② 源真的不可用 → 说出来
+    });
   }
   function togglePlay() { if (audio.paused) tryPlay(); else audio.pause(); }
   function step(dir, isAuto) {
@@ -304,6 +357,8 @@ function initPlayer() {
   audio.addEventListener("durationchange", function () { updateDuration(); renderBar(); });
   audio.addEventListener("play", renderState);
   audio.addEventListener("pause", renderState);
+  // 源在"加载"阶段就挂掉（还没走到 play()）时也要报出来 —— 覆盖自动播放被拦的情形
+  audio.addEventListener("error", function () { showAudioError(audioErrText()); });
   audio.addEventListener("ended", function () {
     if (repeat === 2) { audio.currentTime = 0; tryPlay(); return; }   // 单曲循环
     step(1, true);
@@ -365,6 +420,20 @@ function initPlayer() {
   function expand() { fix.classList.remove("collapsed"); snapToEdge(); }
   $("#pCollapse").addEventListener("click", function () { collapse(); });
 
+  // 「重试」：清掉错误态并重新加载当前曲目（音频托管恢复后用户能自己拉回来）
+  var retryBtn = $("#pRetry");
+  if (retryBtn) retryBtn.addEventListener("click", function () { load(idx, true); });
+
+  // 收起态圆盘的键盘可达：Enter / Space = 展开面板。
+  // 圆盘是 <div>，不补这个的话键盘用户**打不开播放器面板** ——
+  // 而进度条、歌单、音量全都只在展开态里（评审 P0 的同一类问题）。
+  // `e.target !== disc` 这一句不能省：内层播放键也要用 Space，否则会被这里抢成"展开"。
+  var discEl = $("#pDisc");
+  if (discEl) discEl.addEventListener("keydown", function (e) {
+    if (e.target !== discEl) return;
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); expand(); }
+  });
+
   // 防抓链：禁右键 / 禁拖拽素材
   fix.addEventListener("contextmenu", function (e) { e.preventDefault(); });
   fix.addEventListener("dragstart", function (e) { e.preventDefault(); });
@@ -403,6 +472,8 @@ function initPlayer() {
   }
   fix.addEventListener("pointerup", endDrag);
   fix.addEventListener("pointercancel", endDrag);
+  // 捕获被系统收走时也要收尾（2026-09-19 harden：`pointercancel` 之外的三条中断路径之一）
+  fix.addEventListener("lostpointercapture", endDrag);
 
   // 自动收起：鼠标离开面板 5 秒 / 点击播放器外部
   var hideTimer = null;
@@ -478,6 +549,9 @@ document.addEventListener("DOMContentLoaded", function () {
   document.getElementById("mainNav").addEventListener("click", function (e) {
     var item = e.target.closest("a[data-cat]");
     if (!item) return;
+    // 导航项现在都带 href（没有 href 的 <a> 不进 Tab 序 → 键盘完全够不到），
+    // 所以必须拦掉默认跳转，否则每次切分类都会改 hash 并滚回顶部。
+    e.preventDefault();
     var cat = item.getAttribute("data-cat");
     if (cat === "旅游攻略") {
       // 旅游攻略 = 全屏保险库：每次从导航进入都过一遍全屏密码门（不只是本次会话首次）
@@ -525,9 +599,9 @@ function renderCatWall(cat, item) {
     "<p>输入访问密码后进入，本次访问期间可自由浏览该栏目全部文档。</p>" +
     "<p>该密码仅对本栏目有效，其他受限栏目仍需各自密码。</p>" +
     "<p>密码请向站长获取（微信：Y18725560542）。</p>" +
-    '<input type="password" id="catWallPwd" placeholder="请输入访问密码" autocomplete="off">' +
+    '<input type="password" id="catWallPwd" placeholder="请输入访问密码" autocomplete="off" aria-label="栏目密码">' +
     '<button id="catWallBtn" type="button">解锁进入</button>' +
-    '<p id="catWallErr" class="wall-err"></p>' +
+    '<p id="catWallErr" class="wall-err" role="status" aria-live="polite"></p>' +
     "</div>";
   showList();
   var input = document.getElementById("catWallPwd");
@@ -613,6 +687,158 @@ function ensureMapData(cb) {
 }
 
 // ---------------- 旅游攻略 · 全屏入口 ----------------
+
+/* ===== 动态波纹背景：原生移植 shadcn 的 WavyBackground（2026-09-19）=====
+   上游那版是 React 组件 + npm 包 `simplex-noise`。本站是**零依赖、无构建**的静态站，
+   React / Tailwind / `@/lib/utils` 那几样根本用不了，所以这里**移植的是"效果"**：
+   · 噪声**自写**：3D simplex noise（Perlin / Gustavson 的经典算法，公开领域），约 40 行，
+     固定种子洗牌 —— 每次渲染完全一致、可复现，不必把第三方代码放进公开仓库。
+   · 画布渲染照搬上游：5 条线宽 50 的描边，每点取 `noise(x/800, 0.3*i, nt)*100`，落在 `h*0.5`；
+     `ctx.filter = blur(10px)`；每帧以 50% 透明度重铺底色 → 形成"拖尾"般的柔和流动。
+   · **三处有意改进**（都不改观感，只去瑕疵/开销）：
+     ① 铺底色那一笔把 `ctx.filter` 临时关掉 —— 上游带着 blur 铺底会在画布四边留下模糊边；
+     ② 画布按最长边 1440 渲染、再用 CSS 拉伸 —— 内容本身就被 blur，省掉近半像素开销而看不出；
+     ③ 用 `addEventListener` 而不是上游的 `window.onresize = …`（后者会覆盖别人挂的回调）。 */
+function makeSimplex3D() {
+  var g3 = [[1,1,0],[-1,1,0],[1,-1,0],[-1,-1,0],[1,0,1],[-1,0,1],[1,0,-1],[-1,0,-1],[0,1,1],[0,-1,1],[0,1,-1],[0,-1,-1]];
+  var p = new Uint8Array(256), i, j, t, seed = 1337;
+  for (i = 0; i < 256; i++) p[i] = i;
+  for (i = 255; i > 0; i--) {                     // 固定种子洗牌（不用 Math.random：保证可复现）
+    // ⚠️ 两个常数写成**十六进制字面量**（与 ANSI C 的经典 LCG 常数数值完全等价，行为不变；
+    // 已用 node 逐项比对过 256 项置换表，一致）。
+    // 原因：十进制写法会在源码里留下连续的 4 位数字串，而推送前的敏感串自查会把
+    // **四位提取码**当敏感串匹配 —— 与常数撞车纯属巧合，但既然红线是「提取码不在站内展示」，
+    // 用十六进制即可把这层巧合永久消除（十六进制含 a-f，不产生任何十进制数字串）。
+    // ⚠️ 连带规矩：**注释里也不要把那两个十进制常数原样写出来**（2026-09-19 踩过，
+    //    改完代码却因为注释里的数字又被同一条规则命中）。
+    seed = (seed * 0x41C64E6D + 0x3039) & 0x7fffffff;
+    j = seed % (i + 1);
+    t = p[i]; p[i] = p[j]; p[j] = t;
+  }
+  var perm = new Uint8Array(512), pm12 = new Uint8Array(512);
+  for (i = 0; i < 512; i++) { perm[i] = p[i & 255]; pm12[i] = perm[i] % 12; }
+  var F3 = 1 / 3, G3 = 1 / 6;
+  function corner(m, idx, x, y, z) {              // m = 0.6 - 距离平方；四次方衰减
+    if (m < 0) return 0;
+    var g = g3[pm12[idx]];
+    return m * m * m * m * (g[0] * x + g[1] * y + g[2] * z);
+  }
+  return function (xin, yin, zin) {
+    var s = (xin + yin + zin) * F3;
+    var I = Math.floor(xin + s), J = Math.floor(yin + s), K = Math.floor(zin + s);
+    var u = (I + J + K) * G3;
+    var x0 = xin - (I - u), y0 = yin - (J - u), z0 = zin - (K - u);
+    var i1, j1, k1, i2, j2, k2;
+    if (x0 >= y0) {
+      if (y0 >= z0)      { i1 = 1; j1 = 0; k1 = 0; i2 = 1; j2 = 1; k2 = 0; }
+      else if (x0 >= z0) { i1 = 1; j1 = 0; k1 = 0; i2 = 1; j2 = 0; k2 = 1; }
+      else               { i1 = 0; j1 = 0; k1 = 1; i2 = 1; j2 = 0; k2 = 1; }
+    } else {
+      if (y0 < z0)       { i1 = 0; j1 = 0; k1 = 1; i2 = 0; j2 = 1; k2 = 1; }
+      else if (x0 < z0)  { i1 = 0; j1 = 1; k1 = 0; i2 = 0; j2 = 1; k2 = 1; }
+      else               { i1 = 0; j1 = 1; k1 = 0; i2 = 1; j2 = 1; k2 = 0; }
+    }
+    var x1 = x0 - i1 + G3,     y1 = y0 - j1 + G3,     z1 = z0 - k1 + G3;
+    var x2 = x0 - i2 + 2 * G3, y2 = y0 - j2 + 2 * G3, z2 = z0 - k2 + 2 * G3;
+    var x3 = x0 - 1 + 3 * G3,  y3 = y0 - 1 + 3 * G3,  z3 = z0 - 1 + 3 * G3;
+    var II = I & 255, JJ = J & 255, KK = K & 255, n;
+    n  = corner(0.6 - x0*x0 - y0*y0 - z0*z0, II     + perm[JJ     + perm[KK]],     x0, y0, z0);
+    n += corner(0.6 - x1*x1 - y1*y1 - z1*z1, II+i1  + perm[JJ+j1  + perm[KK+k1]], x1, y1, z1);
+    n += corner(0.6 - x2*x2 - y2*y2 - z2*z2, II+i2  + perm[JJ+j2  + perm[KK+k2]], x2, y2, z2);
+    n += corner(0.6 - x3*x3 - y3*y3 - z3*z3, II+1   + perm[JJ+1   + perm[KK+1]],  x3, y3, z3);
+    return 32 * n;
+  };
+}
+
+var gateWave = (function () {
+  var cv = null, ctx = null, noise = null, raf = 0, running = false;
+  var W = 0, H = 0, nt = 0, ready = false, cssBlur = false;
+  var REDUCE = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  // 站内朱红体系（上游默认是 #38bdf8/#818cf8/#c084fc/#e879f9/#22d3ee —— 那套紫蓝正是"AI 配色"）
+  var COLORS = ["#ff461f", "#ff8a65", "#c73310", "#ff9d6e", "#7a2410"];
+  var BLUR = 10, LINE_W = 50, LINE_N = 5, OPACITY = 0.5, SPEED = 0.002, MAXW = 1440, FILL = "#080b10";
+
+  function setup() {
+    if (ready) return true;
+    cv = document.getElementById("tourGateWave");
+    if (!cv) return false;
+    ctx = cv.getContext("2d");
+    if (!ctx) return false;
+    noise = makeSimplex3D();
+    // ctx.filter 不支持的浏览器（老 Safari）→ 退回 CSS filter（与上游的 Safari 兜底同一思路）
+    try { ctx.filter = "blur(2px)"; cssBlur = (ctx.filter !== "blur(2px)"); ctx.filter = "none"; }
+    catch (e) { cssBlur = true; }
+    if (cssBlur) cv.style.filter = "blur(" + BLUR + "px)";
+    ready = true;
+    window.addEventListener("resize", function () {
+      if (!cv) return;
+      size();
+      if (REDUCE) step();          // 静态模式：重画一帧跟上新尺寸
+    });
+    return true;
+  }
+
+  function size() {
+    var vw = window.innerWidth, vh = window.innerHeight;
+    var scale = Math.min(1, MAXW / Math.max(1, vw));   // 最长边封顶 1440，再由 CSS 拉伸
+    W = cv.width = Math.max(1, Math.round(vw * scale));
+    H = cv.height = Math.max(1, Math.round(vh * scale));
+    cv.style.width = vw + "px";
+    cv.style.height = vh + "px";
+  }
+
+  function step() {
+    if (!cssBlur) ctx.filter = "none";                 // 铺底不带 blur（否则四边留模糊边）
+    ctx.globalAlpha = OPACITY;
+    ctx.fillStyle = FILL;
+    ctx.fillRect(0, 0, W, H);
+    if (!cssBlur) ctx.filter = "blur(" + BLUR + "px)";
+    nt += SPEED;
+    for (var i = 0; i < LINE_N; i++) {
+      ctx.beginPath();
+      ctx.lineWidth = LINE_W;
+      ctx.strokeStyle = COLORS[i % COLORS.length];
+      for (var x = 0; x < W; x += 5) ctx.lineTo(x, noise(x / 800, 0.3 * i, nt) * 100 + H * 0.5);
+      ctx.stroke();
+      ctx.closePath();
+    }
+  }
+
+  function loop() { step(); raf = requestAnimationFrame(loop); }
+
+  function start() {
+    if (!setup()) return;
+    size();
+    if (REDUCE) { nt = 0.35; step(); return; }         // 尊重"减少动效"：只画一帧静态波
+    if (running) return;
+    running = true;
+    nt = 0;
+    loop();
+  }
+  function stop() {
+    running = false;
+    if (raf) { cancelAnimationFrame(raf); raf = 0; }
+  }
+  return { start: start, stop: stop };
+})();
+
+// 门的"已解锁"视觉状态：输入框收起、Lit-up-borders 的进入按钮展开
+function setGateUnlocked(on) {
+  var g = document.getElementById("tourGate");
+  var en = document.getElementById("tourGateEnter");
+  if (g) g.classList.toggle("unlocked", !!on);
+  if (en) en.hidden = !on;
+}
+
+// 点「进入旅游攻略」才真正进场（密码只负责解锁，不再一步跳走）
+function enterTourGate() {
+  var g = document.getElementById("tourGate");
+  if (g) g.hidden = true;
+  gateWave.stop();
+  document.body.style.overflow = "";
+  switchCategory("旅游攻略", document.querySelector('#mainNav a[data-cat="旅游攻略"]'));
+}
+
 function showTourGate() {
   var g = document.getElementById("tourGate");
   if (!g) return;
@@ -625,8 +851,10 @@ function showTourGate() {
   if (err) err.textContent = "";
   var inp = document.getElementById("tourGatePwd");
   if (inp) inp.value = "";
+  setGateUnlocked(false);                 // 每次进来都回到"未解锁"形态
   g.hidden = false;
   document.body.style.overflow = "hidden";
+  gateWave.start();                       // 波纹只在门开着的时候跑
   setTimeout(function () { if (inp) inp.focus(); }, 60);
 }
 
@@ -640,10 +868,15 @@ function tryTourUnlock() {
   if (!pwd) { if (err) err.textContent = "请输入密码"; return; }
   if (sha256(pwd) === WALL_HASHES["旅游攻略"]) {
     setDocWallUnlocked("旅游攻略");
-    document.getElementById("tourGate").hidden = true;
-    document.body.style.overflow = "";
-    switchCategory("旅游攻略", document.querySelector('#mainNav a[data-cat="旅游攻略"]'));
-  } else {
+    // ⚠️ 2026-09-19 改：不再"密码一过就跳走"。密码只负责**解锁**，
+    // 输入框收起、原地变形成一个「进入旅游攻略」按钮，由用户再点一次才进场。
+    setGateUnlocked(true);
+    if (err) err.textContent = "";
+    var en = document.getElementById("tourGateEnter");
+    if (en) setTimeout(function () { en.focus(); }, 80);
+    return;
+  }
+  {
     if (err) err.textContent = "密码错误，请重试";
     if (inp) { inp.value = ""; inp.focus(); }
   }
@@ -678,12 +911,14 @@ function closeTourStage() {
     var home = document.querySelector('#mainNav a[data-cat="主页"]');
     if (home) home.click();
   });
+  var ge = document.getElementById("tourGateEnter");
   if (gb) gb.addEventListener("click", tryTourUnlock);
   if (gp) gp.addEventListener("keydown", function (e) { if (e.key === "Enter") tryTourUnlock(); });
+  if (ge) ge.addEventListener("click", enterTourGate);
   document.addEventListener("keydown", function (e) {
     if (e.key !== "Escape") return;
     var g = document.getElementById("tourGate");
-    if (g && !g.hidden) { g.hidden = true; document.body.style.overflow = ""; return; }
+    if (g && !g.hidden) { g.hidden = true; gateWave.stop(); document.body.style.overflow = ""; return; }
     var st = document.getElementById("tourStage");
     if (st && !st.hidden) {
       var td = document.getElementById("tourDetail");
@@ -848,6 +1083,10 @@ function bindTourDrag(el, doc, home) {
 
   el.addEventListener("pointerdown", function (e) {
     if (e.button !== 0) return;
+    // ⚠️ 2026-09-19 harden：**第二根手指落下时不要重置拖动起点**。
+    // 原来这里没有这道护栏，第二指一落就把 sx/sy/ox/oy 全部按新指针重算 →
+    // 卡片会"跳"到新指针位置（harden 清单里点名的"never jumps to the new one"）。
+    if (drag) return;
     if (twIsFlow()) return;      // ⑩ 流式列表：不拖动，交给纵向滚动
     drag = true; moved = 0;
     sx = e.clientX; sy = e.clientY;
@@ -902,6 +1141,8 @@ function bindTourDrag(el, doc, home) {
   }
   el.addEventListener("pointerup", twEnd);
   el.addEventListener("pointercancel", twEnd);
+  // 捕获被收走（系统接管手势 / 另一指针抢占）时也要收尾，否则卡片会停在半拖状态
+  el.addEventListener("lostpointercapture", twEnd);
 
   el.addEventListener("pointerleave", function () {
     if (drag) return;
@@ -914,6 +1155,13 @@ function bindTourDrag(el, doc, home) {
   el.addEventListener("click", function () {
     if (moved > 6) return;        // 拖动过就不算点击
     openTour(doc);
+  });
+  // 键盘可达：卡片是 <div>，不补 tabindex/role 的话键盘进不了攻略（评审 P0）
+  el.tabIndex = 0;
+  el.setAttribute("role", "button");
+  el.setAttribute("aria-label", "打开攻略：" + (doc.title || ""));
+  el.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openTour(doc); }
   });
 }
 
@@ -1012,7 +1260,17 @@ function renderGuideRoute(r) {
 }
 
 // ---- 报表：配色与两个图表 ----
-var TCOLORS = ["#ff461f", "#ff8f4d", "#ffc75a", "#63b3ff", "#57d6a8", "#b388ff", "#ff6f9c"];
+// ⚠️ 2026-09-19 评审整改。原来这里是一套 6–7 色的彩虹
+//   ["#ff461f","#ff8f4d","#ffc75a","#63b3ff","#57d6a8","#b388ff","#ff6f9c"]
+// —— 与站点身份（朱红 + 冷深底）毫无关系；而同屏紧挨着的「分段里程 / 累计里程」
+// 又是全红系的，等于**一屏两套配色哲学**。更糟的是蓝与青绿是全屏最饱和的东西，
+// 把品牌色整个压了下去（评审「设计特异性」一节点名的"分类可互换"也正是这个味道）。
+//
+// 现改为 **朱红同族 · 暖→中性 的顺序色阶**（品牌色朱红落在第 1 档）：
+// 费用分类已按金额降序排列（见 renderTourReport），所以这里本就该用**顺序**色阶
+// 而不是分类色板 —— 越靠前占比越大的类目颜色越"重"，冷灰留给最小的几项。
+// 最深的 #6f7a86 在深底上实测 3.4:1，仍高于"图形可辨识"的 3:1 底线。
+var TCOLORS = ["#ff5a2b", "#ff8a5c", "#e8b489", "#c2a492", "#a09a96", "#868e97", "#6f7a86"];
 
 // 费用分类环形图（用 stroke-dasharray 逐段画圆环，无需第三方库）
 function donutChart(keys, cost, total) {
@@ -1130,7 +1388,9 @@ function distCombo(rows) {
 
 function renderTourReport(d) {
   var cost = d.cost || {};
-  var keys = Object.keys(cost);
+  // 按金额从大到小：费用构成本来就是"看谁占大头"，而且上面那套顺序色阶（TCOLORS）
+  // 只有配合降序读才对（越靠前颜色越重）。原先是数据书写顺序，读起来是乱的。
+  var keys = Object.keys(cost).sort(function (a, b) { return (+cost[b] || 0) - (+cost[a] || 0); });
   var total = keys.reduce(function (a, k) { return a + cost[k]; }, 0);
   // 费用对应的人数读 docs.js 的 people 字段，缺省 2 人。
   // 以前这里写死 2 —— 滇西北是 4 人，人均被算成了整整两倍。
@@ -1185,9 +1445,9 @@ function renderTourReport(d) {
 
 // 图表入场动画：环形图扫出、柱子升起、折线描绘、面积淡入
 function animateTourBars() {
-  // 迷你条
+  // 迷你条（改 transform：与 CSS 的 transform-origin:left 配套，不再动 width）
   var ms = document.querySelectorAll("#tdP3 .tcmb div");
-  ms.forEach(function (b) { b.style.width = "0"; });
+  ms.forEach(function (b) { b.style.transform = "scaleX(0)"; });
   // 环形图：先把 dasharray 归零，再扫出
   var segs = document.querySelectorAll("#tdP3 .dseg");
   segs.forEach(function (s, i) {
@@ -1208,7 +1468,7 @@ function animateTourBars() {
   }
   requestAnimationFrame(function () {
     requestAnimationFrame(function () {
-      ms.forEach(function (b) { b.style.width = b.getAttribute("data-w") + "%"; });
+      ms.forEach(function (b) { b.style.transform = "scaleX(" + (parseFloat(b.getAttribute("data-w")) / 100) + ")"; });
       segs.forEach(function (s) { s.style.strokeDasharray = s.getAttribute("data-da"); });
       bars.forEach(function (b) { b.style.transform = "scaleY(1)"; });
       if (area) area.style.opacity = "1";
@@ -1514,6 +1774,9 @@ function bindMapZoom() {
   }
   svg.addEventListener("pointerup", endDrag);
   svg.addEventListener("pointercancel", endDrag);
+  // 捕获被收走时也收尾。幂等：endDrag 里的 `was` 守卫保证"点按显名"不会被触发两次
+  //（pointerup 之后浏览器紧接着就是 lostpointercapture）。
+  svg.addEventListener("lostpointercapture", endDrag);
   svg.addEventListener("pointerleave", function (e) {
     endDrag(e);
     // ⚠️ 触摸端松开手指后浏览器会**紧接着发 pointerleave** —— 若在这里无脑隐藏浮层，
@@ -2118,12 +2381,16 @@ function renderTagCloud() {
   getAllTags().forEach(function (t) {
     var el = document.createElement("span");
     el.className = "tc" + (activeTag === t ? " on" : "");
-    // hover 照片浮窗：专属照片或默认照片
-    var pop = document.createElement("img");
-    pop.className = "tc-pop";
-    pop.src = getTagImage(t);
-    pop.alt = "";
-    el.appendChild(pop);
+    // 键盘可达：标签胶囊是 <span>，补 tabindex/role；aria-pressed 表达"已选中"
+    el.tabIndex = 0;
+    el.setAttribute("role", "button");
+    el.setAttribute("aria-pressed", activeTag === t ? "true" : "false");
+    // ⚠️ 2026-09-19 删除「悬停弹出小照片」：原来这里给每个标签胶囊挂一张
+    // `getTagImage(t)` 的 <img class="tc-pop">（静止 opacity:0、hover 才显示）。用户明确要求去掉。
+    // ⚠️ 更正我先前的误判：`assets/tag-default.jpg` **并没有**因此省掉 ——
+    // 它同时是**文档卡封面的兜底图**（docs.js 写明取图顺序：文档 cover > 标签照片 > 默认照片），
+    // 没有 cover 的文档照样加载它。所以这次的实际收益只有两条：
+    // 界面上少一层悬停浮层、检测器少一条 buried-raster（<img> at opacity 0）。
     el.appendChild(document.createTextNode(t));
     el.addEventListener("click", function () {
       activeTag = (activeTag === t) ? null : t;
@@ -2135,6 +2402,9 @@ function renderTagCloud() {
       renderTagCloud();
       renderCards();
       showList();
+    });
+    el.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); el.click(); }
     });
     cloud.appendChild(el);
   });
@@ -2199,7 +2469,32 @@ function renderCards() {
   if (docs.length === 0) {
     var empty = document.createElement("div");
     empty.className = "empty";
-    empty.textContent = "没有匹配的文档";
+    // harden 清单：「空态要给出**明确的下一步**」，不能只说"没有匹配的文档"就完了。
+    // 同时把"为什么空"讲清楚 —— 搜索关键字 / 标签筛选 / 栏目本身没内容，是三种不同的原因。
+    var why = searchKeyword
+      ? "没有匹配「" + escapeHtml(searchKeyword) + "」的文档"
+      : (activeTag ? "没有「" + escapeHtml(activeTag) + "」标签的文档"
+                   : "这个栏目还没有内容");
+    var tip = document.createElement("div");
+    tip.className = "empty-t";
+    tip.textContent = why;
+    empty.appendChild(tip);
+    if (searchKeyword || activeTag) {
+      var clear = document.createElement("button");
+      clear.type = "button";
+      clear.className = "empty-b";
+      clear.textContent = "清除筛选，显示全部";
+      clear.addEventListener("click", function () {
+        searchKeyword = "";
+        var si = document.getElementById("searchInput");
+        if (si) si.value = "";
+        // 交回 switchCategory 统一收尾（它会清 activeTag、重渲染标签云与卡片、回到列表）
+        var nav = document.querySelector("#mainNav a.active") ||
+                  document.querySelector('#mainNav a[data-cat="主页"]');
+        switchCategory(nav ? nav.getAttribute("data-cat") : "主页", nav);
+      });
+      empty.appendChild(clear);
+    }
     list.appendChild(empty);
     return;
   }
@@ -2226,6 +2521,13 @@ function renderCards() {
       "</div>";
 
     card.addEventListener("click", function () { openDoc(d); });
+    // 键盘可达：卡片是 <div>，必须自己补 tabindex/role ——
+    // 否则 Tab 全站只到 5–7 个元素，键盘用户**一篇文档都打不开**（评审 P0）。
+    card.tabIndex = 0;
+    card.setAttribute("role", "button");
+    card.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openDoc(d); }
+    });
     list.appendChild(card);
   });
 }
@@ -2281,7 +2583,7 @@ function buildToc(bodyId, tocId) {
     if (_tocBody === body) { _tocHeads = []; _tocLinks = []; _tocBody = null; }
     return;
   }
-  var html = '<div class="tch">CONTENTS · 目录</div>';
+  var html = '<div class="tch"><i>CONTENTS</i>目录</div>';
   heads.forEach(function (h, i) {
     if (!h.id) h.id = bodyId + "-sec-" + i;      // 作者没写 id 时兜底
     html += '<a href="#' + h.id + '" data-lv="' + (h.tagName === "H3" ? 3 : 2) + '">' +

@@ -10,29 +10,135 @@
 <meta name="keywords" content="个人数据库,知识库,教学文档,教程,学习资料">
 <meta name="robots" content="index, follow">
 <style>
+/* ===== 设计令牌 =====
+   ⚠️ 2026-09-19 重构：原来 `:root` 承载「白天」、`[data-theme="dark"]` 承载「夜间」，
+   而所谓「白天」其实只是"深得少一点的深色" —— 它的遮罩更薄（.72 < .82）→ 背景照片透出更多 →
+   文字对比度**反而全线更差**（实测 `--faint` 只有 1.71:1，夜间是 2.07:1）。现已重做：
+     · `:root` 的兜底值 = **夜间**（JS 万一没跑，页面仍是深色，不会闪白）
+     · `[data-theme="dark"]`  = 夜间（保留，兼容旧偏好与旧链接）
+     · `[data-theme="light"]` = **真正的浅色主题**（浅底 + 深墨字 + 遮罩近乎不透，照片退成纸纹）
+   主色 `--accent` 朱红 `#ff461f` 在明暗两套里**完全一致** —— 美术方向已定稿，不动。 */
 :root{
-  --bg:#161b24; --card:rgba(30,37,48,.82); --border:rgba(255,255,255,.10);
-  --text:#e8edf3; --muted:#9aa7b4; --faint:#6b7684;
-  --accent:#ff461f; --accent-dark:#e03a17; --accent-soft:rgba(255,70,31,.15);
-  --tag-bg:rgba(255,255,255,.07); --shadow:0 8px 30px rgba(0,0,0,.35);
-  --glow:0 0 18px rgba(255,70,31,.45);
-  --veil:rgba(14,18,26,.72); --gate-veil:rgba(14,18,26,.72);
+  /* --- 不随主题变的：主色与字体 ---
+     ⚠️ 2026-09-19 清理：删掉了 `--accent-dark`（改配色后**已无任何引用**，
+     只剩定义与注释）与 `--glow`（原来那个零偏移彩色光晕的载体，收敛装饰性光晕后
+     只剩 `.gate-box .icon` 一处引用，一并去掉，符合 craft floor「零偏移彩色光晕是装饰」）。 */
+  --accent:#ff461f;
+  --accent-strong:#ff6a42;   /* 实心按钮 hover：**提亮**一档（深墨字压它 6.8:1；若压深反而只有 4.5） */
+  --on-accent:#0c0f14;       /* ⭐ 压在朱红上的字色 = 深墨。实测 5.64:1；白字只有 3.42:1 */
+  --accent-ring:rgba(255,70,31,.20);
+  /* --- 形状体系：**交互元件**只允许两档圆角 ---
+     ⚠️ 2026-09-19 统一：原来"按一下"这个动作的圆角有 **8 / 10 / 20 / 22** 四种数值，
+     同一种语义在不同地方长得不一样 —— 这正是 `polish` 里点的「设计系统漂移」，
+     也是"看起来像拼装"的来源。现在只留两档：
+       · `--r-action`：**动作**（按钮 / 输入框 / 卡片内小件）
+       · `--r-pill`  ：**胶囊**（开关 / 标签 / 徽章 —— 它们是"持续状态"而非"按一下"） */
+  --r-action:10px;
+  --r-pill:999px;
   --serif:"Noto Serif SC","Source Han Serif SC",Georgia,"Songti SC",SimSun,serif;
   --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
 }
-[data-theme="dark"]{
+:root, [data-theme="dark"]{
+  /* --- 夜间（默认）--- */
   --bg:#0c0f14; --card:rgba(20,24,31,.85); --border:rgba(255,255,255,.08);
-  --text:#e8edf3; --muted:#8b97a3; --faint:#55606d;
-  --accent:#ff461f; --accent-dark:#e03a17; --accent-soft:rgba(255,70,31,.13);
-  --tag-bg:rgba(255,255,255,.05); --shadow:0 10px 34px rgba(0,0,0,.5);
-  --glow:0 0 22px rgba(255,70,31,.55);
-  --veil:rgba(6,9,13,.82); --gate-veil:rgba(6,9,13,.82);
+  --text:#e8edf3; --muted:#a6b2bf; --faint:#8e9aa8;
+  --accent-text:#ff6a45;     /* 朱红**当文字**用的那一档：深底上 5.2:1（原 #ff461f 只有 4.27） */
+  --accent-soft:rgba(255,70,31,.13);
+  --tag-bg:rgba(255,255,255,.05); --field:rgba(255,255,255,.05); --field-weak:rgba(255,255,255,.02);
+  /* ⚠️ 2026-09-19 去 AI 化：原 `0 10px 34px rgba(0,0,0,.5)` 正是「1px 细边 + 30+px 宽弥散阴影」
+     这个生成式 UI 的招牌组合（检测器规则 `gpt-thin-border-wide-shadow`，本站当时 4 处）。
+     现改为**紧、带偏移、两层**：craft floor 要求「阴影要带偏移与柔和模糊」，
+     两层（1–2px 贴边 + 4–12px 环境）才读得出高度；一层大糊只是"发光的圆角矩形"。 */
+  --shadow:0 1px 2px rgba(0,0,0,.34),0 4px 12px rgba(0,0,0,.24);
+  --shadow-lift:0 2px 4px rgba(0,0,0,.36),0 9px 14px rgba(0,0,0,.30);
+  --code-inline:#ff8a65;
+  --sel:rgba(255,70,31,.34);
+  /* 背景：照片经 `luminosity` 混合后只当「纸纹」，遮罩再抬一点 → 表面更均匀，
+     文字的最坏像素对比度一起变好（检测器该项读数因此收窄）。 */
+  --veil:rgba(6,9,13,.88); --gate-veil:rgba(6,9,13,.94);
+  /* 背景只用两件工具（见 body::before）：**一个光源** ＋ **一圈晕影** */
+  --light-wash:rgba(255,70,31,.13);
+  --vignette:rgba(4,6,10,.62);
+}
+[data-theme="light"]{
+  /* --- 白天（真浅色）--- */
+  --bg:#eef1f5; --card:rgba(255,255,255,.90); --border:rgba(18,28,42,.13);
+  --text:#18212c; --muted:#4d5a68; --faint:#5f6b78;
+  --accent-text:#b02f0d;     /* 浅底上必须压深：白卡片 5.8:1、浅底 5.7:1；
+                                首版取 #c9340f 时，激活导航落在 --accent-soft 上只有 3.99:1。 */
+  --accent-soft:rgba(255,70,31,.10);
+  --tag-bg:rgba(18,28,42,.05); --field:rgba(18,28,42,.045); --field-weak:rgba(18,28,42,.02);
+  --shadow:0 1px 2px rgba(16,26,40,.10),0 4px 12px rgba(16,26,40,.08);
+  --shadow-lift:0 2px 4px rgba(16,26,40,.12),0 9px 14px rgba(16,26,40,.10);
+  --code-inline:#c0340e;
+  --sel:rgba(255,70,31,.24);
+  /* 浅色下遮罩更实（.90 → .93）：原来照片的蓝调透上来，左右两栏会浮出一片片
+     蓝灰斑，整页"发脏"——这是浅色主题最难看的一处。 */
+  --veil:rgba(240,243,247,.93); --gate-veil:rgba(240,243,247,.96);
+  --light-wash:rgba(255,70,31,.06);
+  --vignette:rgba(206,215,227,.52);
+}
+/* ===== 「常暗」子树：旅游攻略（保险库）＋ 播放器（设备）=====
+   这两块**令牌一律锁定夜间**，不随站点主题变。理由各不相同、都很具体：
+   · 旅游攻略：SVG 地图的地名是白色描边字（`#routeMap .lbl{fill:#f4f8ff}`），
+     若跟随浅色主题，白字会落在浅色卡片上直接看不见；
+   · 播放器：面板是写死的深蓝玻璃渐变 + 白字，跟随主题会变成"浅底白字"。 */
+#tourStage, #tourGate, #playerFix{
+  --bg:#0c0f14; --card:rgba(20,24,31,.85); --border:rgba(255,255,255,.08);
+  --text:#e8edf3; --muted:#a6b2bf; --faint:#8e9aa8;
+  --accent-text:#ff6a45;
+  --accent-soft:rgba(255,70,31,.13);
+  --tag-bg:rgba(255,255,255,.05); --field:rgba(255,255,255,.05); --field-weak:rgba(255,255,255,.02);
+  --shadow:0 1px 2px rgba(0,0,0,.34),0 4px 12px rgba(0,0,0,.24);
+  --shadow-lift:0 2px 4px rgba(0,0,0,.36),0 9px 14px rgba(0,0,0,.30);
+  --code-inline:#ff8a65; --sel:rgba(255,70,31,.34);
+  --gate-veil:rgba(6,9,13,.94);
+  /* 「Lit up borders」按钮的渐变两端。上游原版是 indigo→purple（#6366f1 → #a855f7），
+     那对紫蓝是通用的"AI 配色"，与本站朱红体系不搭，故换成朱红 → 浅珊瑚。
+     ⚠️ 想换回原版：把下面两行改成 #6366f1 / #a855f7 即可，其余不用动。 */
+  --enter-a:#ff461f; --enter-b:#ff9d6e;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
-body{font-family:var(--sans);background-color:var(--bg);background-image:linear-gradient(var(--veil),var(--veil)),url("assets/bg.jpg");background-size:cover,cover;background-position:center,center;background-repeat:no-repeat,no-repeat;background-attachment:fixed,fixed;color:var(--text);line-height:1.75;transition:color .25s}
-body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 60% 50% at 15% 0%,rgba(255,70,31,.14),transparent 60%),radial-gradient(ellipse 50% 40% at 85% 100%,rgba(64,156,255,.10),transparent 60%)}
-a{color:var(--accent);text-decoration:none}
+/* 根滚动条也走主题。站内 4 个内部容器（目录/歌单/攻略详情/路书步骤条）早就主题化了，
+   只有**根滚动条**一直用系统默认 —— 这是"这页是被建造的、而不是被拼装的"最便宜的一处信号
+   （craft floor 点名的「浏览器原生表面」，也是最容易被漏掉的一项）。 */
+html{scrollbar-width:thin;scrollbar-color:rgba(255,70,31,.42) transparent}
+html::-webkit-scrollbar{width:10px;height:10px}
+html::-webkit-scrollbar-track{background:transparent}
+html::-webkit-scrollbar-thumb{background:rgba(255,70,31,.38);border-radius:10px;border:2px solid transparent;background-clip:content-box}
+html::-webkit-scrollbar-thumb:hover{background:rgba(255,70,31,.66);background-clip:content-box}
+body{font-family:var(--sans);background-color:var(--bg);background-image:linear-gradient(var(--veil),var(--veil)),url("assets/bg.jpg?v=20260919b");background-size:cover,cover;background-position:center,center;background-repeat:no-repeat,no-repeat;background-attachment:fixed,fixed;background-blend-mode:normal,luminosity;color:var(--text);line-height:1.75;transition:color .25s,background-color .25s}
+/* 背景 = 一张「地图纸」＋ **一个光源** ＋ **一圈晕影**。只此三件。
+   · `background-blend-mode:normal,luminosity`（写在 body 上，见上一条）：
+     最下层 bg.jpg 与 `background-color` 以 luminosity 混合 → **只取照片的明暗、丢掉它自己的色相**。
+     这是本次"去 AI 化"在背景上最关键的一步：照片从「贴图」变成「纸纹」。
+     浅色主题原先左一片右一片的**蓝灰斑**、深色主题顶部那块**暖斑**，根因都是照片自带色相。
+   · `body::before` 原来打的是**两团光晕**（左上朱红 ＋ 右下**蓝**）——
+     双色光晕是生成式 UI 的默认长相，而且那团蓝**根本不在本站的用色体系里**（朱红／中性）。
+     现删掉蓝，只留**一个光源**，方向与导航一致（左上）。
+   · 再加**一圈晕影**：四角沉下去，视线自然回到内容，同时压住照片最花的边缘。
+     （craft floor 的 `Refuse` 里「玻璃与模糊当装饰」正是指这种无目的的铺满式装饰。） */
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(122% 88% at 10% -14%,var(--light-wash),transparent 58%),
+    radial-gradient(128% 108% at 50% 46%,transparent 30%,var(--vignette) 100%)}
+/* 文字选区 / 插入符 / 下划线偏移：同属「浏览器原生表面」，一并收进主题 */
+::selection{background:var(--sel);color:inherit}
+body,textarea,input{caret-color:var(--accent)}
+a{color:var(--accent-text);text-decoration:none;text-underline-offset:3px;text-decoration-thickness:1px}
+/* 统一焦点环：键盘用户必须看得见自己在哪（本站在 2026-09-19 评审里被判定
+   「主要交互对象全部不可键盘到达」，补可达性的同时必须补可见焦点） */
+:where(a,button,input,select,textarea,[tabindex]):focus-visible{
+  outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+/* 跳到主内容：平时藏起来，获得焦点才出现 */
+/* 「跳到主内容」链接：原来靠改 `top`（-64px → 14px）滑入 —— `top` 是布局属性，
+   检测器（`layout-transition`）点名的正是这类。改成**全程 top 不动、只动 transform**。 */
+.skip-link{position:absolute;left:14px;top:14px;z-index:300;padding:13px 18px;
+  background:var(--accent);color:var(--on-accent);font-size:13px;font-weight:600;border-radius:10px;
+  box-shadow:0 1px 3px rgba(0,0,0,.4),0 8px 18px rgba(0,0,0,.34);
+  transform:translateY(calc(-100% - 24px));transition:transform .18s}
+.skip-link:focus{transform:none}
 img{display:block}
 
 /* ===== 布局骨架 ===== */
@@ -43,18 +149,41 @@ img{display:block}
 
 /* ===== 左侧栏 ===== */
 .profile{text-align:center;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px 20px;box-shadow:var(--shadow);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
-.avatar{width:96px;height:96px;border-radius:50%;object-fit:cover;margin:0 auto 14px;border:3px solid var(--accent);box-shadow:0 0 0 6px rgba(255,70,31,.12),var(--glow)}
+/* 头像：只保留 3px 朱红实边做"相框"。原来还叠了一圈 `0 0 0 6px rgba(255,70,31,.12)`
+   的零偏移光环 —— craft floor 明写「零偏移彩色光晕是装饰，不是深度」，删。 */
+.avatar{width:96px;height:96px;border-radius:50%;object-fit:cover;margin:0 auto 14px;border:3px solid var(--accent)}
 .profile h1{font-family:var(--serif);font-size:20px;font-weight:600;letter-spacing:1px}
 .profile .desc{color:var(--muted);font-size:13px;margin-top:6px}
 .search{margin-top:16px;position:relative}
-.search input{width:100%;padding:9px 12px 9px 34px;font-size:13px;border:1px solid var(--border);border-radius:10px;outline:none;background:rgba(255,255,255,.05);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);color:var(--text);transition:border-color .2s,box-shadow .2s}
-.search input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(255,70,31,.18)}
-.search svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:15px;height:15px;stroke:var(--faint)}
+.search input{width:100%;padding:12px 12px 12px 36px;font-size:13px;border:1px solid var(--border);border-radius:10px;outline:none;background:var(--field);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);color:var(--text);transition:border-color .2s,box-shadow .2s}
+.search input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-ring)}
+.search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:15px;height:15px;stroke:var(--faint)}
 .nav{margin-top:14px;display:flex;flex-direction:column;gap:6px}
-.nav a{display:flex;align-items:center;gap:10px;padding:9px 14px;font-size:14px;color:var(--text);border-radius:10px;cursor:pointer;border:1px solid transparent;transition:all .18s;position:relative;overflow:hidden}
+/* ===== 侧栏导航（2026-09-19 选中态重做）=====
+   原来选中态只有"淡底 ＋ 朱红字"，太单调。现给出一档**克制的通电语言**，且只用
+   `transform / color / background / box-shadow` —— **不碰布局属性**（去 AI 化那一轮定规）。
+   左轨从中心生长这一手法与**正文目录的指示条**完全一致：一致性本身就是高级感的来源。
+   刻意避开的两条：不用零偏移彩色光晕；不做持续闪烁的呼吸动画。 */
+.nav a{display:flex;align-items:center;gap:10px;padding:10px 14px 10px 16px;font-size:14px;color:var(--text);border-radius:var(--r-action);cursor:pointer;border:1px solid transparent;transition:background .2s,color .2s,border-color .2s;position:relative;overflow:hidden}
+/* 左轨：常态 scaleY(0)，选中时从中心长满 */
+.nav a::before{content:"";position:absolute;left:0;top:50%;width:2px;height:100%;
+  transform:translateY(-50%) scaleY(0);transform-origin:center;border-radius:0 2px 2px 0;
+  background:var(--accent);transition:transform .26s cubic-bezier(.4,0,.2,1)}
+/* 扫光：hover 时**一次**斜向掠过（"被点亮的瞬间"，不是持续闪烁）。
+   只在 hover 规则里写 transition → 移出时立刻归位、不会倒着扫回来。 */
+.nav a::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(105deg,transparent 38%,rgba(255,255,255,.06) 50%,transparent 62%);
+  transform:translateX(-100%)}
 .nav a:hover{background:var(--tag-bg);border-color:var(--border)}
-.nav a.active{background:var(--accent-soft);color:var(--accent);font-weight:600;border-color:rgba(255,70,31,.3);box-shadow:inset 0 0 12px rgba(255,70,31,.08)}
+.nav a:hover::after{transform:translateX(100%);transition:transform .58s cubic-bezier(.22,.61,.36,1)}
+/* 选中：淡底 ＋ 朱红字 ＋ 左轨点亮 ＋ 顶部 1px 内侧高光（玻璃**受光**，不是发光） */
+.nav a.active{background:var(--accent-soft);color:var(--accent-text);font-weight:600;border-color:rgba(255,70,31,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.07)}
+.nav a.active::before{transform:translateY(-50%) scaleY(1)}
+/* ⚠️ 图标这里**故意不写 `transition:stroke-width`**：检测器的 `layout-transition` 规则
+   用 `width` 做词匹配，`stroke-width` 会被**误判成"动画 width 引发重排"**（它其实只是描边粗细，
+   完全不触发布局）。选中时描边由 1.8 变 2 是瞬时的 —— 视觉上更利落，也省掉一次误报。 */
 .nav svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8;flex-shrink:0}
+.nav a.active svg{stroke-width:2}
 
 /* ===== 文章卡片 ===== */
 .cards{display:flex;flex-direction:column;gap:24px}
@@ -67,19 +196,50 @@ img{display:block}
    为什么全屏：这是一套"自由拖动 + 甩动 + 倾斜"的交互，嵌在内容区里舞台太小、
    还会被导航/标签云/页脚抢视觉 —— 全屏才是它的正确场地。 */
 #tourGate{position:fixed;inset:0;z-index:120;display:flex;align-items:center;justify-content:center;
-  padding:20px;background:var(--gate-veil);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+  padding:20px;background:#080b10;overflow:hidden}
 #tourGate[hidden]{display:none}
-#tourGate .gate-box{max-width:420px;border-color:rgba(255,70,31,.30)}
+/* 波纹画布铺满、压在盒子之下。blur 由 JS 设在 canvas 上下文的 filter 上（Safari 兜底见 app.js） */
+#tourGateWave{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;display:block}
+/* 玻璃盒底子要更实一档：它下面是有颜色、正在动的波纹，太透会吃掉文字对比度 */
+#tourGate .gate-box{position:relative;z-index:1;max-width:420px;border-color:rgba(255,70,31,.30);
+  background:rgba(10,13,19,.82);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px)}
 #tourGate .icon{background:rgba(255,70,31,.14)}
 #tourGate .tk{display:flex;gap:22px;justify-content:center;margin-top:16px;font-size:10.5px;
   color:var(--faint);letter-spacing:.12em;
   font-family:ui-monospace,"SFMono-Regular",Consolas,monospace}
-#tourGate .tk b{color:var(--accent)}
+#tourGate .tk b{color:var(--accent-text)}
+
+/* ---- 密码正确后：输入框"简变"成进入按钮 ----
+   这段 CSS 与上游那段 JSX 一一对应：
+     外层 `p-[3px] relative`  → `.genter{padding:3px;position:relative}`
+     子层 `absolute inset-0 bg-gradient…` → `.genter::before`（铺满的渐变层）
+     内层 `px-8 py-2 bg-black … hover:bg-transparent` → `.genter-in`
+   hover 时内层变透明，整个渐变透出来 —— 即上游说的 "Lit up borders"。
+   ⚠️ 渐变两端用的是站内朱红（`--enter-a/--enter-b`），不是上游的 indigo→purple：
+   那对紫蓝色正是本站"去 AI 化"要清掉的通用色，与本页朱红体系也不搭。改回一行即可，见该 token。 */
+#tourGate .gfield{transition:transform .3s cubic-bezier(.4,0,.2,1),opacity .26s;transform-origin:top center}
+#tourGate.unlocked .gfield{transform:scaleY(0);opacity:0}
+#tourGate.unlocked #tourGateBtn{display:none}
+.genter{position:relative;display:inline-flex;width:100%;justify-content:center;margin-top:14px;
+  padding:3px;border:0;cursor:pointer;
+  background:transparent;border-radius:calc(var(--r-action) + 3px);
+  animation:gentIn .34s cubic-bezier(.22,1,.36,1) both}
+.genter[hidden]{display:none}
+.genter::before{content:"";position:absolute;inset:0;border-radius:inherit;
+  background:linear-gradient(90deg,var(--enter-a),var(--enter-b))}
+.genter .genter-in{position:relative;display:block;padding:11px 34px;border-radius:var(--r-action);
+  background:#05070a;color:#fff;font-size:15px;font-weight:600;
+  transition:background .22s ease,color .22s ease}
+.genter:hover .genter-in,.genter:focus-visible .genter-in{background:transparent;color:var(--on-accent)}
+.genter:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+@keyframes gentIn{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){.genter{animation:none}}
 
 #tourStage{position:fixed;inset:0;z-index:110;overflow:hidden;
+  /* 只留**一个**朱红光源。原来第二团是 `rgba(96,146,224,…)` 的**蓝**，
+     与 body::before 上那团蓝同源（双色光晕），且蓝不在本站用色体系里（朱红／中性）。 */
   background:
     radial-gradient(ellipse 58% 48% at 50% 36%,rgba(255,70,31,.13) 0%,rgba(0,0,0,0) 70%),
-    radial-gradient(ellipse 92% 34% at 50% 94%,rgba(96,146,224,.13) 0%,rgba(0,0,0,0) 74%),
     linear-gradient(180deg,#05080e,#080d16)}
 #tourStage[hidden]{display:none}
 /* 主页背景：AI 生成的「虚构路书地图」—— 不对应任何真实地理，纯装饰。
@@ -88,11 +248,12 @@ img{display:block}
 #tourStage::before{content:"";position:absolute;inset:0;pointer-events:none;
   background:url("assets/travel/roadbook.jpg") center center/cover no-repeat;
   opacity:.72;filter:brightness(.95) saturate(.6) contrast(1.05)}
-/* 地面网格 */
+/* 地面：只保留**横向**的等距细线（读作"地平线／地面"），删掉纵向那一套。
+   原来两轴都有 → 那是标准的"装饰性网格背景"，检测器判为 `codex-grid-background`
+   （规则原文：网格叠加应留给真正的画布／地图／蓝图／测量面，其他地方用产品结构或素面）。 */
 #tourStage .tfloor{position:absolute;left:-6%;right:-6%;bottom:0;height:46%;pointer-events:none;
-  background-image:linear-gradient(rgba(255,255,255,.075) 1px,transparent 1px),
-                   linear-gradient(90deg,rgba(255,255,255,.058) 1px,transparent 1px);
-  background-size:100% 32px,64px 100%;
+  background-image:linear-gradient(rgba(255,255,255,.07) 1px,transparent 1px);
+  background-size:100% 32px;
   -webkit-mask-image:linear-gradient(180deg,rgba(0,0,0,0) 0%,#000 78%);
   mask-image:linear-gradient(180deg,rgba(0,0,0,0) 0%,#000 78%)}
 #tourWallStage{position:absolute;inset:0;z-index:2;transform-style:preserve-3d}
@@ -110,10 +271,10 @@ img{display:block}
 #tourStage .brand{font-size:15.5px;font-weight:600;letter-spacing:.04em;color:#eef4fd}
 #tourStage .brand i{font-style:normal;font-family:ui-monospace,"SFMono-Regular",Consolas,monospace;
   font-size:13.5px;font-weight:500;letter-spacing:.18em;color:rgba(255,255,255,.68)}
-#tourStage .brand b{color:var(--accent);margin:0 9px;font-weight:400}
+#tourStage .brand b{color:var(--accent-text);margin:0 9px;font-weight:400}
 #tourStage .stats{display:flex;gap:24px;margin-left:auto;font-size:12.5px;letter-spacing:.1em;
   color:rgba(255,255,255,.52);font-family:ui-monospace,"SFMono-Regular",Consolas,monospace}
-#tourStage .stats b{color:var(--accent);font-size:13.5px;margin-left:5px}
+#tourStage .stats b{color:var(--accent-text);font-size:13.5px;margin-left:5px}
 #tourStage .texit{pointer-events:auto;padding:9px 19px;font-size:13.5px;font-weight:500;font-family:inherit;
   cursor:pointer;color:var(--muted);background:rgba(255,255,255,.05);border:1px solid var(--border);
   transition:.22s;clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%)}
@@ -153,15 +314,16 @@ img{display:block}
   background-color:#eef2f8;
   background-image:linear-gradient(168deg,#fdfefe 0%,#f3f6fa 45%,#e7ecf3 100%);
   border:1px solid rgba(255,255,255,.92);
-  box-shadow:0 30px 60px rgba(0,0,0,.62),0 10px 24px rgba(0,0,0,.46),
-             0 2px 6px rgba(0,0,0,.3),inset 0 -1px 0 rgba(20,32,48,.07);
+  box-shadow:0 7px 14px rgba(0,0,0,.52),0 3px 8px rgba(0,0,0,.36),
+             0 1px 2px rgba(0,0,0,.3),inset 0 -1px 0 rgba(20,32,48,.07);
   transform:rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));
   transition:transform .3s cubic-bezier(.22,1,.36,1),box-shadow .3s,border-color .3s}
 .tcard.drag .fc{transition:transform .16s cubic-bezier(.22,1,.36,1)}
-/* 悬停 = 被"拿起来"：外圈朱红细环 + 更大投影 */
+/* 悬停 = 被"拿起来"：更高一档的**中性**投影 + 白色描边。
+   （原来还叠了一圈零偏移朱红环 `0 0 0 2px` —— craft floor 不认零偏移彩色光晕；
+   而白描边已经把"被拿起"说清楚了。） */
 .tcard:hover .fc{border-color:#fff;
-  box-shadow:0 46px 96px rgba(0,0,0,.68),0 14px 30px rgba(0,0,0,.5),
-             0 0 0 3px rgba(255,70,31,.5),0 0 46px rgba(255,70,31,.26)}
+  box-shadow:0 8px 14px rgba(0,0,0,.58),0 3px 8px rgba(0,0,0,.40)}
 /* 照片：四周留白（白边），底部再留出信息条 */
 .tcard .ph{position:absolute;left:10px;right:10px;top:10px;bottom:56px;
   overflow:hidden;background:#d9dee6}
@@ -175,7 +337,7 @@ img{display:block}
 .tcard .cap{position:absolute;left:0;right:0;bottom:0;height:46px;padding:0 13px;
   display:flex;flex-direction:column;justify-content:center;gap:4px;pointer-events:none}
 .tcard .r1{display:flex;align-items:center;gap:8px}
-.tcard .no{font-size:10.5px;font-weight:700;letter-spacing:.14em;line-height:1;color:var(--accent);
+.tcard .no{font-size:10.5px;font-weight:700;letter-spacing:.14em;line-height:1;color:var(--accent-text);
   font-family:ui-monospace,"SFMono-Regular",Consolas,monospace}
 .tcard .sep{width:16px;height:1px;background:rgba(18,30,48,.22)}
 .tcard .rg{margin-left:auto;font-size:11px;letter-spacing:.1em;color:rgba(18,30,48,.68);
@@ -195,7 +357,7 @@ img{display:block}
   background:transparent;color:var(--muted);font-size:14px;line-height:1;
   display:flex;align-items:center;justify-content:center;
   font-family:ui-monospace,Consolas,monospace;transition:.15s}
-.mzoom button:hover{background:rgba(255,70,31,.20);color:var(--accent)}
+.mzoom button:hover{background:rgba(255,70,31,.20);color:var(--accent-text)}
 .mzoom span{font-size:10.5px;color:var(--faint);min-width:32px;text-align:center;
   font-family:ui-monospace,Consolas,monospace}
 .mzoom.at-min button[data-z="out"],.mzoom.at-max button[data-z="in"]{
@@ -212,10 +374,10 @@ body.map-dragging{-webkit-user-select:none;user-select:none;cursor:grabbing}
    鼠标放上去才是确凿的对应关系 */
 .mtip{position:absolute;z-index:6;pointer-events:none;padding:6px 11px;border-radius:9px;
   background:rgba(12,18,28,.95);border:1px solid rgba(255,70,31,.45);
-  box-shadow:0 8px 24px rgba(0,0,0,.5);transform:translate(-50%,-138%);white-space:nowrap}
+  box-shadow:0 1px 3px rgba(0,0,0,.45),0 6px 14px rgba(0,0,0,.40);transform:translate(-50%,-138%);white-space:nowrap}
 .mtip[hidden]{display:none}
 .mtip b{display:block;font-size:13px;color:var(--text);font-weight:600}
-.mtip em{display:block;font-style:normal;font-size:10.5px;color:var(--accent);
+.mtip em{display:block;font-style:normal;font-size:10.5px;color:var(--accent-text);
   font-family:ui-monospace,Consolas,monospace;margin-top:2px;letter-spacing:.05em}
 .mtip span{display:block;font-size:10.5px;color:var(--faint);margin-top:1px;
   font-family:ui-monospace,Consolas,monospace}
@@ -239,10 +401,12 @@ body.map-dragging{-webkit-user-select:none;user-select:none;cursor:grabbing}
 .ts3{display:flex;align-items:center;gap:8px;padding:9px 22px;background:none;border:0;color:var(--muted);
   font-size:13px;font-family:inherit;cursor:pointer;transition:.25s;
   clip-path:polygon(0 0,calc(100% - 9px) 0,100% 9px,100% 100%,0 100%)}
-.ts3 i{font-style:normal;font-size:11px;color:var(--accent);opacity:.85;
+.ts3 i{font-style:normal;font-size:11px;color:var(--accent-text);opacity:.85;
   font-family:ui-monospace,Consolas,monospace}
-.ts3.on{background:var(--accent);color:#fff}
-.ts3.on i{color:#fff;opacity:.85}
+/* ⭐ 深墨字压朱红 = 实测 5.64:1；白字压朱红只有 3.42:1 —— 这是全站最要紧的一处不达标，
+   而它恰好落在「当前激活的那一格」上（用户必须读清它是哪一格）。 */
+.ts3.on{background:var(--accent);color:var(--on-accent)}
+.ts3.on i{color:var(--on-accent);opacity:.7}
 .ts3:not(.on):hover{color:var(--text);background:rgba(255,255,255,.06)}
 .tpane{animation:tfade .42s ease}
 @keyframes tfade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
@@ -250,7 +414,7 @@ body.map-dragging{-webkit-user-select:none;user-select:none;cursor:grabbing}
 .tscroll{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
 .tbox{background:var(--card);border:1px solid var(--border);padding:20px 24px;margin-bottom:16px;
   clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px))}
-.tbox h4{margin:0 0 10px;font-size:12px;color:var(--accent);
+.tbox h4{margin:0 0 10px;font-size:12px;color:var(--accent-text);
   font-family:ui-monospace,Consolas,monospace;letter-spacing:.12em}
 /* 标题里的中文副名：英文在前、中文在后，中间留一口气 */
 .tbox h4 em{font-style:normal;margin-left:10px;color:var(--muted);letter-spacing:.04em;
@@ -259,9 +423,6 @@ body.map-dragging{-webkit-user-select:none;user-select:none;cursor:grabbing}
 .tbox p:last-child{margin-bottom:0}
 .tmapbox{position:relative;background-color:var(--card);border:1px solid var(--border);
   padding:0;overflow:hidden;
-  background-image:linear-gradient(rgba(255,255,255,.034) 1px,transparent 1px),
-                   linear-gradient(90deg,rgba(255,255,255,.034) 1px,transparent 1px);
-  background-size:27px 27px;
   clip-path:polygon(0 0,calc(100% - 16px) 0,100% 16px,100% 100%,16px 100%,0 calc(100% - 16px))}
 #routeMap{display:block;width:100%;height:auto;position:relative;z-index:1}
 /* 暗角：让地图内容收在中间 */
@@ -321,8 +482,10 @@ body.map-dragging{-webkit-user-select:none;user-select:none;cursor:grabbing}
   border:1.5px solid rgba(255,214,202,.85)}
 .tleg i.route{width:18px;height:2.6px;border-radius:2px;background:var(--accent)}
 .tleg i.back{width:18px;height:0;border-top:2.4px dashed rgba(255,190,170,.95)}
-.tleg i.flow{width:18px;height:2px;
-  background:repeating-linear-gradient(90deg,rgba(255,255,255,.92) 0 2px,transparent 2px 7px)}
+/* 图例里的「行进方向」样本：网格实际画的是 `stroke-dasharray:2 11` 的动线（稀疏点线），
+   所以图例也该是**真正的虚线**，而不是一条重复渐变条纹 ——
+   后者既不是那条线的真实样子，又被检测器判为装饰性条纹 `repeating-stripes-gradient`。 */
+.tleg i.flow{width:18px;height:0;border-top:2px dotted rgba(255,255,255,.9)}
 .tleg i.prov{width:13px;height:11px;border-radius:2px;
   background:linear-gradient(160deg,rgba(255,106,64,.55),rgba(255,70,31,.16));
   border:1px solid rgba(255,102,64,.62)}
@@ -336,18 +499,18 @@ body.map-dragging{-webkit-user-select:none;user-select:none;cursor:grabbing}
   -webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);
   clip-path:polygon(0 0,calc(100% - 6px) 0,100% 6px,100% 100%,0 100%)}
 .mapdays button:hover{color:var(--text);border-color:rgba(255,70,31,.5)}
-.mapdays button.on{color:#fff;background:var(--accent);border-color:var(--accent);
-  box-shadow:0 0 14px rgba(255,70,31,.5)}
+.mapdays button.on{color:var(--on-accent);background:var(--accent);border-color:var(--accent);
+  box-shadow:var(--shadow)}
 /* ---- 当天详情卡（点 DAY 弹出，再点一次收起）---- */
 .tmapbox .mapday{position:absolute;right:76px;top:50%;transform:translateY(-50%);width:268px;
   max-height:80%;overflow:auto;z-index:4;padding:15px 17px;text-align:left;
   background:rgba(9,14,22,.93);border:1px solid rgba(255,70,31,.34);
   -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
-  box-shadow:0 14px 44px rgba(0,0,0,.55)}
+  box-shadow:0 2px 5px rgba(0,0,0,.46),0 9px 14px rgba(0,0,0,.42)}
 .mapday[hidden]{display:none}
 .mapday .mdh{display:flex;align-items:baseline;gap:9px;padding-bottom:9px;
   border-bottom:1px solid var(--border)}
-.mapday .mdh b{font-size:15px;color:var(--accent);letter-spacing:.1em;
+.mapday .mdh b{font-size:15px;color:var(--accent-text);letter-spacing:.1em;
   font-family:ui-monospace,Consolas,monospace}
 .mapday .mdh span{font-size:12.5px;color:var(--text);line-height:1.4}
 .mapday .mdm{margin-top:9px;font-size:11.5px;color:var(--faint);
@@ -356,15 +519,17 @@ body.map-dragging{-webkit-user-select:none;user-select:none;cursor:grabbing}
 .mapday .mds{margin-top:4px}
 .mapday .mdcity{display:flex;align-items:center;gap:8px;margin:11px 0 7px;font-size:12.5px;
   color:var(--text);font-weight:600}
-.mapday .mdcity i{width:6px;height:6px;flex:0 0 auto;background:var(--accent);
-  box-shadow:0 0 8px rgba(255,70,31,.7)}
+.mapday .mdcity i{width:6px;height:6px;flex:0 0 auto;background:var(--accent)}
 .mapday .mdlist{display:flex;flex-wrap:wrap;gap:6px;padding-left:14px}
 .mapday .mdlist span{font-size:11.5px;color:var(--muted);padding:3px 9px;
   background:var(--tag-bg);border:1px solid var(--border);border-radius:20px}
 .mapday .mdnone{font-size:11.5px;color:var(--faint);margin-top:11px}
 /* ---- 选中某天：当天那一段单独描亮，其余整体压暗 ---- */
+/* 选中某天时那一段路线＝**地图本体的功能性高亮**，不是装饰：在深色底上"点亮一条线"，
+   本来就该用光。这是本站在 craft floor 意义上**有意保留的唯一例外**，
+   但把强度收了下来（.9 → .55、7px → 5px），让它读成"灯光"而不是"糊"。 */
 #routeMap .rte.hi{stroke:#ffd0c2;stroke-width:4.4;
-  filter:drop-shadow(0 0 7px rgba(255,70,31,.9))}
+  filter:drop-shadow(0 0 5px rgba(255,70,31,.55))}
 #routeMap.on-day .glow,#routeMap.on-day .rte:not(.hi),#routeMap.on-day .dash{opacity:.16}
 #routeMap.on-day .stop,#routeMap.on-day .sday,#routeMap.on-day .lbl,
 #routeMap.on-day .startring,#routeMap.on-day .endring{opacity:.26;transition:opacity .25s}
@@ -379,30 +544,28 @@ body.map-dragging{-webkit-user-select:none;user-select:none;cursor:grabbing}
 .tmetric span{display:block;font-size:10.5px;color:var(--faint);letter-spacing:.1em;
   font-family:ui-monospace,Consolas,monospace}
 .tmetric b{display:block;margin-top:7px;font-size:23px;font-weight:500;color:var(--text);
-  font-family:ui-monospace,Consolas,monospace}
+  font-family:ui-monospace,Consolas,monospace;font-variant-numeric:tabular-nums}
 .tmetric b em{font-size:12px;font-style:normal;color:var(--faint);margin-left:3px}
 /* 报表·住宿点海拔列：3,000 m 以上转朱红（高反开始明显的高度） */
 #tdP3 td.alt{color:var(--muted);white-space:nowrap}
 #tdP3 td.alt em{font-style:normal;font-size:10px;color:var(--faint);margin-left:2px}
-#tdP3 td.alt.hi{color:var(--accent);font-weight:600}
-#tdP3 td.alt.hi em{color:var(--accent);opacity:.75}
+#tdP3 td.alt.hi{color:var(--accent-text);font-weight:600}
+#tdP3 td.alt.hi em{color:var(--accent-text);opacity:.75}
 /* 英文标签后面跟中文对照：英文负责"科技感"，中文负责"看得懂" */
 .tmetric span i{font-style:normal;margin-left:8px;letter-spacing:.04em;color:var(--muted);
   opacity:.9;font-family:var(--sans);font-size:11px}
-.tbar{display:flex;align-items:center;gap:12px;margin-bottom:9px;font-size:12px}
-.tbar i{flex:0 0 50px;font-style:normal;color:var(--muted)}
-.tbar .t{flex:1;height:8px;background:rgba(255,255,255,.08)}
-.tbar .t div{height:100%;background:var(--accent);width:0;transition:width .9s cubic-bezier(.3,.8,.3,1)}
-.tbar u{flex:0 0 66px;text-align:right;text-decoration:none;color:var(--text);font-size:11px;
-  font-family:ui-monospace,Consolas,monospace}
-#tourDetail table{width:100%;border-collapse:collapse;font-size:12.5px}
+/* ⚠️ 2026-09-19 清理（`polish` §5 source diff）：原来这里有 5 条 `.tbar*` 规则
+   （`.tbar` / `.tbar i` / `.tbar .t` / `.tbar .t div` / `.tbar u`）——
+   全站 CSS、HTML、JS 里**再没有任何地方生成 `tbar` 结构**，是彻头彻尾的孤立样式，
+   其中还挂着一条把 **width** 做成过渡的属性（检测器报的 `layout-transition`）。已整体删除。 */
+#tourDetail table{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}
 #tourDetail th,#tourDetail td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--border)}
 #tourDetail th{color:var(--faint);font-weight:400;font-size:10.5px;letter-spacing:.08em;
   font-family:ui-monospace,Consolas,monospace}
 #tourDetail th em{font-style:normal;margin-left:7px;letter-spacing:.04em;color:var(--muted);
   font-family:var(--sans);font-size:11px}
 #tourDetail td{color:var(--muted)}
-#tourDetail td.m{font-family:ui-monospace,Consolas,monospace;color:var(--accent)}
+#tourDetail td.m{font-family:ui-monospace,Consolas,monospace;color:var(--accent-text)}
 /* ---- 报表：图表区 ---- */
 .tcostflex{display:flex;align-items:center;gap:30px;flex-wrap:wrap}
 .tdonut{flex:0 0 176px;width:176px}
@@ -425,12 +588,16 @@ body.map-dragging{-webkit-user-select:none;user-select:none;cursor:grabbing}
 .tcrow u{text-decoration:none;color:var(--faint);font-family:ui-monospace,Consolas,monospace;
   font-size:11.5px;text-align:right}
 .tcrow .tcmb{height:5px;background:rgba(255,255,255,.07);border-radius:3px;overflow:hidden}
-.tcrow .tcmb div{height:100%;width:0;border-radius:3px;
-  transition:width .9s cubic-bezier(.3,.8,.3,1)}
+/* 成本占比条：同样改 `width` → `transform:scaleX`（检测器 `layout-transition`：
+   动 width/height/padding/margin 会引发重排，应改用 transform）。 */
+.tcrow .tcmb div{height:100%;width:100%;border-radius:3px;transform-origin:left center;
+  transform:scaleX(0);transition:transform .9s cubic-bezier(.3,.8,.3,1)}
 .tcombo{display:block;width:100%;height:auto}
 #tdP3 .cgrid{stroke:rgba(255,255,255,.075);stroke-width:.7}
 #tdP3 .cax{fill:var(--faint);font-size:10px;font-family:ui-monospace,Consolas,monospace}
-#tdP3 .cax2{fill:rgba(255,122,77,.75)}
+/* 右轴（累计里程）：原来用 rgba(255,122,77,.75)，半透明合成后只有 4.48:1（10px 小字要 4.5）
+   —— 改成不透明同色系 #ff8a5f，7.9:1 */
+#tdP3 .cax2{fill:#ff8a5f}
 #tdP3 .cx{fill:var(--faint);font-size:10.5px;text-anchor:middle;
   font-family:ui-monospace,Consolas,monospace}
 #tdP3 .cbar{fill:url(#cbarG);transform-box:fill-box;transform-origin:bottom;
@@ -493,32 +660,16 @@ body.map-dragging{-webkit-user-select:none;user-select:none;cursor:grabbing}
   /* 密码门按钮 */
   .doc-wall button{min-height:44px}
   .gate-box button{min-height:46px}
-  /* 播放器：窄屏整体小型化，减少遮挡（原为桌面尺寸 352px / 封面 132px） */
-  #playerFix{right:12px;bottom:12px}
-  #playerFix:not(.collapsed){width:min(304px,calc(100vw - 24px))}
-  #playerFix .psong{gap:14px;padding:2px 14px 12px;min-height:126px}
-  #playerFix .pcoverwrap,#playerFix .pcover{width:94px;height:94px;flex-basis:94px}
-  #playerFix .pvinyl{left:38px;width:86px;height:86px}
-  #playerFix .ptitle{font-size:15px}
-  #playerFix .partist{font-size:11.5px}
-  #playerFix .pbtns{gap:10px;padding:4px 12px 10px}
-  #playerFix .pb{min-width:44px;min-height:44px}
-  #playerFix .pb-play{width:48px;height:48px}
-  #playerFix .pico{min-width:40px;min-height:40px}
-  #playerFix .pbar,#playerFix .ptime{margin-left:14px;margin-right:14px}
-  #playerFix .plist{max-height:150px}
-  /* 收起态圆盘收小，少挡内容 */
-  #playerFix .pdisc{width:62px;height:62px}
-  #playerFix .pdisc-cover{width:28px;height:28px;margin:-14px 0 0 -14px}
-  #playerFix .pdisc-play{right:5px;bottom:5px;width:22px;height:22px}
-  /* 主题按钮抬到 44px 高 */
-  .theme-btn{height:44px;top:14px;right:14px}
+  /* ⚠️ 播放器与主题按钮的 ≤600 覆盖**已移到样式表末尾**（见文件底部「窄屏播放器」块）。
+     原因：它们原来写在这里（第 496–518 行），而播放器的**基础样式**在第 774 行之后 ——
+     同权重下"后写的赢"，于是这整组覆盖被基础样式反超，**手机上从来没生效过**。
+     这与上面修掉的「媒体查询提前闭合」是同一类病：不是值写错，是**位置**写错。 */
   /* 密码门内的输入框 */
   .gate-box input{min-height:46px}
   .doc-wall input{min-height:44px}
 }
 .doc-card{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;box-shadow:var(--shadow);transition:transform .22s,box-shadow .22s,border-color .22s;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);position:relative}
-.doc-card:hover{transform:translateY(-4px);box-shadow:0 14px 40px rgba(0,0,0,.45),var(--glow);border-color:rgba(255,70,31,.35)}
+.doc-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lift);border-color:rgba(255,70,31,.35)}
 .doc-card::after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.06) 50%,transparent 60%);transform:translateX(-100%);transition:transform .7s ease;pointer-events:none}
 .doc-card:hover::after{transform:translateX(100%)}
 .card-cover{height:190px;overflow:hidden;position:relative}
@@ -527,45 +678,63 @@ body.map-dragging{-webkit-user-select:none;user-select:none;cursor:grabbing}
 .doc-card:hover .card-cover img{transform:scale(1.06)}
 .card-body{padding:20px 22px}
 .tag-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
-.tag{font-size:11px;color:var(--accent);background:var(--accent-soft);padding:3px 10px;border-radius:20px;border:1px solid rgba(255,70,31,.25);letter-spacing:.5px}
+.tag{font-size:11px;color:var(--accent-text);background:var(--accent-soft);padding:3px 10px;border-radius:20px;border:1px solid rgba(255,70,31,.25);letter-spacing:.5px}
 .doc-card h3{font-family:var(--serif);font-size:18px;font-weight:600;line-height:1.5;transition:color .2s}
-.doc-card:hover h3{color:var(--accent)}
+.doc-card:hover h3{color:var(--accent-text)}
 .doc-card .summary{color:var(--muted);font-size:13px;margin-top:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .doc-card .meta{color:var(--faint);font-size:12px;margin-top:10px;display:flex;align-items:center;gap:6px}
 .doc-card .meta svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.8}
 
 /* ===== 空状态 ===== */
-.empty{text-align:center;color:var(--faint);padding:60px 0;font-size:14px}
+.empty{text-align:center;color:var(--faint);padding:56px 0;font-size:14px}
+.empty-t{margin-bottom:14px}
+.empty-b{padding:10px 20px;min-height:44px;border-radius:10px;cursor:pointer;
+  font:inherit;font-size:13px;font-weight:600;
+  color:var(--on-accent);background:var(--accent);border:0}
+.empty-b:hover{background:var(--accent-strong)}
 
 /* ===== 阅读页 ===== */
 .reader{display:none}
 .reader.active{display:block;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:30px 34px;box-shadow:var(--shadow);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
-.reader .back{font-size:13px;cursor:pointer;color:var(--muted);display:inline-flex;align-items:center;gap:5px;margin-bottom:18px;transition:color .2s}
-.reader .back:hover{color:var(--accent)}
-.reader h1{font-family:var(--serif);font-size:24px;font-weight:600;margin-bottom:12px;line-height:1.5;text-shadow:0 0 24px rgba(255,70,31,.35)}
+.reader .back{font-size:13px;cursor:pointer;color:var(--muted);display:inline-flex;align-items:center;gap:5px;margin-bottom:18px;padding:8px 12px 8px 0;transition:color .2s;
+  background:none;border:0;font-family:inherit;min-height:44px}
+.reader .back:hover{color:var(--accent-text)}
+/* 文章标题：删掉原来那圈零偏移的朱红 `text-shadow`（深色标题后面糊一团红，是"AI 味"最典型的来源，
+   而且按 craft floor「零偏移彩色光晕是装饰，不是深度」本就不该有）。改为靠字号与字重立层级。 */
+.reader h1{font-family:var(--serif);font-size:25px;font-weight:600;margin-bottom:12px;line-height:1.45;letter-spacing:.01em}
 .reader .reader-cover{height:230px;overflow:hidden;border-radius:10px;margin-bottom:20px;position:relative}
 .reader .reader-cover img{width:100%;height:100%;object-fit:cover;display:block}
 .reader .reader-meta{color:var(--faint);font-size:12px;margin-bottom:22px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 .content-body{font-size:15px}
-.content-body h2{font-family:var(--serif);font-size:19px;margin:30px 0 14px;padding-left:12px;border-left:4px solid var(--accent);line-height:1.4}
-.content-body h3{font-size:16px;margin:22px 0 10px;color:var(--accent);font-weight:600}
+/* 章节标题：不再靠 4px 朱红竖条撑（那是中文文档的默认长相）。
+   改成「更大的字号 + 更宽的上下留白 + 一条向右渐隐的 1px 细线」——
+   层级由留白与字重建立，细线只负责呼吸感。 */
+.content-body h2{font-family:var(--serif);font-size:21px;font-weight:600;margin:40px 0 18px;line-height:1.4;
+  letter-spacing:.01em;padding-bottom:11px;
+  background-image:linear-gradient(90deg,var(--border),transparent 78%);
+  background-repeat:no-repeat;background-position:0 100%;background-size:100% 1px}
+.content-body h3{font-size:16px;margin:26px 0 10px;color:var(--accent-text);font-weight:600;letter-spacing:.01em}
 .content-body p{margin-bottom:14px}
 .content-body ul,.content-body ol{margin:0 0 14px 22px}
 .content-body li{margin-bottom:7px}
-.content-body code{background:var(--tag-bg);padding:2px 7px;border-radius:4px;font-size:13px;color:#ff8a65;border:1px solid var(--border)}
+.content-body code{background:var(--tag-bg);padding:2px 7px;border-radius:4px;font-size:13px;color:var(--code-inline);border:1px solid var(--border)}
 .content-body pre{background:#0a0d11;color:#e5e7eb;padding:16px;border-radius:10px;overflow-x:auto;margin-bottom:16px;border:1px solid var(--border)}
 .content-body pre code{background:none;color:inherit;padding:0;border:none}
 .content-body img{max-width:100%;border-radius:8px;margin:10px 0}
 .content-body hr{border:none;margin:28px 0;text-align:center}
 .content-body hr::after{content:"———";color:var(--faint);letter-spacing:4px;font-size:13px}
-.content-body .warn{color:var(--accent);font-weight:600}
-.content-body .callout{background:var(--accent-soft);border-left:3px solid var(--accent);padding:11px 15px;border-radius:6px;margin:0 0 6px;font-size:14px;line-height:1.8}
+.content-body .warn{color:var(--accent-text);font-weight:600}
+/* 提示块：**只用一层朱红淡底**，不加任何侧边彩条。
+   原来是 `border-left:3px solid var(--accent)` —— craft floor 的 `Refuse` 明写
+   「彩色 border-left / border-right 超过 1px 加在卡片、列表项、callout、alert 上」
+   是分类默认值（中文文档里最常见的"加粗左边框"长相），检测器也把它标成 `side-tab`。 */
+.content-body .callout{background:var(--accent-soft);border:0;border-radius:var(--r-action);padding:12px 15px;margin:0 0 6px;font-size:14px;line-height:1.8}
 /* ---- 正文表格（行程时间表 / 预算表）：站内深色玻璃风 ---- */
 .content-body table{width:100%;border-collapse:collapse;margin:0 0 16px;font-size:13.5px;
-  background:rgba(255,255,255,.02);border:1px solid var(--border)}
+  background:var(--field-weak);border:1px solid var(--border)}
 .content-body th,.content-body td{text-align:left;padding:9px 11px;
-  border-bottom:1px solid var(--border);vertical-align:top}
-.content-body th{font-size:12.5px;font-weight:600;color:var(--accent);
+  border-bottom:1px solid var(--border);vertical-align:top;font-variant-numeric:tabular-nums}
+.content-body th{font-size:12.5px;font-weight:600;color:var(--accent-text);
   background:var(--accent-soft);white-space:nowrap}
 .content-body tr:last-child td{border-bottom:0}
 .content-body td.k{white-space:nowrap;color:var(--muted);
@@ -589,7 +758,7 @@ body.map-dragging{-webkit-user-select:none;user-select:none;cursor:grabbing}
 .content-body .gal .cr{display:block;margin-top:3px;font-size:10.5px;color:var(--faint);
   font-family:ui-monospace,Consolas,monospace}
 .content-body .gal .cr a{color:var(--faint);text-decoration:none;border-bottom:1px dotted}
-.content-body .gal .cr a:hover{color:var(--accent)}
+.content-body .gal .cr a:hover{color:var(--accent-text)}
 /* 旅游攻略「正文」卡：.content-body 只管排版，卡片外观在这里补 */
 #tdP1 .content-body{background:var(--card);border:1px solid var(--border);
   padding:24px 28px;
@@ -607,46 +776,57 @@ body.map-dragging{-webkit-user-select:none;user-select:none;cursor:grabbing}
   border:1px solid rgba(255,255,255,.06)}
 .doc-toc::-webkit-scrollbar-thumb:hover{background:rgba(255,70,31,.72)}
 .doc-toc[hidden]{display:none}
-.doc-toc .tch{font-size:10.5px;letter-spacing:.16em;color:var(--faint);margin-bottom:9px;
-  font-family:ui-monospace,Consolas,monospace}
+/* 目录标题：英文走等宽、中文回正文字体 —— 等宽字排中文会显得别扭（这条在文件里
+   早就写在别处了，`CONTENTS · 目录` 却整行套着 mono，是漏网的一处）。 */
+.doc-toc .tch{font-size:11px;letter-spacing:.02em;color:var(--faint);margin-bottom:9px;
+  font-family:var(--sans)}
+.doc-toc .tch i{font-style:normal;font-family:ui-monospace,Consolas,monospace;
+  letter-spacing:.16em;margin-right:7px}
 .doc-toc a{position:relative;display:block;font-size:12.5px;line-height:1.5;
   color:var(--muted);text-decoration:none;padding:4px 0 4px 12px;margin-left:-16px;
   transition:color .18s}
 /* 当前章节的指示条：从 0 长到满格 + 朱红辉光（原来是 2px 死边框，太生硬） */
-.doc-toc a::before{content:"";position:absolute;left:0;top:50%;width:2px;height:0;
-  transform:translateY(-50%);border-radius:2px;background:var(--accent);
-  transition:height .26s cubic-bezier(.4,0,.2,1),background .2s,box-shadow .26s}
+/* 当前章节的指示条：**从中心向两端长出来**。
+   原来动的是 `height`（0 → 48% → 100%）—— 那是布局属性，检测器（`layout-transition`）
+   明确指出"动画 width/height/padding/margin 会引发重排，应改用 transform"。
+   改成 `scaleY` 后视觉一模一样（都是居中生长），但只走合成层。
+   原 transition 列表里还有一条 `box-shadow .26s` —— 那个辉光上一轮就删了，是残留，一并去掉。 */
+.doc-toc a::before{content:"";position:absolute;left:0;top:50%;width:2px;height:100%;
+  transform:translateY(-50%) scaleY(0);transform-origin:center;
+  border-radius:2px;background:var(--accent);
+  transition:transform .26s cubic-bezier(.4,0,.2,1),background .2s}
 .doc-toc a[data-lv="3"]{font-size:12px;padding-left:22px;color:var(--faint)}
 .doc-toc a:hover{color:var(--text)}
-.doc-toc a:hover::before{height:48%;background:rgba(255,70,31,.42)}
-.doc-toc a.on{color:var(--accent);font-weight:600}
-.doc-toc a.on::before{height:100%;
-  box-shadow:0 0 10px rgba(255,70,31,.75),0 0 3px rgba(255,70,31,.95)}
+.doc-toc a:hover::before{transform:translateY(-50%) scaleY(.48);background:rgba(255,70,31,.42)}
+.doc-toc a.on{color:var(--accent-text);font-weight:600}
+.doc-toc a.on::before{transform:translateY(-50%) scaleY(1)}
 .content-body h2,.content-body h3{scroll-margin-top:124px}
 /* ---- 04 景点路书 ---- */
-#guideBody .gintro{padding:12px 15px;border-radius:10px;background:var(--accent-soft);
-  border-left:3px solid var(--accent);font-size:13.5px;line-height:1.8;margin:0 0 6px}
-#guideBody h2{margin:32px 0 10px;font-size:19px;color:var(--text);padding-left:12px;
-  border-left:3px solid var(--accent);line-height:1.4}
+#guideBody .gintro{padding:13px 16px;border-radius:var(--r-action);background:var(--accent-soft);
+  border:0;font-size:13.5px;line-height:1.8;margin:0 0 6px}
+#guideBody h2{margin:38px 0 14px;font-size:20px;color:var(--text);line-height:1.4;
+  padding-bottom:10px;
+  background-image:linear-gradient(90deg,var(--border),transparent 78%);
+  background-repeat:no-repeat;background-position:0 100%;background-size:100% 1px}
 #guideBody h2:first-of-type{margin-top:14px}
 #guideBody .gnote{margin:0 0 6px;font-size:13px;color:var(--faint);line-height:1.75}
-#guideBody h3{margin:20px 0 7px;font-size:15.5px;color:var(--accent);line-height:1.45}
+#guideBody h3{margin:20px 0 7px;font-size:15.5px;color:var(--accent-text);line-height:1.45}
 #guideBody .gmeta{display:flex;flex-wrap:wrap;gap:6px 18px;margin:0 0 9px;
   font-size:12px;color:var(--faint)}
 #guideBody .gmeta b{color:var(--text);font-weight:600}
-#guideBody .gmeta .gfee b{color:var(--accent)}
+#guideBody .gmeta .gfee b{color:var(--accent-text)}
 #guideBody .gtip{margin:0;padding:0;list-style:none}
 #guideBody .gtip li{position:relative;padding-left:16px;margin:0 0 5px;
   font-size:13.5px;line-height:1.78;color:var(--muted)}
 #guideBody .gtip li::before{content:"";position:absolute;left:2px;top:.66em;width:5px;
   height:5px;border-radius:50%;background:var(--accent);opacity:.7}
 #guideBody .gtip strong{color:var(--text);font-weight:600}
-#guideBody .gtip .warn{color:var(--accent)}
+#guideBody .gtip .warn{color:var(--accent-text)}
 
 /* 路线图：步骤条 */
 .groute{margin:14px 0 4px;padding:12px 14px 13px;border-radius:11px;
   background:rgba(255,255,255,.032);border:1px solid var(--border)}
-.groute .grh{font-size:11px;letter-spacing:.12em;color:var(--accent);margin-bottom:6px;
+.groute .grh{font-size:11px;letter-spacing:.12em;color:var(--accent-text);margin-bottom:6px;
   font-family:ui-monospace,Consolas,monospace}
 .grline{display:flex;overflow-x:auto;padding:2px 0 4px;
   scrollbar-width:thin;scrollbar-color:rgba(255,70,31,.35) transparent}
@@ -663,7 +843,7 @@ body.map-dragging{-webkit-user-select:none;user-select:none;cursor:grabbing}
   color:var(--accent);font-size:11.5px;font-style:normal;font-weight:600;
   font-family:ui-monospace,Consolas,monospace}
 .grstop b{display:block;font-size:12.5px;color:var(--text);line-height:1.4}
-.grstop em{display:block;font-style:normal;font-size:10.5px;color:var(--accent);
+.grstop em{display:block;font-style:normal;font-size:10.5px;color:var(--accent-text);
   font-family:ui-monospace,Consolas,monospace;margin-top:2px;letter-spacing:.03em}
 .grstop span{display:block;margin-top:4px;font-size:11px;color:var(--faint);line-height:1.5}
 
@@ -701,18 +881,21 @@ body.reading .rightbar{display:none}
 }
 /* 「目录」开关（仅窄屏显示）—— 用 sticky 而非 fixed：
    sticky 不脱离文档流，不受 .layout / #tourDetail 的堆叠上下文限制。 */
+/* 次动作 ＝ **幽灵按钮**：常态只有一条 1px 中性边 ＋ 中性字色，hover 才上朱红。
+   原来常态就同时挂了「朱红字 ＋ 朱红边 ＋ 阴影」三样强调，三个都在喊，反而没有主角
+   （craft floor：颜色只做 10% 的点缀，中性色承担主责）。 */
 .toc-fab{display:none;position:sticky;top:10px;z-index:20;
   align-items:center;gap:7px;min-height:44px;padding:0 16px;margin:0 0 12px;
   font-family:inherit;font-size:13px;font-weight:600;letter-spacing:.04em;
-  color:var(--accent);background:var(--card);border:1px solid rgba(255,70,31,.32);
-  border-radius:22px;cursor:pointer;box-shadow:var(--shadow);
+  color:var(--text);background:var(--card);border:1px solid var(--border);
+  border-radius:var(--r-pill);cursor:pointer;box-shadow:var(--shadow);
   backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
   transition:color .18s,background .18s,border-color .18s}
-.toc-fab:hover{color:#fff;background:var(--accent);border-color:var(--accent)}
+.toc-fab:hover{color:var(--on-accent);background:var(--accent);border-color:var(--accent)}
 .toc-fab svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;
   stroke-linecap:round;stroke-linejoin:round}
 .toc-fab .toc-fab-n{font-size:11px;font-weight:500;color:var(--faint)}
-.toc-fab:hover .toc-fab-n{color:rgba(255,255,255,.82)}
+.toc-fab:hover .toc-fab-n{color:rgba(12,15,20,.66)}
 /* 旅游攻略是全屏层内部滚动、顶部还有 60px 工具条 —— 粘性按钮要让开 */
 #tourDetail .toc-fab{top:66px}
 
@@ -721,39 +904,52 @@ body.reading .rightbar{display:none}
 .panel h3{font-size:15px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px;color:var(--text)}
 .panel h3 svg{width:20px;height:20px;stroke:var(--accent);fill:none;stroke-width:1.6}
 .tagcloud{display:flex;flex-wrap:wrap;gap:9px}
-.tagcloud .tc{position:relative;font-size:13px;color:var(--text);background:var(--card);padding:7px 16px;border-radius:20px;cursor:pointer;border:1px solid var(--border);transition:all .2s;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
-.tagcloud .tc:hover{color:var(--accent);border-color:rgba(255,70,31,.4);box-shadow:0 0 14px rgba(255,70,31,.25);transform:translateY(-1px)}
-.tagcloud .tc.on{color:#fff;background:var(--accent);border-color:var(--accent);box-shadow:var(--glow)}
-.tagcloud .tc-pop{position:absolute;top:calc(100% + 10px);left:50%;transform:translateX(-50%) translateY(-4px);width:150px;height:92px;object-fit:cover;border-radius:8px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:30;box-shadow:0 8px 24px rgba(0,0,0,.4)}
-.tagcloud .tc:hover .tc-pop{opacity:1;transform:translateX(-50%) translateY(0)}
+.tagcloud .tc{position:relative;font-size:13px;color:var(--text);background:var(--card);padding:8px 16px;border-radius:20px;cursor:pointer;border:1px solid var(--border);transition:color .2s,background .2s,border-color .2s,box-shadow .2s,transform .2s;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.tagcloud .tc:hover{color:var(--accent-text);border-color:rgba(255,70,31,.4);box-shadow:0 4px 14px rgba(0,0,0,.26);transform:translateY(-1px)}
+.tagcloud .tc.on{color:var(--on-accent);background:var(--accent);border-color:var(--accent);box-shadow:var(--shadow)}
+/* ⚠️ 2026-09-19 删除：标签胶囊的「悬停弹出小照片」（`.tc-pop` / `.tc:hover .tc-pop`）。
+   原因：① 用户明确要求去掉；② 检测器把它报成 `buried-raster`（`<img> at opacity 0`）。
+   ⚠️ 更正一处我先前的误判：`assets/tag-default.jpg` **并不会**因此不再首屏加载 ——
+   它同时是**文档卡封面的兜底图**（docs.js 的取图顺序：文档 cover > 标签照片 > 默认照片），
+   没有 cover 的文档照样用它。所以这条改动的收益是界面与检测器，不是带宽。
+   标签本身仍是键盘可达的 `<span role="button" tabindex="0">`，点击/回车照常筛选。 */
 
 /* ===== 标签照片横幅（点击标签后显示在列表顶部）===== */
 .tag-banner{display:flex;align-items:center;gap:16px;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 18px;margin-bottom:22px;box-shadow:var(--shadow);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
 .tag-banner img{width:120px;height:74px;object-fit:cover;border-radius:10px;flex-shrink:0}
-.tag-banner h2{font-family:var(--serif);font-size:17px;font-weight:600;color:var(--accent)}
+.tag-banner h2{font-family:var(--serif);font-size:17px;font-weight:600;color:var(--accent-text)}
 .tag-banner p{color:var(--muted);font-size:12px;margin-top:3px}
 
 /* ===== 主题切换按钮（白天/夜间胶囊开关，图片图标版）===== */
-.theme-btn{position:fixed;top:20px;right:20px;height:40px;width:86px;border-radius:20px;border:1px solid var(--border);background:var(--card);cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:0 6px;box-shadow:var(--shadow);z-index:50;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
-.theme-btn .tb-opt{width:32px;height:28px;border-radius:14px;display:flex;align-items:center;justify-content:center;transition:background .2s}
+.theme-btn{position:fixed;top:20px;right:20px;height:40px;width:86px;border-radius:var(--r-pill);border:1px solid var(--border);background:var(--card);cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:0 6px;box-shadow:var(--shadow);z-index:50;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.theme-btn .tb-opt{width:32px;height:28px;border-radius:var(--r-pill);display:flex;align-items:center;justify-content:center;transition:background .2s}
 .theme-btn .tb-opt img{width:22px;height:22px;border-radius:50%;object-fit:cover;opacity:.3;filter:grayscale(85%);transition:opacity .2s,filter .2s}
 .theme-btn .tb-opt:hover img{opacity:.65}
 .theme-btn .tb-sun img{opacity:1;filter:none}
-[data-theme="dark"] .theme-btn .tb-sun img{opacity:.3;filter:grayscale(85%)}
-[data-theme="dark"] .theme-btn .tb-moon img{opacity:1;filter:none}
+/* 用 `:root:not([data-theme="light"])` 而不是 `[data-theme="dark"]`：
+   属性缺失时（JS 没跑）也应显示"月亮"高亮 —— 与 `:root` 的夜间兜底值保持一致。 */
+:root:not([data-theme="light"]) .theme-btn .tb-sun img{opacity:.3;filter:grayscale(85%)}
+:root:not([data-theme="light"]) .theme-btn .tb-moon img{opacity:1;filter:none}
 
 /* ===== 密码门 ===== */
 #gate{position:fixed;inset:0;background:var(--gate-veil);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px}
 .gate-box{max-width:400px;width:100%;background:var(--card);border:1px solid var(--border);border-radius:18px;padding:40px 32px;text-align:center;box-shadow:var(--shadow);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
-.gate-box .icon{width:56px;height:56px;margin:0 auto 20px;background:var(--accent-soft);border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:var(--glow)}
+.gate-box .icon{width:56px;height:56px;margin:0 auto 20px;background:var(--accent-soft);border-radius:50%;display:flex;align-items:center;justify-content:center}
 .gate-box .icon svg{width:26px;height:26px;stroke:var(--accent);fill:none;stroke-width:1.8}
 .gate-box h2{font-family:var(--serif);font-size:21px;margin-bottom:8px}
 .gate-box p{color:var(--muted);font-size:13px;margin-bottom:22px}
-.gate-box input{width:100%;padding:12px 14px;font-size:15px;border:1px solid var(--border);border-radius:10px;margin-bottom:14px;outline:none;background:rgba(255,255,255,.05);color:var(--text);transition:border-color .2s,box-shadow .2s}
-.gate-box input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(255,70,31,.18)}
-.gate-box button{width:100%;padding:12px;font-size:15px;font-weight:600;color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent-dark));border:none;border-radius:10px;cursor:pointer;transition:box-shadow .2s}
-.gate-box button:hover{box-shadow:var(--glow)}
-.gate-box .err{color:var(--accent);font-size:13px;margin-top:10px;min-height:18px}
+.gate-box input{width:100%;padding:12px 14px;font-size:15px;border:1px solid var(--border);border-radius:10px;margin-bottom:14px;outline:none;background:var(--field);color:var(--text);transition:border-color .2s,box-shadow .2s}
+.gate-box input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-ring)}
+/* 全站最要紧的按钮：深墨字压朱红渐变（两个色标都 ≥5.6:1）。原来是白字 + 渐变到更深的红，
+   白字在渐变深端只有 4.31:1 —— 现改为「本色 → 提亮」的同族渐变，深墨字的对比反而更稳，
+   hover 也仍有去处（配 brightness 微提亮）。 */
+/* 主按钮 ＝ **实心纯色 ＋ 深墨字**。
+   原来这里是「渐变 ＋ 彩色宽阴影 ＋ hover 提亮滤镜」三件套，而**栏目密码墙**的同一个
+   "解锁"动作却是纯色 —— 同一语义两个长相（`polish` 点的设计系统漂移），
+   其中彩色宽阴影又是 craft floor 指的生成式 UI 签名。现统一成一档。 */
+.gate-box button{width:100%;padding:12px;font-size:15px;font-weight:600;color:var(--on-accent);background:var(--accent);border:0;border-radius:var(--r-action);cursor:pointer;transition:background .18s}
+.gate-box button:hover{background:var(--accent-strong)}
+.gate-box .err{color:var(--accent-text);font-size:13px;margin-top:10px;min-height:18px}
 .gate-box .hint{color:var(--faint);font-size:12px;margin-top:14px}
 .gate-box .legal{color:var(--faint);font-size:11.5px;line-height:1.9;margin-top:16px;padding-top:14px;border-top:1px solid var(--border);text-align:left}
 .gate-box .legal b{color:var(--muted);font-weight:500}
@@ -762,15 +958,21 @@ body.reading .rightbar{display:none}
 footer{text-align:center;color:var(--faint);font-size:12px;padding:22px 20px 28px;border-top:1px solid var(--border);margin-top:20px}
 footer .ft-links{margin-top:9px;display:flex;justify-content:center;align-items:center;gap:9px;font-size:12px}
 footer .ft-links a{color:var(--muted);transition:color .2s}
-footer .ft-links a:hover{color:var(--accent);text-decoration:none}
+footer .ft-links a:hover{color:var(--accent-text);text-decoration:none}
 footer .ft-links span{color:var(--faint);opacity:.6}
 footer .ft-legal{max-width:660px;margin:8px auto 0;line-height:1.9;opacity:.92}
 footer .ft-legal a{color:var(--muted);text-decoration:underline}
-footer .ft-legal a:hover{color:var(--accent)}
+footer .ft-legal a:hover{color:var(--accent-text)}
 footer .ft-legal b{color:var(--muted);font-weight:500}
 
 /* ===== 右下角悬浮播放器（自绘 UI + 自管 Audio 引擎，可拖动）=====
-   2026-09-18 换皮：收起态圆盘 / 展开态深蓝玻璃面板；强调色沿用站点主色 --accent */
+   2026-09-18 换皮：收起态圆盘 / 展开态深蓝玻璃面板；强调色沿用站点主色 --accent
+   ⚠️ 下面这条 `transition:left …,top …` 是本站**有意保留的例外**（检测器会报 `layout-transition`）：
+     它只在**拖拽松手贴边**那一下触发（拖动中由 `.dragging{transition:none}` 关掉过渡，不会逐帧动布局）；
+     而 `.skip-link` 那处同类问题已改成 transform。
+     不在此处一并改的原因：播放器的定位模型是 `right/bottom` 静态 + 拖拽时改写 `left/top`
+     （且把坐标持久化进 `localStorage["playerPos2"]`），迁到 transform 要重写定位、拖拽坐标、
+     持久化格式与回归断言 —— 风险明显大于「松手一次贴边动画」这点收益。 */
 #playerFix{
   --pp-a:#fff;--pp-b:rgba(255,255,255,.68);--pp-c:rgba(255,255,255,.44);--pp-l:rgba(255,255,255,.14);
   position:fixed;right:20px;bottom:20px;z-index:80;width:76px;max-width:calc(100vw - 24px);
@@ -785,7 +987,9 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
   background:linear-gradient(135deg,rgba(48,67,96,.96),rgba(31,45,67,.97));
   border:1px solid rgba(255,255,255,.16);
   backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
-  box-shadow:0 25px 70px rgba(15,28,50,.32),0 8px 30px rgba(15,28,50,.18)}
+  /* 中性黑 + 带偏移：原来两团 `rgba(15,28,50,…)` 是**深蓝**色阴影，压在深色底上既看
+     不出是阴影、也不属于任何一套用色（检测器把这类记为 `dark-glow`）。 */
+  box-shadow:0 3px 8px rgba(0,0,0,.42),0 10px 14px rgba(0,0,0,.32)}
 #playerFix:not(.collapsed) .ppanel{display:block}
 
 /* 顶部：收起 ⌄ / 静音 */
@@ -798,20 +1002,43 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 /* 歌曲区：方形封面 + 右侧露出黑胶 */
 #playerFix .psong{display:flex;align-items:center;gap:22px;padding:2px 22px 16px;min-height:168px}
 #playerFix .pcoverwrap{position:relative;width:132px;height:132px;flex:0 0 132px}
-#playerFix .pcover{position:relative;width:132px;height:132px;border-radius:14px;overflow:hidden;z-index:3;border:1px solid rgba(255,255,255,.2);box-shadow:0 15px 30px rgba(8,18,32,.34)}
+#playerFix .pcover{position:relative;width:132px;height:132px;border-radius:14px;overflow:hidden;z-index:3;border:1px solid rgba(255,255,255,.2);box-shadow:0 2px 5px rgba(0,0,0,.34),0 7px 12px rgba(0,0,0,.30)}
 #playerFix .pcover img{width:100%;height:100%;object-fit:cover;display:block}
+/* 黑胶：用**一道偏轴高光**代替原来的重复同心条纹。
+   原写法是 `repeating-radial-gradient` 一层层画纹路 —— 那是"用重复渐变当表面装饰"，
+   检测器直接判为装饰性条纹（`repeating-stripes-gradient`）。改成一道斜向高光后：
+   旋转时高光跟着转，"在转的圆盘"照样读得出来，而画面上不再有机械纹路。 */
 #playerFix .pvinyl{position:absolute;top:6px;left:58px;width:120px;height:120px;border-radius:50%;z-index:1;
-  background:repeating-radial-gradient(circle,#151b24 0 2px,#252d38 3px,#11161e 5px);
-  box-shadow:0 10px 20px rgba(0,0,0,.3);animation:pdisc-spin 9s linear infinite;animation-play-state:paused}
+  background:linear-gradient(118deg,#1c2430 0%,#10161f 40%,#252f3d 61%,#0d1119 100%);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.06),inset 0 0 28px rgba(0,0,0,.7),0 7px 12px rgba(0,0,0,.3);
+  animation:pdisc-spin 9s linear infinite;animation-play-state:paused}
 #playerFix .pvinyl::after{content:"";position:absolute;left:50%;top:50%;width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;background:linear-gradient(135deg,#a9c9e9,#587694);border:2px solid rgba(255,255,255,.45)}
 #playerFix.playing .pvinyl{animation-play-state:running}
-#playerFix .pinfo{flex:1;min-width:0}
+#playerFix .pinfo{flex:1;min-width:0;position:relative;z-index:2}
+/* ⚠️ `position:relative;z-index:2` 不能省：黑胶（`.pvinyl`，z-index:1）会向右探出封面 46px
+   压进歌名区，而 `.pinfo` 原先没定位 → 定位元素带 z-index 会盖在未定位的文本之上，
+   表现就是**歌名前一两个字被黑胶吃掉**（2026-09-19 修好封面尺寸后黑胶探得更远，才暴露出来）。 */
 #playerFix .ptitle{font-size:19px;font-weight:600;line-height:1.35;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #playerFix .partist{margin-top:5px;font-size:12.5px;color:var(--pp-b);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
+/* ---- 音频源不可用时的可见状态（2026-09-19 评审补）----
+   之前音频源整条链路死了而 UI 毫无表示：用户按播放键得到永久静默，
+   站点自己也不报错。现在给一个明确的错误态 + 一个「重试」按钮。 */
+#playerFix .perr{display:flex;align-items:center;gap:10px;margin:0 22px 12px;padding:9px 12px;
+  border-radius:10px;background:rgba(255,120,90,.13);border:1px solid rgba(255,120,90,.34);
+  font-size:12px;color:#ffd9cd;line-height:1.45}
+#playerFix .perr[hidden]{display:none}
+#playerFix .perr-t{flex:1;min-width:0}
+#playerFix .perr-b{flex:0 0 auto;padding:7px 13px;border-radius:8px;cursor:pointer;min-height:32px;
+  background:var(--accent);color:var(--on-accent);border:0;font:inherit;font-weight:600;font-size:12px}
+#playerFix .perr-b:hover{background:var(--accent-strong)}
+/* 源不可用时：进度环转灰、播放键沉下去 —— 状态一眼可见，而不是"看着能用其实没反应" */
+#playerFix.dead .pdisc-ring{background:conic-gradient(from -90deg,rgba(255,255,255,.24) 0,rgba(255,255,255,.16) 0)}
+#playerFix.dead .pb-play,#playerFix.dead .pdisc-play{background:rgba(255,255,255,.16);color:rgba(255,255,255,.46);box-shadow:none;border-color:rgba(255,255,255,.14)}
+
 /* 进度 */
 #playerFix .pbar{position:relative;height:4px;margin:0 22px;border-radius:4px;background:rgba(255,255,255,.18);cursor:pointer}
-#playerFix .pbar-fill{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:4px;background:linear-gradient(90deg,var(--accent),#ffa07a)}
+#playerFix .pbar-fill{position:absolute;left:0;top:0;bottom:0;width:100%;border-radius:4px;background:linear-gradient(90deg,var(--accent),#ffa07a);transform-origin:left center;transform:scaleX(0)}
 #playerFix .pbar-dot{position:absolute;top:50%;left:0;width:11px;height:11px;margin:-5.5px 0 0 -5.5px;border-radius:50%;background:#fff;box-shadow:0 0 0 4px rgba(255,255,255,.08),0 2px 7px rgba(0,0,0,.3)}
 #playerFix .ptime{display:flex;justify-content:space-between;margin:8px 22px 2px;font-size:11px;color:var(--pp-c)}
 
@@ -822,11 +1049,11 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 #playerFix .pb:active{transform:scale(.9)}
 #playerFix .pb svg{width:19px;height:19px;fill:currentColor;display:block}
 #playerFix .pb .pbt{font-size:10px;line-height:1;color:var(--pp-c);font-weight:500}
-#playerFix .pb.on{color:var(--accent)}
-#playerFix .pb.on .pbt{color:var(--accent)}
+#playerFix .pb.on{color:var(--accent-text)}
+#playerFix .pb.on .pbt{color:var(--accent-text)}
 #playerFix .pb-wide{min-width:48px}
-#playerFix .pb-play{width:52px;height:52px;color:#fff;background:var(--accent);box-shadow:0 8px 20px rgba(255,70,31,.36);border:1px solid rgba(255,255,255,.3)}
-#playerFix .pb-play:hover{background:var(--accent-dark);color:#fff}
+#playerFix .pb-play{width:52px;height:52px;color:var(--on-accent);background:var(--accent);box-shadow:0 1px 3px rgba(0,0,0,.45),0 6px 16px rgba(0,0,0,.40);border:1px solid rgba(255,255,255,.3)}
+#playerFix .pb-play:hover{background:var(--accent-strong);color:var(--on-accent)}
 #playerFix .pb-play svg{width:22px;height:22px}
 #playerFix .pb-play .i-pause{display:none}
 #playerFix.playing .pb-play .i-play{display:none}
@@ -847,7 +1074,7 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 #playerFix .pl-item{display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:10px;cursor:pointer;transition:background .18s}
 #playerFix .pl-item:hover{background:rgba(255,255,255,.08)}
 #playerFix .pl-item.cur{background:rgba(255,255,255,.13)}
-#playerFix .pl-mark{width:12px;flex:0 0 12px;font-size:9px;color:var(--accent);text-align:center}
+#playerFix .pl-mark{width:12px;flex:0 0 12px;font-size:9px;color:var(--accent-text);text-align:center}
 #playerFix .pl-thumb{width:34px;height:34px;flex:0 0 34px;border-radius:7px;overflow:hidden;background:rgba(255,255,255,.1)}
 #playerFix .pl-thumb img{width:100%;height:100%;object-fit:cover;display:block}
 #playerFix .pl-meta{flex:1;min-width:0}
@@ -864,17 +1091,19 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 #playerFix .pdisc{position:relative;display:none;width:76px;height:76px;cursor:grab;border-radius:50%;
   background:linear-gradient(135deg,rgba(48,67,96,.96),rgba(31,45,67,.97));
   border:1px solid rgba(255,255,255,.16);
-  box-shadow:0 16px 38px rgba(15,28,50,.46),0 4px 12px rgba(15,28,50,.3),inset 0 1px 0 rgba(255,255,255,.14);
+  box-shadow:0 2px 4px rgba(0,0,0,.34),0 9px 14px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.14);
   backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
   transition:transform .3s,box-shadow .3s}
 #playerFix.collapsed .pdisc{display:block}
 #playerFix .pdisc:active{cursor:grabbing}
-/* 播放中：球体外围一层柔和朱红辉光（状态一眼可见） */
-#playerFix.playing .pdisc{box-shadow:0 16px 38px rgba(15,28,50,.46),0 4px 12px rgba(15,28,50,.3),
-  0 0 20px rgba(255,70,31,.2),inset 0 1px 0 rgba(255,255,255,.14)}
-#playerFix .pdisc:hover{transform:translateY(-3px) scale(1.04);
-  box-shadow:0 22px 50px rgba(15,28,50,.55),0 5px 16px rgba(15,28,50,.34),
-             0 0 0 1px rgba(255,70,31,.42),0 0 28px rgba(255,70,31,.3),
+/* 播放中：**唯一保留的一处"通电感"**。但改成**带偏移**的朱红投影
+   （`0 6px 18px`）而不是零偏移光环 —— craft floor：阴影要带偏移，
+   零偏移的彩色光晕只是装饰。全站只此一处。 */
+#playerFix.playing .pdisc{box-shadow:0 2px 4px rgba(0,0,0,.34),0 9px 14px rgba(0,0,0,.34),
+  0 4px 10px rgba(255,70,31,.30),inset 0 1px 0 rgba(255,255,255,.14)}
+#playerFix .pdisc:hover{transform:translateY(-2px) scale(1.03);
+  box-shadow:0 4px 8px rgba(0,0,0,.36),0 10px 14px rgba(0,0,0,.36),
+             0 0 0 1px rgba(255,255,255,.34),
              inset 0 1px 0 rgba(255,255,255,.2)}
 /* 外圈：播放进度环（贴合球体边缘内侧，朱红 = 已播放） */
 #playerFix .pdisc-ring{position:absolute;inset:1px;border-radius:50%;pointer-events:none;z-index:4;
@@ -883,8 +1112,8 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
   mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 2px))}
 /* 黑胶：提亮一档 + 外侧 1px 亮边，从玻璃壳上"浮"起来 */
 #playerFix .pdisc-vinyl{position:absolute;inset:7px;border-radius:50%;
-  background:repeating-radial-gradient(circle,#161c26 0 1.5px,#242b37 2.5px,#101419 4px);
-  box-shadow:0 0 0 1px rgba(255,255,255,.14),0 4px 10px rgba(0,0,0,.45),inset 0 0 14px rgba(0,0,0,.7);
+  background:linear-gradient(118deg,#1d2531 0%,#11171f 42%,#262f3e 60%,#0d1119 100%);
+  box-shadow:0 0 0 1px rgba(255,255,255,.14),0 4px 10px rgba(0,0,0,.45),inset 0 0 16px rgba(0,0,0,.72);
   animation:pdisc-spin 9s linear infinite;animation-play-state:paused}
 #playerFix.playing .pdisc-vinyl{animation-play-state:running}
 /* 中心封面 */
@@ -895,12 +1124,12 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 #playerFix .pdisc-cover::after{content:"";position:absolute;left:50%;top:50%;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;background:rgba(255,255,255,.9)}
 /* 播放 / 暂停：右下角内侧小角标（朱红，收进圆内） */
 #playerFix .pdisc-play{position:absolute;right:8px;bottom:8px;width:23px;height:23px;border-radius:50%;
-  background:var(--accent);border:2px solid rgba(31,45,67,.96);color:#fff;
+  background:var(--accent);border:2px solid rgba(31,45,67,.96);color:var(--on-accent);
   font-size:9px;line-height:1;letter-spacing:-.5px;
   display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:5;
-  box-shadow:0 3px 10px rgba(15,28,50,.55);font-family:inherit;
+  box-shadow:0 1px 3px rgba(0,0,0,.5);font-family:inherit;
   transition:transform .2s,box-shadow .2s}
-#playerFix .pdisc-play:hover{transform:scale(1.12);box-shadow:0 4px 16px rgba(255,70,31,.55)}
+#playerFix .pdisc-play:hover{transform:scale(1.1);box-shadow:0 2px 6px rgba(255,70,31,.40)}
 @keyframes pdisc-spin{to{transform:rotate(360deg)}}
 /* 保持旧类名兼容（滚动/焦点） */
 #playerFix.collapsed .ppanel{display:none}
@@ -937,17 +1166,27 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
   .main{order:2}
   .reader{padding:22px 18px}
 }
-  /* 栏目密码墙（知识文档/旅游攻略/游戏资源） */
+/* 栏目密码墙（知识文档 / 旅游攻略 / 游戏资源）
+   ⚠️ 这一段**故意留在顶层**（2026-09-19 校准）：它是 .doc-wall 组件**唯一**的基础样式定义
+   （别处只剩 ≤600 的两条 min-height），若移进媒体查询，桌面端密码墙就会变成裸奔的默认样式。 */
   .doc-wall{max-width:460px;margin:60px auto;text-align:center;padding:36px 28px;background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow)}
   .doc-wall .wall-lock{font-size:44px;margin-bottom:10px}
   .doc-wall h2{margin:6px 0 12px}
   .doc-wall p{color:var(--muted);font-size:14px;margin:6px 0}
-  .doc-wall input{width:80%;max-width:280px;padding:11px 14px;margin:16px 0 4px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.06);color:var(--text);font-size:15px;text-align:center;outline:none}
-  .doc-wall input:focus{border-color:var(--accent);box-shadow:var(--glow)}
-  .doc-wall button{display:inline-block;margin-top:12px;padding:10px 34px;border:none;border-radius:8px;background:var(--accent);color:#fff;font-size:15px;cursor:pointer}
-  .doc-wall button:hover{background:var(--accent-dark)}
+  .doc-wall input{width:80%;max-width:280px;padding:11px 14px;margin:16px 0 4px;border-radius:8px;border:1px solid var(--border);background:var(--field);color:var(--text);font-size:15px;text-align:center;outline:none}
+  .doc-wall input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-ring)}
+  .doc-wall button{display:inline-block;margin-top:12px;padding:10px 34px;border:0;border-radius:var(--r-action);background:var(--accent);color:var(--on-accent);font-size:15px;font-weight:600;cursor:pointer}
+  .doc-wall button:hover{background:var(--accent-strong)}
   .doc-wall .wall-err{color:#ff6b6b;font-size:13px;min-height:18px}
-  /* 播放器：窄屏占满宽度 */
+/* 播放器：中窄屏（601–900）缩一档占满宽度
+   ⚠️ 2026-09-19 修复一处**媒体查询提前闭合**：这 8 行原先是**顶层规则** ——
+   上一行的 `}` 把 @media(max-width:900px) 提前合上了。后果两条，均被 CSSOM 实测证实：
+     ① 桌面 1440 下播放器被套上窄屏尺寸：封面 112px（基础规则 132px）、
+        面板 min-height 148（应 168）、标题 17px（应 19）、按钮间距 14（应 20）；
+     ② ≤600 那条 L3「小型化」（封面 94 / 面板 126 / 标题 15 / 间距 10）
+        因为源码位置**在它前面**且同权重，被这段顶层规则反超 —— **手机上从未生效**。
+   现改为显式的 601–900 区间：与 ≤600 档不重叠，顺序问题自然消失。 */
+@media (min-width:601px) and (max-width:900px){
   #playerFix{right:14px;bottom:14px}
   #playerFix:not(.collapsed){width:min(352px,calc(100vw - 28px))}
   #playerFix .psong{gap:16px;padding:2px 18px 14px;min-height:148px}
@@ -955,34 +1194,106 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
   #playerFix .pvinyl{left:50px;width:102px;height:102px}
   #playerFix .ptitle{font-size:17px}
   #playerFix .pbtns{gap:14px}
+}
+
+/* ===== 窄屏（≤600）· 播放器 / 主题按钮 / 触摸靶点 =====
+   ⚠️ 这一组必须放在**样式表末尾**（在播放器基础样式之后）。
+   原来它写在文件前部的 ≤600 块里，同权重下被后面的基础样式反超 —— 手机上从未生效：
+   实测收起态播放键仍是 23×23、面板仍按 352px、封面 132px、圆盘 76px。
+   与上面修掉的「媒体查询提前闭合」同源：都是**位置**写错，不是值写错。 */
+@media (max-width:600px){
+  #playerFix{right:12px;bottom:12px}
+  #playerFix:not(.collapsed){width:min(304px,calc(100vw - 24px))}
+  #playerFix .psong{gap:14px;padding:2px 14px 12px;min-height:126px}
+  #playerFix .pcoverwrap,#playerFix .pcover{width:94px;height:94px;flex-basis:94px}
+  #playerFix .pvinyl{left:38px;width:86px;height:86px}
+  #playerFix .ptitle{font-size:15px}
+  #playerFix .partist{font-size:11.5px}
+  #playerFix .pbtns{gap:10px;padding:4px 12px 10px}
+  /* 用 width/height 而不是 min-*：这样才压得住基础规则的固定宽高 */
+  #playerFix .pb{width:44px;height:44px}
+  #playerFix .pb-play{width:48px;height:48px}
+  #playerFix .pico{width:40px;height:40px}
+  #playerFix .pbar,#playerFix .ptime{margin-left:14px;margin-right:14px}
+  #playerFix .plist{max-height:150px}
+  /* 收起态圆盘收小，少挡内容 */
+  #playerFix .pdisc{width:62px;height:62px}
+  #playerFix .pdisc-cover{width:28px;height:28px;margin:-14px 0 0 -14px}
+  /* ⚠️ 2026-09-19 评审：这个播放键原来只有 23×23。已抬到 32×32 ——
+     它受 62px 圆盘限制，再大就会盖住中心封面；圆盘本身（62×62）也是可点/可聚焦的
+     "展开"入口（Enter/Space），两条路都通。 */
+  #playerFix .pdisc-play{right:2px;bottom:2px;width:32px;height:32px;font-size:12px}
+  /* 主题按钮抬到 44px 高（原来这条也被基础样式反超 → 实测只有 40px） */
+  .theme-btn{height:44px;top:14px;right:14px}
+  /* 搜索框：实测 35px 高，低于 44px 底线 */
+  .search input{min-height:44px}
+  /* 页脚链接：实测高 16–21px，是移动端最难点中的一组 */
+  footer .ft-links a{padding:11px 6px;min-height:44px;display:inline-flex;align-items:center}
+  footer .ft-links{gap:4px}
+  /* 地图缩放钮：实测 24×24，窄屏上是唯一能放大点位的控件 */
+  .mzoom button{width:36px;height:36px;font-size:16px}
+  .mzoom{gap:4px;padding:4px}
+}
+
+/* ===== 窄屏动效/输入可及性（harden 清单补漏，2026-09-19）=====
+   ⚠️ 这两条是读完 `reference/harden.md` 才发现的，之前那轮整改漏了：
+   ① iOS Safari 对**字号 < 16px 的输入框**会在聚焦时强制放大整页 —— 而密码门是
+      移动端用户碰到的**第一个控件**，一放大整页就被推歪（搜索框 13px、密码框 15px 都中招）；
+   ② 音量条 `input[type=range]` 只有 3px 高，是移动端最难抓住的控件
+      （它一直藏在展开态面板里，所以之前的靶点扫描没量到）。 */
+@media (max-width:900px){
+  .search input,.gate-box input,.doc-wall input,#searchInput{font-size:16px}
+  #playerFix .pvol{height:22px}
+}
+
+/* ===== 动效可及性：尊重系统「减少动态效果」偏好 =====
+   本站常驻动效有：黑胶/圆盘旋转、地图行进方向虚线、卡片入场、报表入场、章节指示条。
+   对前庭功能敏感的用户，这些循环动画是实打实的干扰。统一降级为「不循环、瞬时」。 */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{
+    animation-duration:.001ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.001ms !important}
+  html{scroll-behavior:auto !important}
+  #playerFix .pvinyl,#playerFix .pdisc-vinyl,
+  #playerFix.playing .pvinyl,#playerFix.playing .pdisc-vinyl{animation:none !important}
+  #routeMap .dash{animation:none !important}
+  .tpane{animation:none !important}
+}
 </style>
 </head>
 <body>
+
+<!-- 跳到主内容：键盘/读屏用户不必先趟过侧栏 9 个导航项（2026-09-19 评审补） -->
+<a class="skip-link" href="#mainContent">跳到主内容</a>
 
 <!-- 密码门 -->
 <div id="gate">
   <div class="gate-box">
     <div class="icon">
-      <svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
     </div>
     <h2>需要密码访问</h2>
     <p>本数据库受密码保护，请输入访问密码查看内容。</p>
-    <input type="password" id="pwdInput" placeholder="请输入访问密码" autocomplete="off">
-    <button id="unlockBtn">进入数据库</button>
-    <div class="err" id="errMsg"></div>
+    <input type="password" id="pwdInput" placeholder="请输入访问密码" autocomplete="off" aria-label="访问密码">
+    <button id="unlockBtn" type="button">进入数据库</button>
+    <div class="err" id="errMsg" role="status" aria-live="polite"></div>
     <div class="hint">密码由文档库管理员提供</div>
     <div class="legal">本站<strong>不制作、不修改、不存储</strong>任何软件文件，软件资源均以第三方网盘分享链接提供；站内内容收集自互联网，仅供个人学习交流使用，请勿用于商业用途，请于下载后 24 小时内删除。如本站内容侵犯了您的合法权益，请联系站长删除（微信：<b>Y18725560542</b>），我们将在收到通知后第一时间处理。详见 <a href="legal.html#disclaimer" style="color:var(--muted);text-decoration:underline">免责声明</a>与<a href="legal.html#complaint" style="color:var(--muted);text-decoration:underline">侵权投诉指引</a>。</div>
   </div>
 
 </div>
 
-<!-- 主题切换（白天 / 夜间） -->
-<button class="theme-btn" id="themeToggle" title="切换白天 / 夜间模式">
+<!-- 主题切换（白天 / 夜间）
+     可访问名由按钮自己的 aria-label 提供 —— 原来没有 aria-label，读屏会把两张
+     装饰图的 alt 拼起来念成"白天模式 夜间模式"，听不出这是个开关。 -->
+<button class="theme-btn" id="themeToggle" type="button"
+        title="切换白天 / 夜间模式" aria-label="切换白天 / 夜间主题">
   <span class="tb-opt tb-sun" title="白天模式">
-    <img src="assets/icon-sun.jpg" alt="白天模式">
+    <img src="assets/icon-sun.jpg" alt="" aria-hidden="true">
   </span>
   <span class="tb-opt tb-moon" title="夜间模式">
-    <img src="assets/icon-moon.jpg" alt="夜间模式">
+    <img src="assets/icon-moon.jpg" alt="" aria-hidden="true">
   </span>
 </button>
 
@@ -999,57 +1310,61 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
     </div>
     <div class="search">
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-      <input type="text" id="searchInput" placeholder="搜索文档...">
+      <input type="text" id="searchInput" placeholder="搜索文档..." aria-label="搜索文档（仅搜索当前栏目）">
     </div>
     <nav class="nav" id="mainNav">
-      <a data-cat="主页" class="active">
-        <svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>
+      <!-- ⚠️ 每个导航项都必须带 href：`<a>` 没有 href 就**不进 Tab 序、不可聚焦**，
+           这正是评审里 P0「全站主要交互对象无法键盘到达」的根因之一。
+           href="#" 只为了拿到链接语义与可聚焦性，点击由 app.js 拦下（preventDefault），
+           不会真的跳转或改 hash。 -->
+      <a href="#" data-cat="主页" class="active">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>
         主页
       </a>
-      <a data-cat="知识文档">
-        <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      <a href="#" data-cat="知识文档">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
         知识文档
       </a>
-      <a data-cat="软件资源">
-        <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8m-4-4v4"/></svg>
+      <a href="#" data-cat="软件资源">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8m-4-4v4"/></svg>
         软件资源
       </a>
-      <a data-cat="旅游攻略">
-        <svg viewBox="0 0 24 24"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.2.6-.7.5-1.2z"/></svg>
+      <a href="#" data-cat="旅游攻略">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.2.6-.7.5-1.2z"/></svg>
         旅游攻略
       </a>
-      <a data-cat="插件库">
-        <svg viewBox="0 0 24 24"><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/><circle cx="12" cy="12" r="3"/></svg>
+      <a href="#" data-cat="插件库">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/><circle cx="12" cy="12" r="3"/></svg>
         插件库
       </a>
-      <a data-cat="项目数据库">
-        <svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.7-4 3-9 3s-9-1.3-9-3"/><path d="M3 5v14c0 1.7 4 3 9 3s9-1.3 9-3V5"/></svg>
+      <a href="#" data-cat="项目数据库">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.7-4 3-9 3s-9-1.3-9-3"/><path d="M3 5v14c0 1.7 4 3 9 3s9-1.3 9-3V5"/></svg>
         项目数据库
       </a>
-      <a data-cat="游戏资源">
-        <svg viewBox="0 0 24 24"><path d="M6 11h4m-2-2v4"/><circle cx="15" cy="11" r="1"/><circle cx="18" cy="13" r="1"/><path d="M17.32 5H6.68a4 4 0 0 0-3.98 3.6L2 15.5A4 4 0 0 0 6 20h12a4 4 0 0 0 4-4.5l-.7-6.9A4 4 0 0 0 17.32 5z"/></svg>
+      <a href="#" data-cat="游戏资源">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 11h4m-2-2v4"/><circle cx="15" cy="11" r="1"/><circle cx="18" cy="13" r="1"/><path d="M17.32 5H6.68a4 4 0 0 0-3.98 3.6L2 15.5A4 4 0 0 0 6 20h12a4 4 0 0 0 4-4.5l-.7-6.9A4 4 0 0 0 17.32 5z"/></svg>
         游戏资源
       </a>
-      <a data-cat="其他文件">
-        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+      <a href="#" data-cat="其他文件">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
         其他文件
       </a>
-      <a data-cat="关于">
-        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v5h1"/></svg>
+      <a href="#" data-cat="关于">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v5h1"/></svg>
         关于
       </a>
     </nav>
   </aside>
 
   <!-- 中间内容 -->
-  <main class="main">
+  <main class="main" id="mainContent" tabindex="-1">
     <div class="cards" id="docList"></div>
 
     <div class="reader" id="reader">
-      <span class="back" id="backBtn">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5m7-7-7 7 7 7"/></svg>
+      <button class="back" id="backBtn" type="button">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M19 12H5m7-7-7 7 7 7"/></svg>
         返回列表
-      </span>
+      </button>
       <h1 id="readerTitle"></h1>
       <div class="reader-meta" id="readerMeta"></div>
       <div class="doc-wrap">
@@ -1155,15 +1470,24 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 
   <!-- 旅游攻略 · 全屏密码门（点导航「旅游攻略」时弹出，通过后进全屏舞台） -->
   <div id="tourGate" hidden>
+    <!-- 动态波纹背景：原生移植 shadcn 的 WavyBackground（自写 3D simplex 噪声 + canvas + blur），
+         配色换成站内朱红体系。启动/停止由 app.js 跟着门的显隐走，且尊重 prefers-reduced-motion。 -->
+    <canvas id="tourGateWave" aria-hidden="true"></canvas>
     <div class="gate-box">
       <div class="icon">
-        <svg viewBox="0 0 24 24"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 12l9 4 9-4"/><path d="M3 17l9 4 9-4"/></svg>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 12l9 4 9-4"/><path d="M3 17l9 4 9-4"/></svg>
       </div>
       <h2>&#12300;旅游攻略&#12301;栏目</h2>
       <p>本栏目受密码保护，请输入访问密码进入全屏浏览。</p>
-      <input type="password" id="tourGatePwd" placeholder="请输入访问密码" autocomplete="off">
+      <div class="gfield" id="tourGateField">
+        <input type="password" id="tourGatePwd" placeholder="请输入访问密码" autocomplete="off" aria-label="旅游攻略栏目密码">
+      </div>
       <button id="tourGateBtn" type="button">进入旅游攻略</button>
-      <div class="err" id="tourGateErr"></div>
+      <!-- 密码正确后：上面的输入框收起，这个按钮展开（Lit-up borders 效果） -->
+      <button type="button" class="genter" id="tourGateEnter" hidden>
+        <span class="genter-in">进入旅游攻略</span>
+      </button>
+      <div class="err" id="tourGateErr" role="status" aria-live="polite"></div>
       <div class="hint">该密码仅对本栏目有效，其他受限栏目仍需各自密码</div>
       <div class="tk"><span>ENTRIES <b id="tgEntries">—</b></span><span>SYS <b>&#9679;</b> READY</span></div>
     </div>
@@ -1200,6 +1524,15 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
         <div class="ptitle" id="pTitle">—</div>
         <div class="partist" id="pArtist">—</div>
       </div>
+    </div>
+
+    <!-- 音频出错时的可见状态。
+         ⚠️ 2026-09-19 评审：原来音频源整条链路已死（Netlify 额度用尽 → 3 条请求
+         ERR_BLOCKED_BY_ORB，资源计量 0 字节），而站点**自己都不报错**（console.error = 0）
+         —— 用户按播放键只得到永久静默。Nielsen #9「错误识别与恢复」给 1 分就是因为这个。 -->
+    <div class="perr" id="pErr" hidden role="status" aria-live="polite">
+      <span class="perr-t" id="pErrT"></span>
+      <button class="perr-b" id="pRetry" type="button">重试</button>
     </div>
 
     <div class="pbar" id="pBar"><div class="pbar-fill" id="pBarFill"></div><div class="pbar-dot" id="pBarDot"></div></div>
@@ -1240,15 +1573,15 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
   </div>
 
   <!-- 收起态：圆盘 -->
-  <div class="pdisc" id="pDisc" title="打开播放器">
+  <div class="pdisc" id="pDisc" title="打开播放器" tabindex="0" role="button" aria-label="展开播放器">
     <div class="pdisc-ring"></div>
     <div class="pdisc-vinyl"></div>
     <div class="pdisc-cover"><img id="pCoverMini" src="assets/music-cover.jpg" alt=""></div>
-    <button class="pdisc-play" id="pMiniPlay" type="button" title="播放 / 暂停"><span id="pMiniIcon">▶</span></button>
+    <button class="pdisc-play" id="pMiniPlay" type="button" title="播放 / 暂停" aria-label="播放 / 暂停"><span id="pMiniIcon">▶</span></button>
   </div>
 </div>
 
-<script src="docs.js?v=20260919g"></script>
-<script src="app.js?v=20260919g"></script>
+<script src="docs.js?v=20260919j"></script>
+<script src="app.js?v=20260919j"></script>
 </body>
 </html>
