@@ -1874,24 +1874,27 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
           <div class="pt-card-eyebrow">Ex Libris · 藏书于此</div>
           <div class="pt-card-title">知识文档 · 目录</div>
           <div class="pt-list">
-            <button class="pt-item" data-doc="0" type="button">
-              <span class="pt-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>
-              <span class="pt-tx"><b>入门教程</b><i>从零开始的系统讲义 · 完整走一遍</i></span>
+            <!-- 四个条目 = 四类"书架"（data-shelf 对应文档的 shelf 字段）：
+                 该分类下有文档 → 可点（打开该分类第一篇）；无 → 自动禁用（灰）。
+                 改名只改这里的 <b>/<i>；分类键（data-shelf）与 docs.js 的 shelf 值对应。 -->
+            <button class="pt-item" data-shelf="rule" type="button">
+              <span class="pt-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path d="M9 12h6M9 16h4"/></svg></span>
+              <span class="pt-tx"><b>馆内规则</b><i>文库使用规则 · 查询指南</i></span>
               <span class="pt-arrow" aria-hidden="true">&#8594;</span>
             </button>
-            <button class="pt-item" data-doc="1" type="button">
-              <span class="pt-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 6a2 2 0 0 1 2-2h3l2 2h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M9 13h6"/></svg></span>
-              <span class="pt-tx"><b>速查手册</b><i>工具、命令与配置的备忘速查</i></span>
+            <button class="pt-item" data-shelf="tech" type="button">
+              <span class="pt-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m8 6-5 6 5 6"/><path d="m16 6 5 6-5 6"/></svg></span>
+              <span class="pt-tx"><b>技术文库</b><i>AI 编程 · GIS 制图 · Python 等技术文档</i></span>
               <span class="pt-arrow" aria-hidden="true">&#8594;</span>
             </button>
-            <button class="pt-item" data-doc="2" type="button">
-              <span class="pt-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg></span>
-              <span class="pt-tx"><b>实战案例</b><i>项目记录与踩坑复盘</i></span>
+            <button class="pt-item" data-shelf="humanities" type="button">
+              <span class="pt-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 3c-6 1.5-9.5 4.5-11.5 8.5C7 14.5 5.5 17 3 19"/><path d="M4 20c2-1 4-1.5 6-1"/></svg></span>
+              <span class="pt-tx"><b>人文文库</b><i>人文社科类知识文档</i></span>
               <span class="pt-arrow" aria-hidden="true">&#8594;</span>
             </button>
-            <button class="pt-item" data-doc="3" type="button">
-              <span class="pt-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 16 15 6l3 3L8 19H5z"/><path d="M4 20h16"/></svg></span>
-              <span class="pt-tx"><b>碎片笔记</b><i>零散心得与阅读摘录</i></span>
+            <button class="pt-item" data-shelf="archive" type="button">
+              <span class="pt-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 7h18v13H3z"/><path d="M3 7V4h18v3"/><path d="M9 12h6"/></svg></span>
+              <span class="pt-tx"><b>馆藏原件</b><i>技术 · 人文文库的文档原件（可下载）</i></span>
               <span class="pt-arrow" aria-hidden="true">&#8594;</span>
             </button>
           </div>
@@ -2025,8 +2028,8 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
   </div>
 </div>
 
-<script src="docs.js?v=20260920b"></script>
+<script src="docs.js?v=20260920c"></script>
 <script src="app.js?v=20260920f"></script>
-<script src="knowledge.js?v=20260920c"></script>
+<script src="knowledge.js?v=20260920d"></script>
 </body>
 </html>

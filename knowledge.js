@@ -193,22 +193,27 @@ function knPortalClock(on) {
   }
 }
 
-// 按知识库实际篇数同步门户条目状态：有对应文档 → 启用；无 → 禁用（灰化）。
-// 内容增加后条目自动启用，不必手改 HTML（HTML 里只写死 data-doc 下标与文案）。
+// 分类（书架）→ 该分类下的文档：按文档的 `shelf` 字段分组
+//（shelf 取值与 index.html 里条目的 data-shelf 对应：rule / tech / humanities / misc）
+function knShelfDocs(shelf) {
+  return knowledgeDocs().filter(function (d) { return (d.shelf || "") === shelf; });
+}
+
+// 按分类同步门户条目状态：该分类下有文档 → 启用；无 → 禁用（灰化）。
+// 新增文档后条目自动启用，不必手改 HTML（HTML 里只写 data-shelf 与文案）。
 function knSyncPortal() {
-  var n = knowledgeDocs().length;
   var items = document.querySelectorAll("#knowledgeHome .pt-item");
   [].forEach.call(items, function (it) {
-    var i = parseInt(it.getAttribute("data-doc") || "0", 10);
-    if (i < n) it.removeAttribute("disabled");
+    var shelf = it.getAttribute("data-shelf") || "";
+    if (knShelfDocs(shelf).length) it.removeAttribute("disabled");
     else it.setAttribute("disabled", "disabled");
   });
 }
 
-// 门户条目 → 沉浸阅读（data-doc 是知识文档列表里的下标；超界 = 该条目暂无内容，直接忽略）
-function knOpenByIndex(i) {
-  var docs = knowledgeDocs();
-  if (i >= 0 && i < docs.length) openKnowledge(docs[i]);
+// 门户条目 → 打开该分类的第一篇（该分类暂无文档时条目已禁用，走不到这里）
+function knOpenShelf(shelf) {
+  var list = knShelfDocs(shelf);
+  if (list.length) openKnowledge(list[0]);
 }
 
 // 「随机一读」：从知识库里随机翻一篇（只有一篇时就是它）—— 替代原来名不副实的「听书台」
@@ -300,11 +305,11 @@ function openKnowledge(d) {
   });
   if (kb) kb.addEventListener("click", knBackToHome);
 
-  // 门户点击：书目条目 → 打开对应文档；「随机一读」→ 随机翻一篇
+  // 门户点击：书目条目 → 打开该分类第一篇；「随机一读」→ 随机翻一篇
   if (kh) kh.addEventListener("click", function (e) {
     if (e.target.closest("#knRandom")) { knRandomRead(); return; }
     var item = e.target.closest(".pt-item");
-    if (item) { knOpenByIndex(parseInt(item.getAttribute("data-doc") || "0", 10)); }
+    if (item) { knOpenShelf(item.getAttribute("data-shelf") || ""); }
   });
 
   if (gok) gok.addEventListener("click", tryKnowledgeUnlock);

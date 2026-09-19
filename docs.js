@@ -1503,6 +1503,7 @@ window.DOCS = [
   {
     title: "OpenCode 使用教程（零基础版）",
     category: "知识文档",
+    shelf: "tech",   // 知识文档门户里的"书架"归属：rule 馆内规则 / tech 技术文库 / humanities 人文文库 / archive 馆藏原件
     summary: "从零上手 OpenCode AI 编程代理：安装配置、常用指令、C/C++ 开发环境搭建、VSCode 配合、编译调试全流程与实战案例。",
     date: "2026-09-17",
     tags: ["OpenCode", "AI编程", "教程", "入门"],
