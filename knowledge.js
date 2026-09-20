@@ -604,12 +604,14 @@ var knowledgeWave = (function () {
     // ② 墨滴绽放
     for (var m = blooms.length - 1; m >= 0; m--) {
       var bl = blooms[m];
-      bl.t += .0072;
+      // 2026-09-20 用户："墨滴落的速度太快了" → 单滴生命周期 2.3s → 3.6s
+      // （绽放、扩散环、墨丝都由 t 驱动，一起慢下来）。
+      bl.t += .0046;
       if (bl.t >= 1) { blooms.splice(m, 1); continue; }
       drawBloom(bl);
     }
     bloomGap++;
-    if (bloomGap > 92) {                  // 约 1.5s 落一滴（小而多，比一大坨像墨）
+    if (bloomGap > 140) {                 // 约 2.3s 落一滴（2026-09-20 用户嫌快：1.5s → 2.3s；小而多，比一大坨像墨）
       bloomGap = 0;
       // 落点避开正中央那一块（大字与输入行在那里），也避开上下两条纸色带，走中环
       var ang = Math.random() * 6.2832, rr = .15 + Math.random() * .17;
