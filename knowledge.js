@@ -281,7 +281,11 @@ var knowledgeWave = (function () {
     [180, 96, 120, 98,  78, 92]     // 17 继续回扫
   ];
   var SIGN_BOX = [330, 118];        // 路径外接盒（换算缩放用）
-  var SIGN_WRITE = 380;             // 写完用多少帧（≈6.3s —— 原来横穿太快的那个问题）
+  // 写完用多少帧（60fps 标定 → 390 帧 ≈ 6.5s）。
+  // ⚠️ 2026-09-20 用户："签字 5-8 秒" —— 原 380 帧(6.3s) 在 60fps 下本来就在区间内，
+  //    但他仍觉得快 → 真凶是**帧率**：高刷屏（120Hz）下 rAF 每秒跑 120 次，帧数不变 = 时间砍半。
+  //    真正的修法是 loop() 里的「攒够 16.667ms 才推进一帧」（把节奏锁在 60fps），见文末 loop()。
+  var SIGN_WRITE = 390;
   var SIGN_HOLD = 70, SIGN_FADE = 62;
 
   // 采样成折线 + 累计弧长（盒坐标；缩放/旋转都留到绘制时算）
@@ -611,7 +615,8 @@ var knowledgeWave = (function () {
       drawBloom(bl);
     }
     bloomGap++;
-    if (bloomGap > 140) {                 // 约 2.3s 落一滴（2026-09-20 用户嫌快：1.5s → 2.3s；小而多，比一大坨像墨）
+    if (bloomGap > 240) {                 // 约 4s 落一滴（60fps 标定）。
+                                          // 2026-09-20 用户两次嫌快：1.5s → 2.3s → **4s**（用户要 3~5s）。
       bloomGap = 0;
       // 落点避开正中央那一块（大字与输入行在那里），也避开上下两条纸色带，走中环
       var ang = Math.random() * 6.2832, rr = .15 + Math.random() * .17;
@@ -669,7 +674,28 @@ var knowledgeWave = (function () {
     }
   }
 
-  function loop() { step(); raf = requestAnimationFrame(loop); }
+  // ⚠️⚠️ 帧率归一（2026-09-20）：本文件**所有节奏参数都是"按 60fps 标定的帧数"**
+  //    （墨滴间隔 240 帧、签名 390 帧、藤蔓 330 帧、星尘/浮尘的步进……）。
+  //    而 `requestAnimationFrame` 的回调频率 = **屏幕刷新率**：60Hz 屏每秒 60 次、
+  //    120Hz 屏每秒 120 次、144Hz 每秒 144 次 —— 帧数完全不变，**时间却被成倍压缩**。
+  //    这就是用户两次说"太快了"的**真凶**（60fps 下 6.3s 的签名，在 120Hz 上是 3.2s）。
+  //    解法：**攒够 16.667ms 才推进一帧** —— 无论屏幕刷新率多少，节奏都锁死在 60fps。
+  //    （不逐项乘 dt 系数，是因为那样要改十几处增量、还会把各动画的相位关系搞乱；
+  //     锁 60fps 则 `step()` 与全部常量一字不动。）
+  //    ⚠️ 别退化成"跳帧不管时间"：`accMs` 只在**攒够一整帧**时扣减，且扣减后立刻取模，
+  //       这样画面卡顿一次也不会在之后"瞬移"补播。低刷屏（＜60Hz）则每帧都满足条件、行为同旧版。
+  var accMs = 0, lastTs = 0;
+  function loop(ts) {
+    var now = ts || (window.performance && performance.now ? performance.now() : Date.now());
+    if (!lastTs) { lastTs = now; raf = requestAnimationFrame(loop); return; }
+    accMs += now - lastTs;
+    lastTs = now;
+    if (accMs >= 16.667) {
+      accMs %= 16.667;                     // 只留不足一帧的余量（不累积、不补播）
+      step();
+    }
+    raf = requestAnimationFrame(loop);
+  }
 
   function start() {
     if (!setup()) return;
@@ -680,6 +706,7 @@ var knowledgeWave = (function () {
     signatures = []; signGap = 130;   // 第一个签名约 2s 后开始写
     bloomGap = 60; flourishGap = 210;      // 开门后很快就有第一滴墨、第一枝藤
     mx = my = ax = ay = -9999; aura = 0; lastMx = lastMy = -9999; trailGap = 0;
+    accMs = 0; lastTs = 0;                 // 帧率归一的累加器也要归零（否则重开门会带上一轮的余量）
     // 开门第一拍：先落一滴墨（不等计时器），门一露面就有动的东西
     spawnBloom(W * (.5 + (Math.random() < .5 ? -.24 : .24) * 1.6), H * .62,
                Math.min(W, H) * .07, INK_C);
