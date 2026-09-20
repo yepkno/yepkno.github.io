@@ -695,6 +695,21 @@ img{display:block}
   width:calc(var(--crestSz) * 1.6);height:auto;display:block;pointer-events:none;
   transform:rotate(-9deg)}
 #knowledgeGate .gcrest img{width:100%;height:auto;display:block;opacity:.8}
+/* ⭐ 红圈区：**飞行中的猫头鹰 ＋ 飘落的羽毛**（2026-09-21 用户："这个区域还能不能加一些
+   涉及森林里的猫头鹰绘图的要素"）。位置＝信封**上部那条空白带**（邮戳右侧、右上抬头左侧、
+   中央场景之上）。⭐ 它跟下方场景是**同一件事的两半**：下面四只已经落枝站定，这一只还在飞来。
+   ⚠️ 净空（信封坐标）：邮戳 x4~13%/y3~17% ｜ 右上抬头 x68~100%/y3~17% ｜ 中央场景 y32.4% 起
+      ｜ **解锁后才出现的 `WELCOME`（`.gwel`）x30~70%/y3.4~7.3%** → 羽毛 `top` 取 **11%**、
+      宽 **6.4%**（box 实测 y10.3~28.5%）—— ⚠️ 旋转 8° 会让包围盒上沿再抬高约 0.7%，
+      之前按 9% 放时实测与 WELCOME 相交。
+   ⚠️ 资产 `owl-fly.webp`（展翅迎面）／`feathers.webp`（三片飘羽）都是**墨绿线描 ＋ 真透明底**
+      （模型给的"透明底"其实是浅灰 ~220 → 走亮度阈值键控，**阈值要陡**，否则残影 alpha 30 上下
+      会让"按墨迹 bbox 裁"裁不掉水印）。⚠️ 换图后同步 `?v=` ＋ 预热列表。 */
+#knowledgeGate .gfly{position:absolute;left:18%;top:13.5%;width:10.8%;
+  pointer-events:none;opacity:.62}
+#knowledgeGate .gfeather{position:absolute;left:33%;top:11%;width:6.4%;
+  pointer-events:none;opacity:.42;transform:rotate(8deg)}
+#knowledgeGate .gfly img,#knowledgeGate .gfeather img{width:100%;height:auto;display:block}
 /* 右上：**小型**档案信息三行。⭐ 第三行 `VOL. I · MMXXVI` 在第六轮被删过，第七轮**加回来** ——
    用户这次明确点名要保留这三行。
    ⚠️ 月桂已删，所以右端离边就是 --ornIn（原来为躲月桂多缩了 12px，这条别照抄旧公式）。 */
@@ -2685,18 +2700,18 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
                 <span class="gperch gperch-far">
                   <img class="gb" src="assets/branch-fade.webp?v=20260920g" alt=""
                        width="974" height="134" loading="lazy" decoding="async">
-                  <span class="koh koh2"><img src="assets/owl-line.webp" alt=""
+                  <span class="koh koh2"><img src="assets/owl-line.webp?v=20260921b" alt=""
                         width="160" height="339" loading="lazy" decoding="async"></span>
-                  <span class="koh koh4"><img src="assets/owl-line.webp" alt=""
+                  <span class="koh koh4"><img src="assets/owl-line.webp?v=20260921b" alt=""
                         width="160" height="339" loading="lazy" decoding="async"></span>
                 </span>
                 <!-- 近枝（低、整幅） -->
                 <span class="gperch gperch-near">
                   <img class="gb" src="assets/branch-fade.webp?v=20260920g" alt=""
                        width="974" height="134" loading="lazy" decoding="async">
-                  <span class="koh koh1"><img src="assets/owl-line.webp" alt=""
+                  <span class="koh koh1"><img src="assets/owl-line.webp?v=20260921b" alt=""
                         width="160" height="339" loading="lazy" decoding="async"></span>
-                  <span class="koh koh3"><img src="assets/owl-line.webp" alt=""
+                  <span class="koh koh3"><img src="assets/owl-line.webp?v=20260921b" alt=""
                         width="160" height="339" loading="lazy" decoding="async"></span>
                 </span>
               </span>
@@ -2727,6 +2742,18 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
                       也别再加星／叶冠（用户这轮要求"减少装饰"）。 -->
               <span class="gcrest" aria-hidden="true">
                 <img src="assets/crest-post.webp?v=20260920d" alt="" width="200" height="198"
+                     loading="lazy" decoding="async">
+              </span>
+              <!-- ⭐ 红圈区（2026-09-21 批六）：**飞行中的猫头鹰 ＋ 飘羽**。
+                   位置＝信封**上部那条空白带**（邮戳右侧、右上抬头左侧、中央场景之上）。
+                   与下方 `.gscene` 里的四只是同一件事的两半 —— 它们已落枝站定，这只还在飞来。
+                   ⚠️ 挂在 `.env-front` 里（和邮戳同一层），所以**解锁后仍然在飞**（不是场景的一部分）。 -->
+              <span class="gfly" aria-hidden="true">
+                <img src="assets/owl-fly.webp?v=20260921b" alt="" width="168" height="48"
+                     loading="lazy" decoding="async">
+              </span>
+              <span class="gfeather" aria-hidden="true">
+                <img src="assets/feathers.webp?v=20260921b" alt="" width="119" height="181"
                      loading="lazy" decoding="async">
               </span>
               <!-- 右上：**小型**档案信息三行（第七轮用户点名"保留 LETTER No.001、
@@ -2911,7 +2938,8 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
                  而不是再次拆阅信件"。箭头沿用原来的**自绘 SVG**（不是文字 `→`）：
                 它带 hover 右移 3px 的位移，比文本箭头更稳、也和按钮的金边同一套笔触。 -->
         <button type="button" class="genter" id="knowledgeGateEnter" hidden>
-          <span class="genter-in"><span class="ge-orn" aria-hidden="true"></span>查阅档案<svg class="ge-arrow" viewBox="0 0 22 12" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round"><path d="M1 6h17.6M13.4 1.5 18 6l-4.6 4.5"/></svg></span>
+          <span class="genter-in"><span class="ge-orn" aria-hidden="true"></span>
+查阅档案<svg class="ge-arrow" viewBox="0 0 22 12" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round"><path d="M1 6h17.6M13.4 1.5 18 6l-4.6 4.5"/></svg></span>
         </button>
         <div class="gseal" aria-hidden="true"><span>Ex Libris</span></div>
       </div>
@@ -3008,6 +3036,6 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 
 <script src="docs.js?v=20260920c"></script>
 <script src="app.js?v=20260920f"></script>
-<script src="knowledge.js?v=20260921a"></script>
+<script src="knowledge.js?v=20260921b"></script>
 </body>
 </html>
