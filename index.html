@@ -346,13 +346,15 @@ img{display:block}
   border-left:1px solid rgba(176,138,62,.34);
   opacity:0;transition:opacity 1.1s ease .55s}
 #knowledgeGate.enter .gquote{opacity:1}
+/* ⚠️ 批二：用户"这段语录间距弄大一点" —— 行距与段距**一起**放大（只放段距会显得松散）。
+   行高 1.95→2.35 / 1.85→2.25；段距 7→13px；左竖线只到文字高度，别跟着变长。 */
 #knowledgeGate .gq-en{display:block;font-family:var(--serif);font-style:italic;
-  font-size:clamp(9.5px,.8vw,11.5px);line-height:1.95;letter-spacing:.02em;
+  font-size:clamp(9.5px,.8vw,11.5px);line-height:2.35;letter-spacing:.02em;
   color:rgba(47,93,80,.62)}
-#knowledgeGate .gq-cn{display:block;margin-top:7px;font-family:var(--serif);
-  font-size:clamp(11px,.95vw,13.5px);line-height:1.85;letter-spacing:.07em;
+#knowledgeGate .gq-cn{display:block;margin-top:13px;font-family:var(--serif);
+  font-size:clamp(11px,.95vw,13.5px);line-height:2.25;letter-spacing:.07em;
   color:rgba(47,93,80,.70)}
-#knowledgeGate .gq-by{display:block;margin-top:7px;text-align:right;white-space:nowrap;
+#knowledgeGate .gq-by{display:block;margin-top:13px;text-align:right;white-space:nowrap;
   font-size:clamp(9px,.76vw,10.5px);letter-spacing:.14em;color:rgba(176,138,62,.62)}
 /* ② 证书式双细金框 + 四角十字章（十字用墨绿，与鎏金框拉开一层） */
 #knowledgeGate .gframe{position:absolute;z-index:3;pointer-events:none;
@@ -399,9 +401,6 @@ img{display:block}
   /* 信封正面装饰（四角月桂 / 徽记 / 信函编号 / 藏书印）的尺寸与缩进：随视口收放。
      ⚠️ 别写死 px —— 信封宽 = min(520px,92vw-40)，写死的话窄屏装饰相对变大、把留白挤没。 */
   --ornIn:clamp(26px,2.9vw,38px);--crestSz:clamp(34px,3.2vw,42px);
-  /* 左上邮戳的油墨色（2026-09-20 批一）。⭐ 想换成红戳：把下面的 rgba 改成
-     朱红系（例如 rgba(158,58,38,.72)）即可 —— 只有这一处。 */
-  --stampInk:rgba(84,90,88,.72);
   /* 蜡封尺寸（改它只动这一处）。**第七轮 96 → 104**：用户"保留并**强化**火漆印章，
      作为视觉中心" —— 尺寸就是"强化"的那一半，另一半是压印图案（见下方 .postmark）。 */
   --waxSz:104px;
@@ -631,23 +630,22 @@ img{display:block}
    中央**只有那枚红色火漆**（--waxSz 104px，"强化"）。
    ⚠️ 留白仍是大头 —— 再加元素之前先问"这块能不能空着 / 这条信息有意义吗"。
    ⚠️ 尺寸全走 --ornIn / --crestSz（窄屏在媒体查询里再收一档），别写死 px。 */
-/* 左上：**KNOWLEDGE 邮戳**（2026-09-20 批一 · 用户："这个徽章不用霍格沃兹也没关系，
-   你给替换成 KNOWLEDGE 嘛，但是外围的圆环不能去掉，它是一个邮戳形式，最好是红色或者灰色"）。
-   ⭐ 选**灰墨**：中央那枚火漆印是全片唯一的红 —— 左上再来一枚红戳会分掉"唯一视觉中心"；
-      而且真实的邮戳本来就是灰黑/蓝黑油墨。要换红只改 `--stampInk` 一处（在 .mail 上）。
-   ⚠️ 改用**内联 SVG** 画（圆环 ＋ 一行字 ＋ 两道短线），不再用位图：
-      ① 上一版是 300×251 的城堡图，本身源自 HOGWARTS 衍生图 —— 公开站点不该带它，已删资产；
-      ② 矢量在任何尺寸都锐利，还省掉一次解码（门一露脸就少一份主线程压力）。
-   ⚠️ `textLength` + `lengthAdjust="spacing"`：字宽由 CSS 定不了，用这个**锁死整行宽度**，
-      换字体也不会撑出圆环（只调字距、不变形字形）。
-   ⚠️ 压印感：整枚**逆时针转 -9°** —— 手盖的戳不会正得像网页徽标。 */
+/* 左上：**KNOWLEDGE 邮戳** = 原徽章改字（2026-09-20 批二定型）。
+   用户第二次说清了要求："`03 pictrues` 里有一个徽章，中间是城堡图案，外面有一个外环，
+   我的意思是**外环里的霍格沃兹改成 KNOWLEDGE**，其他的要素保留。"
+   → 所以**不是重画一枚邮戳**，而是拿那枚原徽章**只改上弧那圈字**：圆环、星章、城堡、
+     下弧 `MAGICAL MAIL`、两侧短弧线**一律保留**（批一那枚"自绘单圈"已作废）。
+   ⭐ 生成脚本＝`scripts\arc_text_swap.py`（擦掉上弧扇环 → 按原几何沿弧写新字；
+     字体/字高/基半径/弧跨都是**从原图实测**再写的，不是估的）。
+     ⚠️ 换词或换墨色＝改脚本参数重跑（`--text` / `--ink`），**不要再手改这张图**。
+   ⚠️ 墨色灰（#545a58）：中央火漆印是全片唯一的红，左上不抢；要红就重跑脚本 `--ink`。
+   ⚠️ 压印感：整枚**逆时针 -9°** —— 手盖的戳不会正得像网页徽标。
+   ⚠️ 资产 200×198（≈ 显示槽位 3 倍）＋ 透明底：纸色直接透出，不用 `multiply`。 */
 #knowledgeGate .env-front .gcrest{position:absolute;
   left:var(--ornIn);top:calc(var(--ornIn) + 2px);
   width:calc(var(--crestSz) * 1.6);height:auto;display:block;pointer-events:none;
-  color:var(--stampInk);transform:rotate(-9deg)}
-#knowledgeGate .gcrest svg{width:100%;height:auto;display:block}
-#knowledgeGate .gcrest text{font-family:var(--serif);font-size:13px;letter-spacing:0;
-  fill:currentColor}
+  transform:rotate(-9deg)}
+#knowledgeGate .gcrest img{width:100%;height:auto;display:block;opacity:.8}
 /* 右上：**小型**档案信息三行。⭐ 第三行 `VOL. I · MMXXVI` 在第六轮被删过，第七轮**加回来** ——
    用户这次明确点名要保留这三行。
    ⚠️ 月桂已删，所以右端离边就是 --ornIn（原来为躲月桂多缩了 12px，这条别照抄旧公式）。 */
@@ -2678,13 +2676,8 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
                       同一枚院徽，不是两套图案。⚠️ 别改回圆环（会被读成"网页徽标"），
                       也别再加星／叶冠（用户这轮要求"减少装饰"）。 -->
               <span class="gcrest" aria-hidden="true">
-                <svg viewBox="0 0 100 100" aria-hidden="true">
-                  <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" stroke-width="3"/>
-                  <path d="M25 27.5H75M25 72.5H75" stroke="currentColor" stroke-width="1.7"
-                        stroke-linecap="round"/>
-                  <text x="50" y="55.6" text-anchor="middle" textLength="76"
-                        lengthAdjust="spacing">KNOWLEDGE</text>
-                </svg>
+                <img src="assets/crest-post.webp?v=20260920d" alt="" width="200" height="198"
+                     loading="lazy" decoding="async">
               </span>
               <!-- 右上：**小型**档案信息三行（第七轮用户点名"保留 LETTER No.001、
                    KNOWLEDGE ARCHIVE、VOL. I · MMXXVI" → 第六轮删掉的第三行**加回来**）。
@@ -2965,6 +2958,6 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 
 <script src="docs.js?v=20260920c"></script>
 <script src="app.js?v=20260920f"></script>
-<script src="knowledge.js?v=20260920q"></script>
+<script src="knowledge.js?v=20260920r"></script>
 </body>
 </html>

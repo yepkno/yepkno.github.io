@@ -790,6 +790,7 @@ function openKnowledge(d) {
 function warmGateImages() {
   var list = [
     "assets/forest-line.webp?v=20260920c",
+    "assets/crest-post.webp?v=20260920d",
     "assets/branch-line.webp?v=20260920c",
     "assets/owl-line.webp",
     "assets/knowledge-bg.jpg?v=20260920a",
