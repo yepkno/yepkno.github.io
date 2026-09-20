@@ -249,51 +249,120 @@ var knowledgeWave = (function () {
     }
   }
 
-  // ---- 魔法学院小物：羽毛笔 / 飘浮蜡烛 / 星尘 ----
-  // 2026-09-20 用户："加入一点哈利波特的元素，比如猫头鹰" → 先做了漂浮的线描猫头鹰；
-  // 同日用户又："漂浮的那个简绘猫头鹰换个别的吧"（线描小鸟飘在天上认不出来）
-  // → 换成**羽毛笔**：斜着缓缓飘过画面，笔尖在空气里拖出一条会淡去的墨线（"在空中写字"），
-  //   正好和水墨底子是一路的。猫头鹰没丢：改成**栖在信封上沿的静态猫头鹰**
-  //   （index.html 的 `.perchowl`）+ **邮戳正中的猫头鹰印记**。
+  // ---- 魔法学院小物：签名羽毛笔 / 飘浮蜡烛 / 星尘 ----
+  // 2026-09-20 演变：漂浮的线描猫头鹰 → 用户"换个别的" → 横穿画面的羽毛笔（笔尖拖一条淡墨线）
+  //   → 用户"动的太快了，而且最好是签名，不是画简单直线" → 改成现在的**在空中写签名**：
+  //     羽毛笔停在一处，沿一条连笔带圈的手写路径**慢慢写完**（约 6.3s），墨迹随笔画生长，
+  //     写完停留一下、笔提起来淡去。猫头鹰没丢：栖在信封上沿（index.html 的 `.perchowl`）
+  //     + 邮戳正中的猫头鹰印记。
   // ⚠️ 只做**通用的魔法学院意象**，不复刻任何影视作品的美术、徽标或字体（版权）。
-  var quills = [], candles = [], stars = [], inkTrail = [];
-  var quillGap = 0, candleGap = 0, trailFade = 0;
+  //
+  // ⚠️ 签名路径是拿 Python+PIL 迭代出来的（`.workbuddy/tmp/sign_try3.py`）：
+  //    **相邻两段的切线不连续就会出现"针尖"折角**（第二版就是这样，渲染出来像界面上的杂线）。
+  //    改控制点之前先拿那个脚本渲染一眼再动。
+  var SIGN_START = [34, 78];
+  var SIGN_SEGS = [
+    [20, 58,  20, 28,  42, 20],     // 1 起笔上挑
+    [62, 12,  76, 30,  59, 44],     // 2 顶部回环（折返回左下 → 第一个圈）
+    [48, 53,  38, 58,  34, 70],     // 3 落回基线
+    [32, 50,  44, 44,  54, 64],     // 4 第一拱（矮）
+    [62, 80,  74, 72,  82, 54],     // 5 谷更深 → 第二拱（高）
+    [90, 36, 106, 40, 112, 60],     // 6 第三拱（高、宽）
+    [118, 76, 130, 78, 136, 62],    // 7 第四拱（正中）
+    [140, 50, 136, 44, 126, 46],    // 8 折返 → 中段小圈的上半
+    [116, 48, 112, 58, 118, 66],    // 9 小圈的下半（与 8 交叉成圈）
+    [126, 74, 138, 76, 148, 62],    // 10 出圈后接一个拱
+    [158, 46, 172, 42, 180, 58],    // 11 第五拱（高）
+    [188, 72, 206, 96, 232, 92],    // 12 下垂尾
+    [252, 88, 258, 62, 244, 50],    // 13 尾端回勾（垂圈）
+    [232, 40, 250, 30, 276, 32],    // 14 向右甩出
+    [300, 34, 314, 50, 312, 66],    // 15 收尾下压
+    [310, 80, 280, 92, 236, 94],    // 16 长横回扫
+    [180, 96, 120, 98,  78, 92]     // 17 继续回扫
+  ];
+  var SIGN_BOX = [330, 118];        // 路径外接盒（换算缩放用）
+  var SIGN_WRITE = 380;             // 写完用多少帧（≈6.3s —— 原来横穿太快的那个问题）
+  var SIGN_HOLD = 70, SIGN_FADE = 62;
 
-  function spawnQuill() {
-    var dir = Math.random() < .5 ? 1 : -1;
-    // 航道让开中间的文字块：窄屏压到最上面，宽屏留一条带
-    var band = W < 900 ? [.05, .19] : [.10, .28];
-    quills.push({
-      x: dir > 0 ? -W * .1 : W * 1.1,
-      y: H * (band[0] + Math.random() * (band[1] - band[0])),
-      dir: dir,
-      s: Math.min(W, H) * (.05 + Math.random() * .022),
-      v: (W * .00095 + Math.random() * W * .0004) * dir,
-      ph: Math.random() * 6.2832,
-      t: 0
+  // 采样成折线 + 累计弧长（盒坐标；缩放/旋转都留到绘制时算）
+  var SIGN = (function () {
+    var pts = [SIGN_START.slice()], cum = [0], total = 0, i, j, s, t, mt;
+    for (i = 0; i < SIGN_SEGS.length; i++) {
+      s = SIGN_SEGS[i];
+      for (j = 1; j <= 22; j++) {
+        t = j / 22; mt = 1 - t;
+        var a = mt * mt * mt, b = 3 * mt * mt * t, c = 3 * mt * t * t, d = t * t * t;
+        var p0 = pts[pts.length - 1];
+        pts.push([
+          a * p0[0] + b * s[0] + c * s[2] + d * s[4],
+          a * p0[1] + b * s[1] + c * s[3] + d * s[5]
+        ]);
+      }
+    }
+    for (i = 1; i < pts.length; i++) {
+      var dx = pts[i][0] - pts[i - 1][0], dy = pts[i][1] - pts[i - 1][1];
+      total += Math.sqrt(dx * dx + dy * dy);
+      cum.push(total);
+    }
+    return { pts: pts, cum: cum, len: total };
+  })();
+
+  var signatures = [], candles = [], stars = [];
+  var signGap = 0, candleGap = 0;   // ⚠️ candleGap 原来和 quillGap 写在同一行，替换时被一起删掉过
+
+  function spawnSign() {
+    // 位置：让开中间那块「信封 ＋ 信纸」——只走上方那条带，左右随机。
+    // ⚠️ 下界必须**量**出来、不能写死百分比：信纸抽出来后它的顶边正好落在 `.mail` 的顶边
+    //    （`--openY` 就是按这个反推的），写死的话窄屏/矮屏上签名会被信纸盖掉半截
+    //    （canvas 在 `.gstage` 之下，被盖住就是整段看不见）。过冲还会再往上探 ~15px，所以留 12px 余量。
+    var y0 = H * .06, limit = H * .30;
+    var m = document.getElementById("knMail");
+    if (m) limit = Math.min(limit, m.getBoundingClientRect().top * (H / Math.max(1, window.innerHeight)) - 12);
+    var avail = Math.max(46, limit - y0);
+    // 宽度三重上限取小：屏宽 28% / 300px / 由这条带的高度反推出来的宽度
+    var bw = Math.min(W * .28, 300, avail / .358) * (.86 + Math.random() * .28);
+    var k = bw / SIGN_BOX[0];
+    if (SIGN_BOX[1] * k > avail) k = avail / SIGN_BOX[1];     // 带子太矮就整体缩一档
+    var bh = SIGN_BOX[1] * k;
+    signatures.push({
+      ox: W * .05 + Math.random() * Math.max(0, W * .90 - bw),
+      oy: y0 + Math.random() * Math.max(0, avail - bh),
+      k: k, rot: (Math.random() * 2 - 1) * .05,
+      t: 0, pi: 0, ink: []
     });
-    if (quills.length > 1) quills.shift();
-    inkTrail = [];                       // 换一支笔 → 重新起一条墨线
+    if (signatures.length > 1) signatures.shift();
   }
 
-  // 返回笔尖的世界坐标（给墨线尾迹用）
-  function drawQuill(q) {
-    var s = q.s, d = q.dir;
-    // ⚠️ 上下摆动的频率要够快：墨线是笔尖轨迹，摆得太慢会拉成一条**笔直的杂线**
-    //（第一版 0.0026 + 0.8s 振幅，截图上看就是一条横线，不像"写出来的"）
-    var x = q.x, y = q.y + Math.sin(q.t * .0075 + q.ph) * s * .5;
-    var tilt = -0.45 * d + Math.sin(q.t * .0018 + q.ph) * .07;   // 笔身倾角（笔尖朝行进方向）
-    var cs = "36,80,68", a = .62, L = s * 2.7;                   // L = 羽毛全长
+  // 盒坐标 → 世界坐标（绕盒原点轻微旋转，像随手签上去的）
+  function signToWorld(sg, bx, by) {
+    var c = Math.cos(sg.rot), s = Math.sin(sg.rot);
+    var x = bx * sg.k, y = by * sg.k;
+    return [sg.ox + x * c - y * s, sg.oy + x * s + y * c];
+  }
+
+  // 墨迹折线（世界坐标）——两层：① 洇开的一层浅晕 ② 笔迹主体
+  function inkStroke(ink, w, style) {
+    ctx.strokeStyle = style;
+    ctx.lineWidth = w;
+    ctx.beginPath();
+    ctx.moveTo(ink[0][0], ink[0][1]);
+    for (var i = 1; i < ink.length; i++) ctx.lineTo(ink[i][0], ink[i][1]);
+    ctx.stroke();
+  }
+
+  // 羽毛笔：笔尖落在 (x, y)；tilt=0 时羽毛竖直向上，越大越向右倾（像握笔）
+  function drawQuillAt(x, y, tilt, s, a) {
+    var L = s * 2.7, cs = "36,80,68";
     ctx.save();
     ctx.translate(x, y);
     ctx.rotate(tilt);
+    ctx.translate(0, -L * .62);                // 让笔尖（局部 y=+L*.62）落到原点
     ctx.lineJoin = "round";
     ctx.lineCap = "round";
     ctx.lineWidth = Math.max(1, s * .05);
-    // 羽片（叶形）：四段二次曲线合围
     ctx.fillStyle = "rgba(" + cs + "," + (a * .16) + ")";
     ctx.strokeStyle = "rgba(" + cs + "," + a + ")";
-    ctx.beginPath();
+    ctx.beginPath();                           // 羽片（叶形）
     ctx.moveTo(0, L * .44);
     ctx.quadraticCurveTo(-L * .36, L * .02, -L * .075, -L * .58);
     ctx.quadraticCurveTo(-L * .02, -L * .68, 0, -L * .68);
@@ -302,15 +371,13 @@ var knowledgeWave = (function () {
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
-    // 羽轴
-    ctx.beginPath();
+    ctx.beginPath();                           // 羽轴
     ctx.moveTo(0, L * .46);
     ctx.lineTo(0, -L * .66);
     ctx.stroke();
-    // 羽枝：几道斜线（越靠笔尖越短）
     ctx.strokeStyle = "rgba(" + cs + "," + (a * .45) + ")";
     ctx.lineWidth = Math.max(.7, s * .03);
-    ctx.beginPath();
+    ctx.beginPath();                           // 羽枝（越靠笔尖越短）
     for (var i = 0; i < 8; i++) {
       var ty = -L * .5 + i * L * .12;
       var wd = L * .26 * (1 - Math.abs(i - 2.6) / 4.6);
@@ -319,17 +386,59 @@ var knowledgeWave = (function () {
       ctx.moveTo(0, ty); ctx.lineTo(wd, ty + L * .06);
     }
     ctx.stroke();
-    // 笔尖
     ctx.fillStyle = "rgba(" + cs + "," + (a * .9) + ")";
-    ctx.beginPath();
+    ctx.beginPath();                           // 笔尖
     ctx.moveTo(-s * .07, L * .44);
     ctx.lineTo(s * .07, L * .44);
     ctx.lineTo(0, L * .62);
     ctx.closePath();
     ctx.fill();
     ctx.restore();
-    // 局部点 (0, L*.62) 旋转后的世界坐标
-    return [x - L * .62 * Math.sin(tilt), y + L * .62 * Math.cos(tilt)];
+  }
+
+  // 每帧：推进笔画 → 画墨迹 → 画笔（写完笔抬起淡出）
+  function drawSign(sg, s) {
+    var cum = SIGN.cum, p = SIGN.pts;
+    var prog = sg.t / SIGN_WRITE;
+    if (prog > 1) prog = 1;
+    // 手写节奏：起笔与收笔略慢（easeInOutQuad），中段快
+    var e = prog < .5 ? 2 * prog * prog : 1 - Math.pow(2 - 2 * prog, 2) / 2;
+    var L = e * SIGN.len;
+    while (sg.pi < cum.length - 1 && cum[sg.pi + 1] <= L) sg.pi++;
+    var i0 = sg.pi, i1 = Math.min(i0 + 1, p.length - 1);
+    var seg = cum[i1] - cum[i0];
+    var f = seg > 0 ? (L - cum[i0]) / seg : 0;
+    if (f > 1) f = 1;
+    var wx = signToWorld(sg, p[i0][0] + (p[i1][0] - p[i0][0]) * f,
+                             p[i0][1] + (p[i1][1] - p[i0][1]) * f);
+
+    var writing = sg.t <= SIGN_WRITE;
+    var alpha = 1;
+    if (sg.t > SIGN_WRITE + SIGN_HOLD)
+      alpha = Math.max(0, 1 - (sg.t - SIGN_WRITE - SIGN_HOLD) / SIGN_FADE);
+
+    // 记墨：只在"写"的阶段推进（点密到 0.7px 才收一个，写完就定住）
+    if (writing) {
+      var last = sg.ink[sg.ink.length - 1];
+      if (!last || Math.abs(wx[0] - last[0]) + Math.abs(wx[1] - last[1]) > .7)
+        sg.ink.push([wx[0], wx[1]]);
+    }
+
+    if (sg.ink.length > 1 && alpha > .01) {
+      ctx.lineJoin = "round";
+      ctx.lineCap = "round";
+      inkStroke(sg.ink, Math.max(2.6, s * .2), "rgba(36,80,68," + (.085 * alpha) + ")");    // 洇
+      inkStroke(sg.ink, Math.max(1.15, s * .058), "rgba(28,62,52," + (.34 * alpha) + ")");  // 笔迹
+    }
+
+    // 笔：写完就抬起来淡出（像真的写完把笔提走）
+    var penA = 1;
+    if (sg.t > SIGN_WRITE) {
+      var lift = Math.min(1, (sg.t - SIGN_WRITE) / 30);
+      penA = 1 - lift;
+      wx = [wx[0] + lift * 26, wx[1] - lift * 32];
+    }
+    if (penA > .01) drawQuillAt(wx[0], wx[1], .58 + Math.sin(sg.t * .02) * .06, s, .62 * penA);
   }
 
   // 飘浮蜡烛：烛身 + 会抖的火苗 + 一圈暖光（用缓存贴图做光晕，省一次 createRadialGradient）
@@ -559,31 +668,15 @@ var knowledgeWave = (function () {
       if (cd.y < -60) { candles.splice(ci, 1); continue; }
       drawCandle(cd);
     }
-    // 羽毛笔：缓缓飘过，笔尖在空气里写下一条墨线（约 3.3s 一支）
-    quillGap++;
-    if (quillGap > 200) { quillGap = 0; spawnQuill(); }
-    for (var qi = quills.length - 1; qi >= 0; qi--) {
-      var ql = quills[qi];
-      ql.t++; ql.x += ql.v;
-      if (ql.x < -W * .25 || ql.x > W * 1.25) { quills.splice(qi, 1); continue; }
-      var np = drawQuill(ql);
-      if (ql.t % 3 === 0) inkTrail.push({ x: np[0], y: np[1] });
-      if (inkTrail.length > 46) inkTrail.shift();      // 尾迹短一点，别拉成一条长直线
-    }
-    // 墨线尾迹：笔尖走过的一串点连成的淡墨线；笔走了就一边淡出、一边从旧端收短
-    if (quills.length) trailFade = Math.min(1, trailFade + .07);
-    else {
-      trailFade = Math.max(0, trailFade - .022);
-      if (inkTrail.length && nt % 2 === 0) inkTrail.shift();
-    }
-    if (inkTrail.length > 1 && trailFade > .01) {
-      ctx.strokeStyle = "rgba(36,80,68," + (.2 * trailFade) + ")";
-      ctx.lineWidth = 1.3;
-      ctx.lineCap = "round";
-      ctx.beginPath();
-      ctx.moveTo(inkTrail[0].x, inkTrail[0].y);
-      for (var ti = 1; ti < inkTrail.length; ti++) ctx.lineTo(inkTrail[ti].x, inkTrail[ti].y);
-      ctx.stroke();
+    // 签名羽毛笔：停在一处慢慢写完一个签名（约 6.3s），写完停留 → 笔抬起 → 墨迹淡去
+    signGap++;
+    if (signGap > 150) { signGap = 0; if (!signatures.length) spawnSign(); }
+    var quillS = Math.min(W, H) * .04;
+    for (var gi = signatures.length - 1; gi >= 0; gi--) {
+      var sg2 = signatures[gi];
+      sg2.t++;
+      if (sg2.t > SIGN_WRITE + SIGN_HOLD + SIGN_FADE) { signatures.splice(gi, 1); continue; }
+      drawSign(sg2, quillS);
     }
     drawStars();
 
@@ -619,8 +712,7 @@ var knowledgeWave = (function () {
     measureFrame();                        // 量一次金框的实际位置（给描金流光用）
     gilt = 0;
     blooms = []; flourishes = []; specks = [];
-    quills = []; candles = []; inkTrail = [];
-    quillGap = 150; candleGap = 0;          // 蜡烛开场就来，羽毛笔约 2.5s 后飘过
+    signatures = []; candles = []; signGap = 130;   // 蜡烛开场就来，第一个签名约 2s 后开始写
     bloomGap = 60; flourishGap = 210;      // 开门后很快就有第一滴墨、第一枝藤
     mx = my = ax = ay = -9999; aura = 0; lastMx = lastMy = -9999; trailGap = 0;
     spawnCandle(true); spawnCandle(true);  // 常驻两支飘浮蜡烛
@@ -646,8 +738,28 @@ var knowledgeWave = (function () {
     running = false;
     if (raf) { cancelAnimationFrame(raf); raf = 0; }
   }
-  return { start: start, stop: stop };
+  // 给回归用：签名/羽毛笔的当前状态。回归里靠它钉"羽毛笔是在**写签名**、不是横穿画直线"，
+  // 光看截图分不清"没画"和"画得太淡"，所以必须能读到内部计数。
+  function signState() {
+    var s = signatures[0];
+    return {
+      n: signatures.length,
+      t: s ? Math.round(s.t) : -1,
+      ink: s ? s.ink.length : 0,      // 已落下的墨点个数（随笔画增长）
+      segs: SIGN_SEGS.length,         // 路径由多少段贝塞尔拼成（直线只要 1 段）
+      len: Math.round(SIGN.len)       // 折线总长（盒坐标）
+    };
+  }
+
+  return { start: start, stop: stop, sign: signState };
 })();
+
+// ---------- 1. 回归口 ----------
+// 只有回归断言会调它（test_site.py）。放在这里是为了让断言能读到"签名写到哪了"，
+// 否则"羽毛笔在写签名"这件事在截图上看不出来（可能只是墨太淡）。
+function knSignState() {
+  return knowledgeWave && knowledgeWave.sign ? knowledgeWave.sign() : null;
+}
 
 // ---------- 2. 门逻辑 ----------
 function setKnowledgeGateUnlocked(on) {

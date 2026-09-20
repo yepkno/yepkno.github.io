@@ -347,36 +347,46 @@ img{display:block}
 #knowledgeGate .env-back{position:absolute;inset:0;border-radius:3px;
   background:linear-gradient(160deg,#ece1c9,#dfd2b4);
   box-shadow:inset 0 0 44px rgba(120,104,74,.22)}
-/* 信封前片：整块纸（信纸闭合时被它完全遮住）＋ 右下角的三道"地址线" ＋ 顶缘一道"信口" */
+/* 信封前片：整块纸（信纸闭合时被它完全遮住）＋ 右下角的三道"地址线" ＋ 顶缘一道"信口"。
+   ⚠️ 不要只用一个方向的一层线性渐变 —— 那样是一张**平板**（用户："合上后信封上部分也感觉太假了"）。
+      这里叠了三层：顶部一道窗光、斜向主色、底部一道内阴影（信封体因此有"鼓起来"的体积）。 */
 #knowledgeGate .env-front{position:absolute;inset:0;z-index:3;border-radius:3px;
-  background:linear-gradient(158deg,#fdfaf1 0%,#f4ecdc 100%);
+  background:
+    radial-gradient(130% 80% at 44% -6%,rgba(255,255,255,.6),transparent 58%),
+    linear-gradient(158deg,#fdfaf1 0%,#f7f0e2 58%,#efe6d3 100%);
   border:1px solid rgba(176,138,62,.42);
-  box-shadow:0 1px 0 rgba(255,255,255,.7) inset,0 14px 30px rgba(47,93,80,.13)}
+  box-shadow:0 1px 0 rgba(255,255,255,.75) inset,
+             inset 0 -20px 26px -20px rgba(120,104,74,.3),
+             0 14px 30px rgba(47,93,80,.13)}
 /* ⚠️ 顶缘的"信口"（2026-09-20 用户："信封抽出的时候完全看不出来是抽出来的"）：
    前片顶边压一道内阴影 + 一条深线，信纸抽出来时才看得出是**从这条口子里出来的**。
-   前片在抽出态 z-index 高于信纸，所以这条阴影会压在信纸下沿上 —— 正是要的效果。 */
+   前片在抽出态 z-index 高于信纸，所以这条阴影会压在信纸下沿上 —— 正是要的效果。
+   ⚠️ 但它**只在抽出态出现**：合上时封口盖不住顶边的两个角，那条暗边露在角上很假。 */
 #knowledgeGate .env-front::after{content:"";position:absolute;left:0;right:0;top:0;height:16px;
-  border-radius:3px 3px 0 0;pointer-events:none;
+  border-radius:3px 3px 0 0;pointer-events:none;opacity:0;transition:opacity .35s;
   box-shadow:inset 0 2px 5px rgba(88,74,50,.3);
   background:linear-gradient(180deg,rgba(96,82,58,.22),rgba(96,82,58,.04) 55%,transparent)}
+#knowledgeGate.open .env-front::after{opacity:1}
 #knowledgeGate .env-front::before{content:"";position:absolute;right:24px;bottom:28px;
   width:44%;max-width:190px;height:26px;
   background:repeating-linear-gradient(180deg,rgba(110,104,90,.42) 0 1px,transparent 1px 12px);
   -webkit-mask-image:linear-gradient(90deg,transparent,#000 26%,#000 100%);
   mask-image:linear-gradient(90deg,transparent,#000 26%,#000 100%)}
-/* 封口（上三角）：闭合时压在信纸上，开门时绕上边翻起。
-   ⚠️ 两个取值是为了"看得出开了"：高度 62%（原来是 52%，翻起来只剩两条细边）；
-   翻开只到 -158°（原来 -177° 贴平，投影上几乎看不见），留一点角度才有"翻开的一片"。
-   填充也比信纸深一档，好和信纸分开。 */
+/* 封口（上三角）：闭合时压在信封体上，开门时绕上边翻起。
+   ⚠️ 形状改用**内嵌 SVG** 画，不再用 clip-path —— clip-path 会把两条斜边上的描边**整条切掉**，
+      所以之前那两条边是"硬切"的、看着很假（用户："合上后信封上部分也感觉太假了"）。
+   ⚠️ 闭合态也挂 `filter:drop-shadow` —— 真实信封的折口会在信封体上投一道影；
+      没有这道影，封口就像"贴上去的一块纸"。
+   ⚠️ 翻开只到 -158°（不是 -177° 贴平）：留一点角度才看得见"翻开的那一片"。 */
 #knowledgeGate .env-flap{position:absolute;left:0;right:0;top:0;height:62%;z-index:4;
   transform-origin:top center;transform:rotateX(0deg);
-  background:linear-gradient(180deg,#f0e5cd,#d6c5a1);
-  border:1px solid rgba(176,138,62,.58);border-top:0;
-  -webkit-clip-path:polygon(0 0,100% 0,50% 100%);clip-path:polygon(0 0,100% 0,50% 100%);
+  filter:drop-shadow(0 2px 3px rgba(96,78,48,.26));
   transition:transform .68s cubic-bezier(.22,.9,.24,1) .26s,z-index 0s .6s,filter .3s}
+#knowledgeGate .env-flap svg{display:block;width:100%;height:100%}
 /* 信纸：密码表单在这一层。
    ⚠️ 宽度**必须明显窄于信封**（现 74%）—— 否则抽出来时会把翻起的封口整片盖住，
-     看着就只是"一个盒子上面放了张纸"，读不出"信是从信封里抽出来的"。 */
+     看着就只是"一个盒子上面放了张纸"，读不出"信是从信封里抽出来的"。
+   ⚠️ 阴影随高度走：信纸升得越高影子越大越散（原来是一路不变的，看着像贴图）。 */
 #knowledgeGate .mail-card{position:absolute;left:13%;right:13%;
   bottom:calc((var(--envH) - var(--cardH)) / 2);
   height:var(--cardH);z-index:1;overflow:hidden;
@@ -384,9 +394,9 @@ img{display:block}
   padding:12px 16px;border-radius:2px;
   background:linear-gradient(170deg,#fffefb,#f9f2e4);
   border:1px solid rgba(176,138,62,.3);
-  box-shadow:0 16px 34px rgba(47,93,80,.22),0 2px 6px rgba(47,93,80,.14);
-  transform:translateY(0);
-  transition:transform .92s cubic-bezier(.2,.9,.2,1) .46s,z-index 0s .6s}
+  box-shadow:0 7px 16px rgba(47,93,80,.15);
+  transform:translateY(0) rotate(0deg);
+  transition:box-shadow .55s ease .28s,z-index 0s .6s}
 /* 徽记 / 题词 / 落款：都镶在信封前片的下缘（避开封口的三角区） */
 #knowledgeGate .env-front .gcrest{position:absolute;left:22px;bottom:22px;
   width:56px;height:56px;display:flex;align-items:center;justify-content:center;color:#2f5d50}
@@ -412,27 +422,55 @@ img{display:block}
   transform:rotate(-13deg) scale(1.8);
   transition:opacity .26s ease-out 1.16s,transform .34s cubic-bezier(.2,1.5,.4,1) 1.16s}
 #knowledgeGate .postmark svg{width:100%;height:100%;display:block;opacity:.82}
-/* 栖在信封上沿的猫头鹰（线描，静态）——用户："猫头鹰能不能加入"。
+/* 栖在信封上沿的猫头鹰（线描）——用户："猫头鹰能不能加入"。
+   2026-09-20 用户："虽然是简绘的，但是也太简单了，高级一点" → 重画：
+   分层羽翼、胸羽鳞纹、金色虹膜 + 瞳孔高光、眉脊、钩喙、双足三趾扣住信口，
+   再用低透明度的渐变填充给一点体积感（原来只有一圈光秃秃的轮廓线）。
    ⚠️ 它是 `.mail` 的直接子级（不是 `.mail-env` 的子级）：`.mail-env` 自己是 stacking context，
       放进去的话再高的 z-index 也压不过信纸（z-index 5），会被整只盖住。
-   位置用 `bottom` 算：信封上沿 = 距 mail 底 `--envH`，所以 bottom = envH - 4px 让爪子正好落在沿上。
+   位置用 `bottom` 算：信封上沿 = 距 mail 底 `--envH`，所以 bottom = envH - 6px，
+   让爪趾正好扣在信口沿上（viewBox 底部那 6px 就是扣过去的部分）。
    z-index 7：压过信纸(5)与前片(6)，所以信抽出来时它仍站在最前面（像栖在信封口上）。 */
-#knowledgeGate .perchowl{position:absolute;right:2px;bottom:calc(var(--envH) - 4px);
-  width:64px;height:72px;z-index:7;color:#2f5d50;pointer-events:none;
-  filter:drop-shadow(0 6px 12px rgba(47,93,80,.22))}
+#knowledgeGate .perchowl{position:absolute;right:2px;bottom:calc(var(--envH) - 6px);
+  width:74px;height:92px;z-index:7;color:#2f5d50;pointer-events:none;
+  filter:drop-shadow(0 7px 14px rgba(47,93,80,.24));
+  animation:knOwlSway 5.4s ease-in-out infinite}
+@keyframes knOwlSway{
+  0%,100%{transform:translateY(0) rotate(0deg)}
+  50%{transform:translateY(-1.8px) rotate(-.6deg)}
+}
 #knowledgeGate .perchowl svg{width:100%;height:100%;display:block}
 
 /* 抽出态：封口翻起 + 信纸升起（并把前片提到信纸之上，留在信封里的那段才藏得住）
    ⚠️ 封口翻起时加投影：不然它和背景纸色几乎同色，"信封开了"这件事看不见
-      （用户原话："这个信封抽出的时候，完全看不出来是抽出来的"）。 */
+      （用户原话："这个信封抽出的时候，完全看不出来是抽出来的"）。
+   ⚠️ 信纸的"抽出来"改用**关键帧**（原来是单条 transition）：用户说"抽出来的形态太僵硬了"。
+      要的是**先快后缓 + 轻微过冲再回稳 + 抽到位时微微倾一个角** —— 像手抽纸，不是升降机。
+   ⚠️ 关键帧里的 transform 是**整体替换**：每一帧都必须把 translateY 与 rotate 都写全，
+      漏一项那一段就会跳（`.wrong` 的抖动同理，见下）。 */
 #knowledgeGate.open .env-flap{transform:rotateX(-158deg);z-index:0;
   filter:drop-shadow(0 10px 16px rgba(47,93,80,.22))}
-#knowledgeGate.open .mail-card{transform:translateY(var(--openY));z-index:5}
+#knowledgeGate.open .mail-card{animation:knPull .98s cubic-bezier(.3,.02,.2,1) .44s both;
+  z-index:5;box-shadow:0 22px 44px rgba(47,93,80,.26),0 4px 10px rgba(47,93,80,.16)}
 #knowledgeGate.open .env-front{z-index:6}
+@keyframes knPull{
+  0%   {transform:translateY(0) rotate(0deg)}
+  34%  {transform:translateY(calc(var(--openY) * .58)) rotate(-1.9deg)}
+  64%  {transform:translateY(calc(var(--openY) * 1.055)) rotate(-.5deg)}
+  79%  {transform:translateY(calc(var(--openY) * .972)) rotate(-1.25deg)}
+  90%  {transform:translateY(calc(var(--openY) * 1.014)) rotate(-.95deg)}
+  100% {transform:translateY(var(--openY)) rotate(-1.1deg)}
+}
 
-/* 合上态：信收回 → 封口合上 → 邮戳落下 → 按钮出现（延迟依次是 0 / .58 / 1.16 / 1.46s） */
-#knowledgeGate.unlocked .mail-card{transform:translateY(0);z-index:1;
-  transition:transform .62s cubic-bezier(.5,0,.6,1) 0s,z-index 0s .5s}
+/* 合上态：信收回 → 封口合上 → 邮戳落下 → 按钮出现（延迟依次是 0 / .58 / 1.16 / 1.46s）
+   ⚠️ 收回也要有节奏：先"松一下"、再加速落回、最后被信封接住（后面 knThud 那一颤）。 */
+#knowledgeGate.unlocked .mail-card{animation:knReturn .6s cubic-bezier(.62,0,.72,.16) both;
+  z-index:1;box-shadow:0 7px 16px rgba(47,93,80,.15)}
+@keyframes knReturn{
+  0%   {transform:translateY(var(--openY)) rotate(-1.1deg)}
+  30%  {transform:translateY(calc(var(--openY) * .84)) rotate(-1.5deg)}
+  100% {transform:translateY(0) rotate(0deg)}
+}
 #knowledgeGate.unlocked .env-front{z-index:3}
 #knowledgeGate.unlocked .env-flap{transform:rotateX(0deg);z-index:4;
   transition:transform .6s cubic-bezier(.3,.7,.3,1) .58s,z-index 0s .58s}
@@ -444,17 +482,20 @@ img{display:block}
 #knowledgeGate.unlocked .gfield{opacity:1;transform:none;filter:none;pointer-events:none}
 #knowledgeGate.unlocked .gok{opacity:1;pointer-events:none}
 /* 输错：抖的是整封信，不是单独一行输入。
-   ⚠️ 不能直接套共享的 gshake —— 它的关键帧只写了 translateX，会把信纸的
-      `translateY(-0.88envH)` 抹掉，结果是信纸"掉回信封里再抖"。这里必须把
-      位移写进每一帧。 */
+   ⚠️ 抖动用**独立的 `translate` 属性**叠一层位移，不再写第二套 `transform` 关键帧：
+      信纸的 transform 已经归 knPull / knReturn 管；若这里再接管 transform，
+      `.wrong` 一加一减会让 knPull 重新从 0% 开始播（信纸"掉回信封里再抽一次"），
+      而且每帧都得把 translateY/rotate 重复一遍。 */
 #knowledgeGate.wrong .gfield{animation:none}
-#knowledgeGate.wrong .mail-card{animation:knShake .44s cubic-bezier(.36,.07,.19,.97) both}
-@keyframes knShake{
-  0%,100%{transform:translateY(var(--openY))}
-  12%,88%{transform:translateY(var(--openY)) translateX(-2px)}
-  24%,76%{transform:translateY(var(--openY)) translateX(4px)}
-  36%,64%{transform:translateY(var(--openY)) translateX(-6px)}
-  46%,56%{transform:translateY(var(--openY)) translateX(6px)}
+#knowledgeGate.wrong .mail-card{
+  animation:knPull .98s cubic-bezier(.3,.02,.2,1) .44s both,
+             knNudge .46s cubic-bezier(.36,.07,.19,.97) both}
+@keyframes knNudge{
+  0%,100%{translate:0 0}
+  12%,88%{translate:-2.5px 0}
+  24%,76%{translate:4px 0}
+  36%,64%{translate:-6px 0}
+  46%,56%{translate:6px 0}
 }
 /* 按钮：等邮戳盖完再出现 */
 #knowledgeGate.unlocked .genter{animation:gentIn .5s cubic-bezier(.2,1.02,.3,1) 1.46s backwards}
@@ -473,7 +514,7 @@ img{display:block}
 @media (max-width:600px){
   /* ⚠️ 邮戳现在是"居中 + 负 margin"定位，窄屏只改尺寸，别再把 right/top 写回去（会跑偏） */
   #knowledgeGate .postmark{width:88px;height:88px;margin:-44px 0 0 -44px}
-  #knowledgeGate .perchowl{width:46px;height:52px;right:0}
+  #knowledgeGate .perchowl{width:54px;height:67px;right:0}
   #knowledgeGate .env-front .gcrest{width:46px;height:46px;left:16px;bottom:20px}
   #knowledgeGate .glatin{left:16px;font-size:9px;letter-spacing:.24em}
   #knowledgeGate .env-front::before{right:16px;bottom:26px;width:40%}
@@ -2181,7 +2222,39 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
               </span>
               <span class="glatin">Scientia · Sapientia · Veritas</span>
             </div>
-            <div class="env-flap"></div>
+            <!-- 封口：内嵌 SVG 画这个三角（**不用 clip-path** —— 它会把两条斜边上的描边整条切掉，
+                 所以之前那两条边是"硬切"的、很假）。折痕高光、折下的一道内阴影都画在里面。
+                 ⚠️ preserveAspectRatio="none" + vector-effect="non-scaling-stroke"：
+                    信封宽高比随视口变，这样描边才不会被拉成粗细不匀。 -->
+            <div class="env-flap">
+              <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+                <defs>
+                  <linearGradient id="knFlapG" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#f2e9d6"/>
+                    <stop offset=".30" stop-color="#fbf5e8"/>
+                    <stop offset="1" stop-color="#e6d7b5"/>
+                  </linearGradient>
+                  <linearGradient id="knFlapCrease" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#8c7444" stop-opacity=".2"/>
+                    <stop offset="1" stop-color="#8c7444" stop-opacity="0"/>
+                  </linearGradient>
+                  <!-- ⚠️ 折痕那条暗带必须**裁进三角里**：不裁的话它是一条横贯整宽的矩形，
+                       会在信封顶部两个角上各留一块暗块（看着像脏点）。 -->
+                  <clipPath id="knFlapClip">
+                    <polygon points=".5,.5 99.5,.5 50,99"/>
+                  </clipPath>
+                </defs>
+                <g clip-path="url(#knFlapClip)">
+                  <polygon points=".5,.5 99.5,.5 50,99" fill="url(#knFlapG)"/>
+                  <rect x=".5" y=".5" width="99" height="9" fill="url(#knFlapCrease)"/>
+                </g>
+                <polygon points=".5,.5 99.5,.5 50,99" fill="none"
+                         stroke="rgba(152,128,80,.62)" stroke-width="1"
+                         stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+                <path d="M.5,.7H99.5" fill="none" stroke="rgba(255,255,255,.72)"
+                      stroke-width="1" vector-effect="non-scaling-stroke"/>
+              </svg>
+            </div>
             <!-- 邮戳：解锁后"咚"地盖上去（圆环 + 环形文字 + **猫头鹰**印记）—— 居中信封正中 -->
             <div class="postmark" id="knPostmark">
               <svg viewBox="0 0 120 120" aria-hidden="true">
@@ -2211,21 +2284,75 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
                   是个 stacking context，放里面的话猫头鹰再高的 z-index 也逃不出来，
                   会被信纸（z-index 5）整只盖住（第一版就是这样，只露出半只）。 -->
           <div class="perchowl">
-            <svg viewBox="0 0 64 72" fill="none" stroke="currentColor" stroke-width="1.7"
+            <svg viewBox="0 0 84 104" fill="none" stroke="currentColor" stroke-width="1.45"
                  stroke-linecap="round" stroke-linejoin="round">
-              <path d="M20.5 15.5 22.8 5.6l6.6 6.6"/>
-              <path d="M43.5 15.5 41.2 5.6l-6.6 6.6"/>
-              <circle cx="32" cy="25.5" r="14"/>
-              <circle cx="32" cy="27" r="9.6"/>
-              <circle cx="26.6" cy="24.6" r="4.1"/>
-              <circle cx="37.4" cy="24.6" r="4.1"/>
-              <circle cx="26.6" cy="24.6" r="1.4" fill="currentColor" stroke="none"/>
-              <circle cx="37.4" cy="24.6" r="1.4" fill="currentColor" stroke="none"/>
-              <path d="M32 29.2l2.5 3.4h-5z" fill="currentColor" stroke="none"/>
-              <path d="M32 39.6c7.2 0 12.2 5.3 12.2 12.4 0 7.3-5.3 12.2-12.2 12.2S19.8 59.3 19.8 52c0-7.1 5-12.4 12.2-12.4z"/>
-              <path d="M26.6 50.6c3.4 2.8 7.4 2.8 10.8 0"/>
-              <path d="M27.6 55.8c2.6 2.1 6.2 2.1 8.8 0"/>
-              <path d="M27.2 64.6v4.2M36.8 64.6v4.2"/>
+              <defs>
+                <radialGradient id="knOwlFace" cx="50%" cy="40%" r="64%">
+                  <stop offset="0" stop-color="#fffaf0" stop-opacity=".95"/>
+                  <stop offset="1" stop-color="#efe4cb" stop-opacity=".2"/>
+                </radialGradient>
+                <linearGradient id="knOwlBody" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#5d9180" stop-opacity=".16"/>
+                  <stop offset="1" stop-color="#265043" stop-opacity=".34"/>
+                </linearGradient>
+                <linearGradient id="knOwlWing" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#4a7f6e" stop-opacity=".24"/>
+                  <stop offset="1" stop-color="#224b3e" stop-opacity=".46"/>
+                </linearGradient>
+              </defs>
+              <!-- 耳簇：**有粗细的尖羽**（不画成两根细线 —— 3x 放大看就像两根天线） -->
+              <path d="M29.5 22.5C26.6 16.4 24.6 11.4 22.6 6.2c3.8 3.2 7.8 7.8 11 13.4z"
+                    fill="currentColor" fill-opacity=".13"/>
+              <path d="M54.5 22.5c2.9-6.1 4.9-11.1 6.9-16.3-3.8 3.2-7.8 7.8-11 13.4z"
+                    fill="currentColor" fill-opacity=".13"/>
+              <!-- 身体（盾形坐姿） -->
+              <path d="M28 24c-6.4 10-10.2 24.4-10.2 39 0 15.6 9.8 27.6 24.2 27.6S66.2 78.6 66.2 63c0-14.6-3.8-29-10.2-39z"
+                    fill="url(#knOwlBody)"/>
+              <!-- 头 -->
+              <path d="M42 10c-11 0-19.5 8.5-19.5 19.5S31 47.5 42 47.5s19.5-7 19.5-18S53 10 42 10z"/>
+              <!-- 面盘（心形）+ 面盘中缝 -->
+              <path d="M42 46.5c-7 0-13.5-6-13.5-14.5C28.5 22.8 35 16.5 42 16.5s13.5 6.3 13.5 15.5c0 8.5-6.5 14.5-13.5 14.5z"
+                    fill="url(#knOwlFace)"/>
+              <path d="M42 43.4V32.6" stroke-opacity=".5"/>
+              <!-- 眉脊 -->
+              <path d="M28.8 21.6c3.6-3.4 8.6-4.4 12.4-3" stroke-opacity=".8"/>
+              <path d="M55.2 21.6c-3.6-3.4-8.6-4.4-12.4-3" stroke-opacity=".8"/>
+              <!-- 眼：外圈 → 金色虹膜 → 瞳孔 → 高光 -->
+              <circle cx="35.2" cy="30.6" r="5.9"/>
+              <circle cx="48.8" cy="30.6" r="5.9"/>
+              <circle cx="35.2" cy="30.6" r="4.1" fill="#b08a3e" fill-opacity=".44" stroke="none"/>
+              <circle cx="48.8" cy="30.6" r="4.1" fill="#b08a3e" fill-opacity=".44" stroke="none"/>
+              <circle cx="35.2" cy="30.6" r="2.2" fill="currentColor" stroke="none"/>
+              <circle cx="48.8" cy="30.6" r="2.2" fill="currentColor" stroke="none"/>
+              <circle cx="33.7" cy="28.9" r=".95" fill="#fffdf7" stroke="none"/>
+              <circle cx="47.3" cy="28.9" r=".95" fill="#fffdf7" stroke="none"/>
+              <!-- 钩喙 -->
+              <path d="M42 34.6c2.6 0 4.1 2.6 2.7 5.2-.7 1.4-2 2.4-2.7 3.4-.7-1-2-2-2.7-3.4-1.4-2.6.1-5.2 2.7-5.2z"
+                    fill="currentColor" fill-opacity=".78"/>
+              <!-- 双翼（合拢，三层羽） -->
+              <path d="M58.5 45.5c6.5 7.5 9 20 7.5 32-.9 7-6.4 11-11.4 8.7-5-2.2-7-8.2-6-15.3 1-8 4-18 9.9-25.4z"
+                    fill="url(#knOwlWing)"/>
+              <path d="M25.5 45.5c-6.5 7.5-9 20-7.5 32 .9 7 6.4 11 11.4 8.7 5-2.2 7-8.2 6-15.3-1-8-4-18-9.9-25.4z"
+                    fill="url(#knOwlWing)"/>
+              <path d="M56.6 52.4c3.8 8 5 18 3.8 27.2" stroke-opacity=".5"/>
+              <path d="M53.4 59.6c3 6.8 4 14.8 3 22.4" stroke-opacity=".5"/>
+              <path d="M27.4 52.4c-3.8 8-5 18-3.8 27.2" stroke-opacity=".5"/>
+              <path d="M30.6 59.6c-3 6.8-4 14.8-3 22.4" stroke-opacity=".5"/>
+              <!-- 胸羽：三排鳞纹 -->
+              <path d="M36.8 56.4 42 60.2l5.2-3.8" stroke-opacity=".48"/>
+              <path d="M36 63.4 42 67.6l6-4.2" stroke-opacity=".48"/>
+              <path d="M36.5 70.6 42 74.6l5.5-4" stroke-opacity=".48"/>
+              <!-- 双足：三趾向前扣住信封的上沿（趾要**有粗细**，细线在放大后像蜘蛛腿） -->
+              <g stroke-width="2.1" stroke-opacity=".9">
+                <path d="M34.5 86v6.5"/>
+                <path d="M49.5 86v6.5"/>
+                <path d="M34.5 92.5c-2.3 1.3-3.6 3.1-4 5.2"/>
+                <path d="M34.5 92.5c-.6 2.2-.5 4.3.2 5.7"/>
+                <path d="M34.5 92.5c2.1 1.8 3.2 3.7 3.5 5.7"/>
+                <path d="M49.5 92.5c-2.3 1.3-3.6 3.1-4 5.2"/>
+                <path d="M49.5 92.5c-.6 2.2-.5 4.3.2 5.7"/>
+                <path d="M49.5 92.5c2.1 1.8 3.2 3.7 3.5 5.7"/>
+              </g>
             </svg>
           </div>
         </div>
@@ -2328,6 +2455,6 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 
 <script src="docs.js?v=20260920c"></script>
 <script src="app.js?v=20260920f"></script>
-<script src="knowledge.js?v=20260920i"></script>
+<script src="knowledge.js?v=20260920j"></script>
 </body>
 </html>
