@@ -350,15 +350,21 @@ img{display:block}
       · 批二说"间距弄大一点" → 行距/段距一起放大（只放段距会显得松散）；
       · 批三澄清"**我想要的不是增加宽度，是增加高度**" → 上一轮把宽度 340→520 是**走错了方向**
         （块变得又宽又扁、下方照样空）。**现在：宽度收回 380，高度靠 字号＋行高＋段距 一起提。**
+      · **批四再收一档**：用户"中文字放在一行（不然署名离文字太远）＋ 整体高度调低一点点" →
+        中文 18→**17**、行高 2.75→**2.5**、段距 24→**16**、
+        **署名距 24→10**（署名贴回正文）。
+      ⚠️ **中文那句必须一行放得下**：17px × 19 字 × 1.07（字距）≈ 345px。
+        宽度**保持 380**（试过 400：英文从 3 行掉到 2 行 → 块高 235 直落 158，降得太狠；
+        380 下英文仍是 3 行，中文 345px 也有 35px 余量）。字号再加、或宽度收到 345 以下会折行。
       ⚠️ 别再只调 max-width —— 那条路的终点是"更宽更扁"。左竖线只到文字高度，别跟着变长。 */
 #knowledgeGate .gq-en{display:block;font-family:var(--serif);font-style:italic;
-  font-size:clamp(11.5px,1vw,15px);line-height:2.75;letter-spacing:.02em;
+  font-size:clamp(11.5px,1vw,15px);line-height:2.5;letter-spacing:.02em;
   text-wrap:balance;   /* ⭐ 批三：字号放大后英文断成 3 行、末行只剩一个词 → 均衡每行长度 */
   color:rgba(47,93,80,.62)}
-#knowledgeGate .gq-cn{display:block;margin-top:24px;font-family:var(--serif);
-  font-size:clamp(13.5px,1.18vw,18px);line-height:2.7;letter-spacing:.07em;
+#knowledgeGate .gq-cn{display:block;margin-top:16px;font-family:var(--serif);
+  font-size:clamp(13px,1.04vw,17px);line-height:2.5;letter-spacing:.07em;
   color:rgba(47,93,80,.70)}
-#knowledgeGate .gq-by{display:block;margin-top:24px;text-align:right;white-space:nowrap;
+#knowledgeGate .gq-by{display:block;margin-top:10px;text-align:right;white-space:nowrap;
   font-size:clamp(11px,.9vw,13px);letter-spacing:.14em;color:rgba(176,138,62,.62)}
 /* ② 证书式双细金框 + 四角十字章（十字用墨绿，与鎏金框拉开一层） */
 #knowledgeGate .gframe{position:absolute;z-index:3;pointer-events:none;
@@ -444,10 +450,17 @@ img{display:block}
 #knowledgeGate .gscene{position:absolute;left:50%;top:32.4%;width:88%;aspect-ratio:916/238;
   transform:translateX(-50%);pointer-events:none}
 #knowledgeGate .gscene img{position:absolute;display:block;pointer-events:none}
-/* 森林：⭐ **`mirror(A)|A` 拼接**（A = 原纵深图的"浓→淡"段，中间最密、向两侧渐淡）。
-   ⚠️ 上一版直接用原图 → 它的树只长在左侧 45%，右侧 55% 全空；枝横贯过去就是"悬在空中"
-      （用户："右边这里怎么没有树了，这个树枝这么长不突兀嘛"）。
-   ⚠️ 拼法必须**零缩放**（左右两半都是 1:1 的同一段镜像）—— 拉伸会得到一片变胖的树。 */
+/* 森林：⭐⭐ **多层错落 ＋ 整体横向渐变**（2026-09-21 批五定稿）。
+   **两层目标分开做**，合成一锅就调不动（试过）：
+     ① **层位负责结构**：A(1:1) ／ .66A 原向 ／ .66A 镜像 ×2 —— x 错开、全部**底对齐**
+        → 铺满整幅、树形不重复（关键是**不再是镜像对称**）；
+     ② **整体渐变负责浓淡**：一条 左 1.0 → 右 .86 的横向 alpha 渐变 → 左近右远。
+   ⚠️⚠️ 别改成"逐层 opacity"造纵深：那样调不出单调递减，中右部反而比中左浓
+      （实测 [33,30,24,23,19,30,30,16,8,9] —— 50~70% 处冒出一段 30）。
+   ⚠️ 演进：原图一张（树只长左侧 45%、右半张空）→ `mirror(A)|A`（铺满了但**左右完全镜像**，
+      用户："对称太规整"）→ **现在这版**（实测列墨量 33→10，左半均墨是右半的 **1.57 倍**）。
+   ⚠️ 各层**必须底对齐**（地平线一致），否则会出现两条地平线。
+   ⚠️ 改层位后**必须用 `col_ink()` 重测列墨量**：右半每一段都要有墨（上一稿掉到 5~8＝又空一段）。 */
 #knowledgeGate .gf{left:0;bottom:0;width:100%;height:88%;opacity:.27;
   transition:opacity .8s ease .42s}
 #knowledgeGate.unlocked .gf{opacity:0}
@@ -475,12 +488,27 @@ img{display:block}
 #knowledgeGate .koh3{left:62.7%}
 #knowledgeGate .koh2{left:16.2%}
 #knowledgeGate .koh4{left:83.8%}
+/* 飞入的渐显：**单挂一条动画**，不放进 `knFlyIn*` 的关键帧里 ——
+   放进关键帧会多切一段属性插值，段间就多一次速度台阶（批五实测到过）。
+   0.12s ≈ 原来那个"10% 处 opacity:1"的时刻。 */
+@keyframes knFade{from{opacity:0}to{opacity:1}}
 /* 扑翅：**独立 scale 属性**（不是 transform）→ 才能和飞入/飞离的 transform 叠加而不互相覆盖。
    ⚠️ scale 属性要 Chrome 104+ / Safari 14.1+（本站在用的都是现代浏览器）。 */
 @keyframes knPulse{
   0%,100%{scale:1}
   50%{scale:1.05 1.09}}
 /* 飞入：从画面外侧斜掠 → 滑翔 → 落枝 → 轻微一沉 → 站住。左右交替四条航线 ＋ 各自 delay。
+   ⭐⭐ 2026-09-21 批五：用户第二次说"飞来**还是一卡一卡**" → 换了条完全不同的路子查
+     （`anim_probe.py` 逐帧读 transform 算速度曲线），真因**不在主线程，在曲线本身**：
+     **CSS 的 `animation-timing-function` 作用在每一个关键帧区间上** ——
+     6 个帧位就是 5 段，每段各跑一遍"慢-快-慢" ⇒ 实测量到 **4 个速度峰**
+     （418 → 387 → 215 → 139 px/s），观感就是"一冲一顿"。批二治的是主线程（delay），
+     这一条治的是曲线，**两条都要在**。
+     · 治法①：每段改 **linear** → 段内速度恒定、整体单调递减（612→548→387→256→50）
+       ＝"一路减速滑翔"，不再反复加速。
+     · 治法②：`opacity` 从关键帧里**抽出来**单挂 `knFade` —— 只要关键帧里留着一个
+       "只声明 opacity"的帧（原来的 10%），属性插值就被多切一段、段间再多一次速度台阶。
+     ⚠️ 改帧位/曲线后**必须用 `anim_probe.py` 复测**：速度序列要单调递减、峰数 ≤1。
    ⭐⭐ 2026-09-20 批二：delay 从 0.25s 整体挪到 **1.50s**，原因**量过**（`frame_probe.py` 四组对照）：
      · 只量"飞入"这一段 → **0 个长帧**（p50/p95 全 16.7ms，满 60fps）；
      · 与开门动效重叠时 → **7 个长帧**（p95 33ms）；
@@ -490,28 +518,30 @@ img{display:block}
    ⚠️ 改这里必须**连 `knPulse` 的 delay 一起改**（两条动画必须同一时刻起）。
    ⚠️ 别再挪回 0.25s：那不是"更即时"，是把飞入重新丢回主线程最挤的那一拍。 */
 @keyframes knFlyInL{
-  0%{transform:translate(-420%,-200%) rotate(-26deg) scale(.74);opacity:0}
-  10%{opacity:1}
+  0%{transform:translate(-420%,-200%) rotate(-26deg) scale(.74)}
   38%{transform:translate(-208%,-104%) rotate(-17deg) scale(.82)}
   62%{transform:translate(-92%,-42%) rotate(-9deg) scale(.9)}
   82%{transform:translate(-22%,-9%) rotate(-2.5deg) scale(.97)}
   92%{transform:translate(0,4%) rotate(1.2deg) scale(1.015)}
   100%{transform:translate(0,0) rotate(0) scale(1)}}
 @keyframes knFlyInR{
-  0%{transform:translate(430%,-215%) rotate(24deg) scale(.74);opacity:0}
-  10%{opacity:1}
+  0%{transform:translate(430%,-215%) rotate(24deg) scale(.74)}
   38%{transform:translate(214%,-110%) rotate(16deg) scale(.82)}
   62%{transform:translate(94%,-45%) rotate(8deg) scale(.9)}
   82%{transform:translate(24%,-10%) rotate(2.5deg) scale(.97)}
   92%{transform:translate(0,4%) rotate(-1.2deg) scale(1.015)}
   100%{transform:translate(0,0) rotate(0) scale(1)}}
-#knowledgeGate .koh1 img{animation:knFlyInL 1.05s cubic-bezier(.4,.1,.3,1) 1.50s both,
+#knowledgeGate .koh1 img{animation:knFlyInL 1.05s linear 1.50s both,
+                                  knFade .12s linear 1.50s both,
                                   knPulse .2s ease-in-out 1.50s 6}
-#knowledgeGate .koh2 img{animation:knFlyInR 1.05s cubic-bezier(.4,.1,.3,1) 1.78s both,
+#knowledgeGate .koh2 img{animation:knFlyInR 1.05s linear 1.78s both,
+                                  knFade .12s linear 1.78s both,
                                   knPulse .2s ease-in-out 1.78s 6}
-#knowledgeGate .koh3 img{animation:knFlyInL 1.05s cubic-bezier(.4,.1,.3,1) 2.04s both,
+#knowledgeGate .koh3 img{animation:knFlyInL 1.05s linear 2.04s both,
+                                  knFade .12s linear 2.04s both,
                                   knPulse .2s ease-in-out 2.04s 6}
-#knowledgeGate .koh4 img{animation:knFlyInR 1.05s cubic-bezier(.4,.1,.3,1) 2.30s both,
+#knowledgeGate .koh4 img{animation:knFlyInR 1.05s linear 2.30s both,
+                                  knFade .12s linear 2.30s both,
                                   knPulse .2s ease-in-out 2.30s 6}
 /* ⭐ 解锁：**鸟先各自飞走** → 树与枝随后淡出（"渐变成骑士"的那一半） */
 @keyframes knFlyOutL{
@@ -2649,7 +2679,7 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
                       knowledge.js 的 `warmGateImages()` 里预取＋解码 —— 门一露脸就要飞入，
                       那一刻才开始下载就会掉帧。 -->
               <span class="gscene" aria-hidden="true">
-                <img class="gf" src="assets/forest-wide.webp?v=20260920f" alt=""
+                <img class="gf" src="assets/forest-wide.webp?v=20260921a" alt=""
                      width="458" height="119" loading="lazy" decoding="async">
                 <!-- 远枝（高、窄、淡、镜像）：先画，压在下层 -->
                 <span class="gperch gperch-far">
@@ -2978,6 +3008,6 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 
 <script src="docs.js?v=20260920c"></script>
 <script src="app.js?v=20260920f"></script>
-<script src="knowledge.js?v=20260920t"></script>
+<script src="knowledge.js?v=20260921a"></script>
 </body>
 </html>
