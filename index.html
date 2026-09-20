@@ -637,7 +637,13 @@ img{display:block}
   height:var(--cardH);z-index:2;overflow:hidden;
   display:flex;flex-direction:column;align-items:center;
   justify-content:flex-start;padding:clamp(12px,1.5vh,18px) 26px 0;border-radius:2px;
-  background:linear-gradient(170deg,#fffefb,#f9f2e4);
+  /* ⭐ 批七：用户"这个纸张要添加古典信纸的横线" → 在原有纸色之上**叠一层横格线**。
+     ⚠️ 横线写在**第一层**（`repeating-linear-gradient` 先于底色），间距 26px、油墨 .13 ——
+        刻意压得很淡：它是"信笺的底纹"，不是表格线，压过 .2 就会和标题、输入行打架。
+     ⚠️ 信纸抽出时带 `rotate(-1.1deg)`，横线随纸一起倾斜（背景层跟着 transform 走）。 */
+  background:
+    repeating-linear-gradient(180deg,transparent 0 25px,rgba(176,138,62,.13) 25px 26px),
+    linear-gradient(170deg,#fffefb,#f9f2e4);
   border:1px solid rgba(176,138,62,.3);
   box-shadow:0 7px 16px rgba(47,93,80,.15);
   transform:translateY(0) rotate(0deg);
@@ -690,24 +696,42 @@ img{display:block}
    ⚠️ 资产 200×198（≈ 显示槽位 3 倍）＋ 透明底：纸色直接透出，不用 `multiply`。 */
 #knowledgeGate .env-front .gcrest{position:absolute;
   /* ⭐ 批二：用户"位置往左上角挪一下，压住线没关系" → 不再对齐 --ornIn，
-     直接压到角上（会盖住内框细线，这是要的效果）。 */
+     直接压到角上（会盖住内框细线，这是要的效果）。
+   ⭐ 批七：用户"左上角邮戳放大一点" → 乘数 **1.6 → 1.92**（桌面 67 → 80px、窄屏 46 → 56px）。
+   ⚠️ 放大后它的包围盒到 x15.2% / y26.5% —— **远山 `.ghill` 因此必须从 x17% 起**，
+      不然会横穿进邮戳里（这条是算过的，不是估的）。 */
   left:calc(var(--ornIn) * .32);top:calc(var(--ornIn) * .24);
-  width:calc(var(--crestSz) * 1.6);height:auto;display:block;pointer-events:none;
+  width:calc(var(--crestSz) * 1.92);height:auto;display:block;pointer-events:none;
   transform:rotate(-9deg)}
 #knowledgeGate .gcrest img{width:100%;height:auto;display:block;opacity:.8}
+/* ⭐ 批七：**远处的高山**（用户："这个空白画远处的高山"）——
+   横贯信封上部的一道山脉，**最淡的一层**（opacity .30，比羽毛 .42 还淡 → 空气透视）。
+   ⚠️ 它画在 `.gcrest` **之前**（DOM 顺序）→ 邮戳、飞鸟、羽毛都压在它上面：
+      观感是"鸟在山前飞、羽毛从山前飘落"，三层深浅分开。
+   ⚠️ 落位是**算过净空**的：x20~64% ／ y10.2~27.8%（下端离中央场景盒 32.4% 留 4.6%）。
+      ⚠️⚠️ 左边界的依据不是"邮戳写法上的宽度"而是**它的包围盒**：邮戳带 `rotate(-9deg)`，
+      **斜着的方框比正的宽 14%**（实测 80px 的图占 92px ⇒ x≤19.1%）—— 第一版按 17% 放，
+      直接横穿进邮戳里。⚠️ 比例 **4:1 是原图比例**，
+      不要为了"更扁"去压高度 —— 那会把山峰压成矮胖。 */
+#knowledgeGate .ghill{position:absolute;left:20%;top:10%;width:44%;
+  pointer-events:none;opacity:.30}
+#knowledgeGate .ghill img{width:100%;height:auto;display:block}
 /* ⭐ 红圈区：**飞行中的猫头鹰 ＋ 飘落的羽毛**（2026-09-21 用户："这个区域还能不能加一些
    涉及森林里的猫头鹰绘图的要素"）。位置＝信封**上部那条空白带**（邮戳右侧、右上抬头左侧、
    中央场景之上）。⭐ 它跟下方场景是**同一件事的两半**：下面四只已经落枝站定，这一只还在飞来。
-   ⚠️ 净空（信封坐标）：邮戳 x4~13%/y3~17% ｜ 右上抬头 x68~100%/y3~17% ｜ 中央场景 y32.4% 起
+   ⚠️ 净空（信封坐标）：**放大后的邮戳包围盒 x≤21.2%**（含旋转）｜ 右上抬头 x68~100%（窄屏 x≥45%）
+      ｜ 中央场景 y32.4% 起
       ｜ **解锁后才出现的 `WELCOME`（`.gwel`）x30~70%/y3.4~7.3%** → 羽毛 `top` 取 **11%**、
       宽 **6.4%**（box 实测 y10.3~28.5%）—— ⚠️ 旋转 8° 会让包围盒上沿再抬高约 0.7%，
       之前按 9% 放时实测与 WELCOME 相交。
    ⚠️ 资产 `owl-fly.webp`（展翅迎面）／`feathers.webp`（三片飘羽）都是**墨绿线描 ＋ 真透明底**
       （模型给的"透明底"其实是浅灰 ~220 → 走亮度阈值键控，**阈值要陡**，否则残影 alpha 30 上下
       会让"按墨迹 bbox 裁"裁不掉水印）。⚠️ 换图后同步 `?v=` ＋ 预热列表。 */
-#knowledgeGate .gfly{position:absolute;left:18%;top:13.5%;width:10.8%;
+#knowledgeGate .gfly{position:absolute;left:24%;top:13.5%;width:10.8%;
   pointer-events:none;opacity:.62}
-#knowledgeGate .gfeather{position:absolute;left:33%;top:11%;width:6.4%;
+/* ⚠️ 批七巡检出真问题：邮戳放大后**包围盒到 x21.2%**，飞鸟原来在 x18% → 直接钻进去了。
+   现在飞鸟 24%、羽毛 35%（两者只搭 0.4% 边，是刻意让"鸟的右翼与飘羽"挨着的）。 */
+#knowledgeGate .gfeather{position:absolute;left:35%;top:11%;width:6.4%;
   pointer-events:none;opacity:.42;transform:rotate(8deg)}
 #knowledgeGate .gfly img,#knowledgeGate .gfeather img{width:100%;height:auto;display:block}
 /* 右上：**小型**档案信息三行。⭐ 第三行 `VOL. I · MMXXVI` 在第六轮被删过，第七轮**加回来** ——
@@ -951,6 +975,11 @@ img{display:block}
   /* ⚠️ 窄屏场景（2026-09-20 批一重算）：信封只有 319×245、邮戳占 y24~70、收件区 top≈157
      —— 场景收 80% 并下移到 35%：盒底 152（离收件区 5px）、鸟头约 77（离邮戳下缘 7px）。 */
   #knowledgeGate .gscene{width:80%;top:35%}
+  /* ⚠️ 窄屏**直接隐藏远山**（不是偷懒，是放不下）：窄屏抬头三行占到 x≈45~93% / y≈9~22.5%，
+     远山若要让开它就得下移到 y≥23.5%，而中央场景盒在 y35% —— 只剩 11% 的高度，
+     4:1 的山脉放进去只有 30% 宽（一条 95px 的小土丘，读不出"远山"）。
+     ⚠️ 别为了"窄屏也要有"去把山压扁或裁断：那两头都吃过亏。 */
+  #knowledgeGate .ghill{display:none}
 }
 /* ⚠️ 矮屏但不算窄屏（例如 1440×720）：信封矮了，可**蜡封是定尺的**（不随 vh 缩）——
    矮屏把蜡封收一档，免得它相对信封显得过大（第七轮桌面 104 → 矮屏 88）。 */
@@ -2740,6 +2769,11 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
                    ⚠️ 与蜡封压印**同一枚 device**（只是尺寸不同）：抬头徽与火漆印本来就是
                       同一枚院徽，不是两套图案。⚠️ 别改回圆环（会被读成"网页徽标"），
                       也别再加星／叶冠（用户这轮要求"减少装饰"）。 -->
+              <!-- ⭐ 批七：信封上部的**远山**（最淡的一层，压在邮戳与飞鸟之下）。 -->
+              <span class="ghill" aria-hidden="true">
+                <img src="assets/hills-far.webp?v=20260921c" alt="" width="764" height="190"
+                     loading="lazy" decoding="async">
+              </span>
               <span class="gcrest" aria-hidden="true">
                 <img src="assets/crest-post.webp?v=20260920d" alt="" width="200" height="198"
                      loading="lazy" decoding="async">
@@ -3036,6 +3070,6 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 
 <script src="docs.js?v=20260920c"></script>
 <script src="app.js?v=20260920f"></script>
-<script src="knowledge.js?v=20260921b"></script>
+<script src="knowledge.js?v=20260921c"></script>
 </body>
 </html>
