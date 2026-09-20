@@ -362,9 +362,10 @@ img{display:block}
   --reveal:.58;
   /* 信封正面装饰（四角月桂 / 徽记 / 信函编号 / 藏书印）的尺寸与缩进：随视口收放。
      ⚠️ 别写死 px —— 信封宽 = min(520px,92vw-40)，写死的话窄屏装饰相对变大、把留白挤没。 */
-  --leafSz:clamp(34px,3.5vw,46px);--ornIn:clamp(26px,2.9vw,38px);--crestSz:clamp(36px,3.5vw,46px);
-  /* 蜡封尺寸（改它只动这一处 —— 中央那圈**圆形纹章已删**，不再有"派生 1.81 倍"的关系）。 */
-  --waxSz:96px;
+  --ornIn:clamp(26px,2.9vw,38px);--crestSz:clamp(34px,3.2vw,42px);
+  /* 蜡封尺寸（改它只动这一处）。**第七轮 96 → 104**：用户"保留并**强化**火漆印章，
+     作为视觉中心" —— 尺寸就是"强化"的那一半，另一半是压印图案（见下方 .postmark）。 */
+  --waxSz:104px;
   /* 猫头鹰在信封上沿被裁切的比例（0~1，越大露得越多）。几何推导见 .perchowl 注释。 */
   --owlCut:.72;
   --openY:calc((var(--cardH) - var(--envH)) / 2 - var(--cardH) * var(--reveal));
@@ -400,21 +401,7 @@ img{display:block}
   box-shadow:inset 0 2px 5px rgba(88,74,50,.3);
   background:linear-gradient(180deg,rgba(96,82,58,.22),rgba(96,82,58,.04) 55%,transparent)}
 #knowledgeGate.open .env-front::after{opacity:1}
-/* 右下：**档案记录栏**（2026-09-20 第五轮，替换原来的"三道纯装饰横线"）。
-   用户："装饰只作辅助；这些信息要有实际视觉意义，不要只是随意堆英文" →
-   改成两行「中文标签 ＋ 引导线 ＋ 真值」：引导线留着（档案线的质感还在），
-   但它同时是**填写栏的引导线**，功能与装饰合一。
-   ⚠️ 右端离边 = `--ornIn + --leafSz + 12px`（与右上抬头、左上徽记同一条竖线），
-      并且必须与右下角月桂净空（月桂占右 38~84px，本栏右端在 96px 处）。 */
-#knowledgeGate .gdock{position:absolute;right:calc(var(--ornIn) + var(--leafSz) + 12px);
-  bottom:clamp(28px,4vh,40px);width:min(196px,40%);margin:0;
-  display:grid;gap:clamp(4px,.8vh,8px);font-family:var(--serif);
-  font-size:clamp(8px,.72vw,9.5px);line-height:1;letter-spacing:.14em;
-  color:rgba(47,93,80,.66)}
-#knowledgeGate .gdock span{display:flex;align-items:center;gap:9px}
-#knowledgeGate .gdock span::after{content:"";order:1;flex:1;height:1px;
-  background:linear-gradient(90deg,rgba(176,138,62,.5),rgba(176,138,62,.14))}
-#knowledgeGate .gdock em{order:2;font-style:normal;letter-spacing:.16em;color:rgba(138,109,43,.85)}
+
 /* 封口（上三角）：闭合时压在信封体上，开门时绕上边翻起。
    ⚠️ 形状用**内嵌 SVG** 画，不用 clip-path —— clip-path 会把两条斜边上的描边**整条切掉**，
       所以之前那两条边是"硬切"的、看着很假（用户："合上后信封上部分也感觉太假了"）。
@@ -464,65 +451,78 @@ img{display:block}
 /* ⚠️ .gsync 继承共享样式的 margin-top:30px —— 在信纸里会把输入行推进遮住段 */
 #knowledgeGate .mail-card .gsync{margin-top:clamp(9px,1.6vh,16px)}
 #knowledgeGate .mail-card .err{margin-top:8px;font-family:var(--serif)}
-/* ── 信封正面的"排面"（第四轮加、第六轮**重排** · 用户："整体还是有一点'网页装饰卡片'的
-   感觉，缺少真实信件的物件感…装饰减少一些，保留少量植物线稿和细金边即可"）。
-   现在**一角一件**，宁可少一件也不叠：
-     左上 学院盾徽 ｜ 右上 信函编号（小型档案信息）
-     左下 拉丁题词（很淡） ｜ 右下 档案记录栏（编号 ＋ 收录日期）
-     右上 / 左下 两角各一枝月桂线稿（四角减到两角）
-   中央**只剩那枚红色火漆**。⭐ 原「猫头鹰＋书本」圆形印记整块删除 —— 用户原话：
-   "页面已经有猫头鹰角色，不需要重复出现第二只…中央改为真实的红色火漆印章/学院纹章"。
-   那一圈环＋金字最容易被读成"空心的网页徽标"，删掉之后中央才有"真信"的分量。
-   ⚠️ 留白仍是大头 —— 再加元素之前先问"这块能不能空着"。
-   ⚠️ 尺寸全走 --leafSz / --ornIn / --crestSz（窄屏在媒体查询里再收一档），别写死 px。 */
-/* 两角月桂线稿：**同一份 SVG**，靠 CSS 镜像（scaleX / scaleY）凑出两角 —— 只维护一份路径。
-   基样：茎从角点 (6,6) 沿对角线伸到 (54,50)，左右交替 3 对叶 + 尖端一叶（共 9 片）。 */
-#knowledgeGate .env-leaf{position:absolute;width:var(--leafSz);height:var(--leafSz);
-  color:#2f5d50;opacity:.20;pointer-events:none}
-#knowledgeGate .env-leaf svg{display:block;width:100%;height:100%;overflow:visible;
-  fill:none;stroke:currentColor;stroke-width:1.05;stroke-linecap:round}
-#knowledgeGate .env-leaf.tr{right:var(--ornIn);top:var(--ornIn);transform:scaleX(-1)}
-#knowledgeGate .env-leaf.bl{left:var(--ornIn);bottom:var(--ornIn);transform:scaleY(-1)}
-/* 左上：小型学院**盾徽**（与蜡封压印是同一枚盾形 —— 真信件的抬头徽与火漆印本来就是
-   同一个 device，不是两套图案）。⚠️ 别再改回圆形外环：圆形会被读成"网页徽标"。 */
+/* ── 信封正面的"排面"（第四轮加、第六轮重排、**第七轮定为"信息优先、零纯装饰"**）。
+   第七轮用户原话："不要继续增加纯装饰……保留简洁学院风，**减少叶子、圆环等装饰**。
+   中央：保留并**强化火漆印章**，作为视觉中心，印章使用学院徽章/书本/字母等图案，不要猫头鹰 Logo。
+   左侧：加入真实收件信息（TO ·Trainee、PERSONAL KNOWLEDGE ARCHIVE），形成一个明确的信息区域。
+   右上：保留 LETTER No.001、KNOWLEDGE ARCHIVE、VOL. I · MMXXVI。
+   右下：保留 档案编号 K-001、收录日期 2026.09.20，可增加 STATUS · PRIVATE。
+   底部：保留少量 EX LIBRIS / 学院格言。装饰只做辅助，不要为了填空增加更多植物和边框。"
+
+   布局（**一角一件，没有一件是纯装饰**）：
+     左上 盾徽 ｜ 右上 三行抬头 ｜ 左中 **收件信息区** ｜ 右下 档案记录栏 ｜ 底边 左 EX LIBRIS ＋ 右 格言
+   中央**只有那枚红色火漆**（--waxSz 104px，"强化"）。
+   ⚠️ 留白仍是大头 —— 再加元素之前先问"这块能不能空着 / 这条信息有意义吗"。
+   ⚠️ 尺寸全走 --ornIn / --crestSz（窄屏在媒体查询里再收一档），别写死 px。 */
+/* 左上：小型学院**盾徽**（盾形 ＋ 打开的书）。⭐ 它与蜡封压印是**同一枚 device**（只尺寸不同）：
+   抬头徽与火漆印本来就是同一枚院徽，不是两套图案。
+   ⚠️ 别改回圆环（会被读成"网页徽标"）；⚠️ 也别再加星／叶冠（用户这轮要求"减少装饰"）。 */
 #knowledgeGate .env-front .gcrest{position:absolute;
   left:var(--ornIn);top:var(--ornIn);
   width:var(--crestSz);height:calc(var(--crestSz) * 1.15);display:flex;align-items:center;
   justify-content:center;color:#2f5d50}
 #knowledgeGate .gcrest::after{content:"";position:absolute;inset:-6px;
-  background:radial-gradient(circle at 50% 42%,rgba(176,138,62,.16),transparent 72%)}
+  background:radial-gradient(circle at 50% 42%,rgba(176,138,62,.14),transparent 72%)}
 #knowledgeGate .gcrest svg{position:relative;z-index:1;width:100%;height:100%}
-/* 右上：**小型**档案信息（用户："LETTER No.001 和 KNOWLEDGE ARCHIVE 可以保留，
-   但只作为小型档案信息"）→ 只留两行、字号压到 9px 以下、颜色降到 .58/.44。
-   ⚠️ 原来那行 `VOL. I · MMXXVI` 已删（用户只点了这两行，信息重复就是装饰）。 */
-#knowledgeGate .gletter{position:absolute;
-  right:calc(var(--ornIn) + var(--leafSz) + 12px);top:var(--ornIn);margin:0;
+/* 右上：**小型**档案信息三行。⭐ 第三行 `VOL. I · MMXXVI` 在第六轮被删过，第七轮**加回来** ——
+   用户这次明确点名要保留这三行。
+   ⚠️ 月桂已删，所以右端离边就是 --ornIn（原来为躲月桂多缩了 12px，这条别照抄旧公式）。 */
+#knowledgeGate .gletter{position:absolute;right:var(--ornIn);top:var(--ornIn);margin:0;
   text-align:right;font-family:var(--serif);font-size:clamp(7.5px,.66vw,8.8px);
-  line-height:1.55;letter-spacing:.22em;text-transform:uppercase;color:rgba(176,138,62,.58)}
+  line-height:1.5;letter-spacing:.22em;text-transform:uppercase;color:rgba(176,138,62,.58)}
 #knowledgeGate .gletter b{display:block;font-weight:400;font-size:clamp(7px,.62vw,8.2px);
   letter-spacing:.26em;color:rgba(47,93,80,.44)}
-/* 左下：拉丁题词（用户："可以保留，但降低存在感"）→ 字号收小、颜色压到 .5。 */
-#knowledgeGate .glatin{position:absolute;left:var(--ornIn);bottom:7px;margin:0;
-  font-family:var(--serif);font-size:clamp(8.5px,.78vw,10px);letter-spacing:.26em;
-  color:rgba(138,109,43,.5);text-transform:uppercase}
-/* 右下：**档案记录栏** = 真信息（档案编号 ＋ 收录日期），右对齐贴右下角 ——
-   现实里档案信笺的登记栏就在这个位置（原来它在版心中部，读着像"装饰文字"）。
+#knowledgeGate .gletter i{display:block;font-style:normal;font-size:clamp(6.5px,.58vw,7.8px);
+  letter-spacing:.24em;color:rgba(176,138,62,.5)}
+/* 左侧：**收件信息区**（第七轮新增）。现实里信封正面这个位置就是写收件人的：
+   第一行收件人（衬线、信封上字号最大的拉丁）＋ 第二行所属机构（小字、淡金）。
+   ⚠️ 它是"信息"不是"装饰" → 给足字号与对比度（.82 / .62，比其它小字都亮）。
+   ⚠️ bottom 走 clamp：桌面 ~60px（让开底边落款），窄屏另有覆盖（让开右下记录栏）。 */
+#knowledgeGate .gto{position:absolute;left:var(--ornIn);bottom:clamp(52px,7vh,68px);
+  margin:0;display:flex;flex-direction:column;gap:clamp(3px,.6vh,6px);text-align:left}
+#knowledgeGate .gto span{font-family:var(--serif);font-size:clamp(12px,1.05vw,14px);
+  line-height:1.2;letter-spacing:.1em;color:rgba(47,93,80,.82)}
+#knowledgeGate .gto b{font-weight:400;font-family:var(--serif);
+  font-size:clamp(7.5px,.68vw,9px);line-height:1.2;letter-spacing:.26em;
+  text-transform:uppercase;color:rgba(176,138,62,.62)}
+/* 右下：**档案记录栏**（编号／收录日期／状态）—— 全是真信息，贴右下角、右对齐。
    标签 ＋ 引导线 ＋ 真值：引导线既是"档案线"的质感、又是填写栏的引导（功能与装饰合一）。
-   ⚠️ 这一角**不再放月桂** —— 176px 宽的栏与月桂在同角必撞（上一轮就靠"右移 60px"硬躲）。
-   ⚠️ 这一角在**封上信封后仍然可见**（封口的 V 只占上半区）：所以"真正的信件信息"放这儿，
-      而抬头那几件在封上时会被 V 遮住 —— 这不是 bug，是这一版的取舍。 */
-#knowledgeGate .gdock{position:absolute;right:var(--ornIn);bottom:clamp(20px,3vh,30px);
-  width:min(176px,42%);margin:0;display:grid;gap:clamp(4px,.8vh,8px);font-family:var(--serif);
+   ⚠️ 这一角不放任何植物/边框：用户"不要为了填空增加更多植物和边框"。 */
+#knowledgeGate .gdock{position:absolute;right:var(--ornIn);bottom:clamp(30px,4vh,42px);
+  width:min(176px,42%);margin:0;display:grid;gap:clamp(4px,.7vh,7px);font-family:var(--serif);
   font-size:clamp(8.5px,.76vw,10px);line-height:1;letter-spacing:.14em;
   color:rgba(47,93,80,.62)}
 #knowledgeGate .gdock span{display:flex;align-items:center;gap:9px}
 #knowledgeGate .gdock span::after{content:"";order:1;flex:1;height:1px;
   background:linear-gradient(90deg,rgba(176,138,62,.18),rgba(176,138,62,.52))}
 #knowledgeGate .gdock em{order:2;font-style:normal;letter-spacing:.16em;color:rgba(138,109,43,.88)}
-/* ⚠⚠️ 中央「圆形纹章」（`.env-medal`：虚线金环 ＋ 环上两段铭文 ＋ 中心书＋猫头鹰记号）
-   已**整块删除**，别再顺手加回来 —— 用户原话："删除中央圆形'猫头鹰+书本'Logo，
-   页面已经有猫头鹰角色，不需要重复出现第二只。"中央现在只有 #knPostmark 那一枚火漆，
-   它自己就是纹章（压印图案见下方 .postmark 注释）。 */
+/* 状态行 `STATUS · PRIVATE`：不是"标签＋引导线＋值"，而是一枚**状态戳**
+   （无引导线、字距更大、右对齐、颜色稍亮一点）。 */
+#knowledgeGate .gdock b{display:block;font-weight:400;text-align:right;
+  font-size:clamp(7.5px,.68vw,9px);letter-spacing:.24em;text-transform:uppercase;
+  color:rgba(138,109,43,.72)}
+/* 底边落款一对：左 `EX LIBRIS`（藏书印惯例在左）＋ 右 学院格言。
+   用户："底部：保留少量 EX LIBRIS / 学院格言"——但没要求它们抢眼 → 都压在 .52 / .42。 */
+#knowledgeGate .glatin{position:absolute;left:var(--ornIn);bottom:7px;margin:0;
+  font-family:var(--serif);font-size:clamp(8px,.7vw,9px);letter-spacing:.3em;
+  color:rgba(138,109,43,.52);text-transform:uppercase}
+#knowledgeGate .garch{position:absolute;right:var(--ornIn);bottom:7px;margin:0;
+  font-family:var(--serif);font-size:clamp(8px,.7vw,9px);letter-spacing:.12em;
+  color:rgba(138,109,43,.42);text-transform:uppercase}
+/* ⚠️⚠️ 第七轮**整块删除**了月桂线稿 `.env-leaf`（原四角→第六轮两角→现在 0）：
+   用户"减少叶子、圆环等装饰""装饰只做辅助，不要为了填空增加更多植物和边框"。
+   算上第六轮删的中央圆环 `.env-medal`，**信封上现在没有一件纯装饰** —— 别再顺手加回来。
+   中央只有 `#knPostmark` 那一枚火漆，它自己就是纹章。 */
 #knowledgeGate .gseal{margin-top:22px;width:min(300px,62vw);
   display:flex;align-items:center;justify-content:center}
 #knowledgeGate .gseal::before,#knowledgeGate .gseal::after{content:"";flex:1;height:1px;
@@ -530,18 +530,17 @@ img{display:block}
 #knowledgeGate .gseal span{padding:0 12px;font-size:10px;letter-spacing:.32em;text-indent:.32em;
   color:rgba(110,104,90,.7);text-transform:uppercase}
 
-/* 蜡封位置：解锁后"咚"地压在**信封正中**（略偏上），落在封口 V 之上 ——
-   现实里火漆就是压在封口尖上的。⚠️ 第六轮起它是信封上**唯一的纹章**
-   （原来外面还套着一圈"环＋铭文"的圆形印记，已删；见下方 markup 注释）。 */
-/* 蜡封：解锁后"咚"地压在信封正中。
-   落下感：从 1.55 倍压到原大（火漆是重的、迟缓的），只带一点点歪（-7°，不会盖得端端正正），
-   时机与 knThud（信封一颤）同步 1.14s。
-   ⚠️ 尺寸 112 → **96**（用户 2026-09-20："蜡封整体不要太大，不要成为整个信封最抢眼的元素"）。 */
+/* 蜡封位置：压在**信封正中**（略偏上），落在封口 V 之上 —— 现实里火漆就压在封口尖上。
+   它是信封上**唯一的纹章**（第六轮删掉了外面那圈"环＋铭文"的圆形印记）。
+   ⭐ 第七轮起手从 **1.55 倍 → .88**（用户："执行一次轻微的 scale(0.88 → 1.04 → 1)，
+   制造真实'压印完成'的感觉"＋"不要夸张弹跳或大幅缩放"）——
+   上一版"从 1.55 压到原大 + 强回弹 cubic-bezier(.2,1.5,.4,1)"正是要被换掉的那种夸张缩放。
+   ⚠️ -7° 的歪角全程保持（火漆不会盖得端端正正）；时机与 knThud 的"咚"对齐 **1.18s**
+      （＝ 信纸收回 .6s ＋ 封口翻回 .58s 延迟 + .6s 时长）。 */
 #knowledgeGate .postmark{position:absolute;left:50%;top:44%;
   width:var(--waxSz);height:var(--waxSz);z-index:8;
-  margin:calc(var(--waxSz) / -2) 0 0 calc(var(--waxSz) / -2);opacity:0;pointer-events:none;transform-origin:center;
-  transform:rotate(-7deg) scale(1.55);
-  transition:opacity .2s ease-out 1.16s,transform .3s cubic-bezier(.2,1.5,.4,1) 1.16s}
+  margin:calc(var(--waxSz) / -2) 0 0 calc(var(--waxSz) / -2);opacity:0;pointer-events:none;
+  transform-origin:center;transform:rotate(-7deg) scale(.88)}
 #knowledgeGate .postmark svg{width:100%;height:100%;display:block}
 /* 猫头鹰：**AI 学院绘本插画（2026-09-20 第六轮）**。
    资产 assets/knowledge-owl.webp（透明底 760×888 / 106KB，灰棕＋米白面盘＋墨绿斗篷＋淡金滚边，
@@ -612,8 +611,14 @@ img{display:block}
   100% {transform:translateY(var(--openY)) rotate(-1.1deg)}
 }
 
-/* 合上态：信收回 → 封口合上 → 邮戳落下 → 按钮出现（延迟依次是 0 / .58 / 1.16 / 1.46s）
-   ⚠️ 收回也要有节奏：先"松一下"、再加速落回、最后被信封接住（后面 knThud 那一颤）。 */
+/* ⭐⭐ 合上态的**完整时序**（第七轮按用户给的 5 步重排，单位 s）：
+     ① 信纸平滑收回            knReturn  0     ~ 0.60
+     ② 封口翻回并**轻微回弹**      过渡     0.58  ~ 1.18（缓动带一点过冲 → 回弹）
+     ③ 封口闭合后**火漆淡入 + 压印**  knStamp 1.18  ~ 1.64（.88 → 1.04 → 1）
+     ④ 火漆完成后延迟 .32s → 按钮**淡入并上移 8px**  knEnter 1.96 ~ 2.46
+     ⑤ 同时金边**轻微亮起一次**后恢复              knFrame 1.96 ~ 3.01
+   目标是"信件密封 → 拆阅按钮出现"是一个**连续叙事**，而不是两段互不相干的动画。
+   ⚠️ 改任一步的时长，后面每一步的 delay 都要跟着改（它们是硬编码的绝对时间）。 */
 #knowledgeGate.unlocked .mail-card{animation:knReturn .6s cubic-bezier(.62,0,.72,.16) both;
   box-shadow:0 7px 16px rgba(47,93,80,.15)}
 @keyframes knReturn{
@@ -621,34 +626,42 @@ img{display:block}
   30%  {transform:translateY(calc(var(--openY) * .84)) rotate(-1.5deg)}
   100% {transform:translateY(0) rotate(0deg)}
 }
+/* ② 封口翻回并**轻微回弹**：把缓动的 y 抬过 1 → rotateX 会略过 0° 再落回。
+   ⭐ y1 与过冲角的关系（rotateX 行程 158°，实算）：1.06→0.1°（肉眼为零）／1.25→3.2°
+      ／**1.30→5.0°**／1.40→8.4°。取 1.30 ≈ 5°（flap 高 175px → 尖端回弹 ~15px），
+      是"合上时手一松"的量；再往上就成"夸张弹跳"了（用户明确排除）。 */
 #knowledgeGate.unlocked .env-flap{transform:perspective(1000px) rotateX(0deg);z-index:4;
-  transition:transform .6s cubic-bezier(.3,.7,.3,1) .58s,z-index 0s .58s}
-#knowledgeGate.unlocked .mail-env{animation:knThud .5s cubic-bezier(.3,1.35,.5,1) 1.14s both}
+  transition:transform .6s cubic-bezier(.3,1.3,.42,1) .58s,z-index 0s .58s}
+/* 信封被"合上"那一颤（3px），与封口闭合、火漆落下同一拍 1.18s */
+#knowledgeGate.unlocked .mail-env{animation:knThud .5s cubic-bezier(.3,1.35,.5,1) 1.18s both}
 @keyframes knThud{0%{transform:translateY(0)}32%{transform:translateY(3px)}100%{transform:translateY(0)}}
-/* 蜡封落下：压到原大，与 knThud 的抖动同时（1.14s）—— 像真的"咚"一下 */
-#knowledgeGate.unlocked .postmark{opacity:1;transform:rotate(-7deg) scale(1)}
+/* ③ 火漆**压印**：淡入在前 1/3 完成，之后只是"压下去 → 回弹到原大"（0.88 → 1.04 → 1） */
+#knowledgeGate.unlocked .postmark{animation:knStamp .46s cubic-bezier(.32,.86,.4,1) 1.18s both}
+@keyframes knStamp{
+  0%  {opacity:0;transform:rotate(-7deg) scale(.88)}
+  33% {opacity:1;transform:rotate(-7deg) scale(1.04)}
+  100%{opacity:1;transform:rotate(-7deg) scale(1)}
+}
 /* 解锁后不再"把输入行收拢成一条线"（那是旅游攻略门的手法）——这里由信纸收回承担 */
 #knowledgeGate.unlocked .gfield{opacity:1;transform:none;filter:none;pointer-events:none}
 #knowledgeGate.unlocked .gok{opacity:1;pointer-events:none}
-/* 输错：抖的是整封信，不是单独一行输入。
-   ⚠️ 抖动用**独立的 `translate` 属性**叠一层位移，不再写第二套 `transform` 关键帧：
-      信纸的 transform 已经归 knPull / knReturn 管；若这里再接管 transform，
-      `.wrong` 一加一减会让 knPull 重新从 0% 开始播（信纸"掉回信封里再抽一次"），
-      而且每帧都得把 translateY/rotate 重复一遍。 */
-#knowledgeGate.wrong .gfield{animation:none}
-#knowledgeGate.wrong .mail-card{
-  animation:knPull .98s cubic-bezier(.3,.02,.2,1) .44s both,
-             knNudge .46s cubic-bezier(.36,.07,.19,.97) both}
-@keyframes knNudge{
-  0%,100%{translate:0 0}
-  12%,88%{translate:-2.5px 0}
-  24%,76%{translate:4px 0}
-  36%,64%{translate:-6px 0}
-  46%,56%{translate:6px 0}
+/* ④⑤ 按钮：淡入 + 上移 8px，同时金边亮一次。
+   ⚠️ **不用**共享的 `gentIn`（那是旅游攻略门"一条线长成按钮"的 scale(.64,.08)+blur(5px)，
+      属于另一套叙事）—— 这里要的是"信已封好，请你拆阅"的克制入场。 */
+#knowledgeGate.unlocked .genter{animation:knEnter .5s cubic-bezier(.2,.9,.3,1) 1.96s both}
+@keyframes knEnter{
+  0%  {opacity:0;transform:translateY(8px)}
+  100%{opacity:1;transform:translateY(0)}
 }
-/* 按钮：等邮戳盖完再出现 */
-#knowledgeGate.unlocked .genter{animation:gentIn .5s cubic-bezier(.2,1.02,.3,1) 1.46s backwards}
-#knowledgeGate .genter{margin-top:24px}
+/* 金边 = `.genter` 的 padding(1.5px) 露出的 `::before` 底色。
+   只把金色**提亮一档再落回**：不发光（不加 box-shadow / blur）、不循环、只跑一次。 */
+#knowledgeGate.unlocked .genter::before{animation:knFrame 1.05s ease-out 1.96s both}
+@keyframes knFrame{
+  0%  {background:rgba(176,138,62,.62)}
+  28% {background:rgba(214,182,116,.94)}
+  100%{background:rgba(176,138,62,.62)}
+}
+#knowledgeGate.unlocked .genter{margin-top:24px}
 #knowledgeGate .gfield{width:min(320px,100%)}
 /* 信纸内的输入行压一档（信纸只露出上半段，表单必须整体落在露出段里）：
    input 上下 padding 10/12 → 7/9，gfield 高约 58 → 52 */
@@ -674,29 +687,37 @@ img{display:block}
      ⚠️ 不要再在这里写 padding / 字号覆盖：纵向节奏已经是 vh 参与 clamp 的，会自适应；
         写死 px 反而会在矮屏上把输入行推进遮住段。 */
   #knowledgeGate .mail{--envH:clamp(190px,29vh,246px);--cardH:clamp(186px,27vh,236px);--reveal:.60;
-    /* 信封装饰在窄屏一起收：信封只有 ~318px 宽，不收就会把留白挤没 */
-    --leafSz:30px;--ornIn:22px;--crestSz:36px}
+    /* 信封装饰在窄屏一起收：信封只有 ~319px 宽，不收就会把留白挤没 */
+    --ornIn:22px;--crestSz:34px}
   #knowledgeGate .mail-card .gsub{display:none}
   /* ⚠️ 蜡封窄屏收一档（居中负 margin 由 calc(--waxSz/-2) 自动跟着走）；
-        ⚠️ 别再把 right/top 写回去 —— 它是"居中定位"，写回 right/top 会跑偏。
-        ⚠️ 中央圆形纹章已删（第六轮），这里不再有"随 --waxSz 派生"的东西。 */
+        ⚠️ 别再把 right/top 写回去 —— 它是"居中定位"，写回 right/top 会跑偏。 */
   #knowledgeGate .mail{--waxSz:80px}
-  #knowledgeGate .glatin{left:var(--ornIn);bottom:7px;font-size:7.5px;letter-spacing:.14em}
-  #knowledgeGate .gdock{right:var(--ornIn);bottom:26px;width:min(138px,46%);font-size:7.5px;
+  /* ⚠️ 窄屏信封只有 ~319×245，每一件都要量过不撞（回归已钉）：
+     徽章 x22~58 ｜ 抬头右端离边 22px ｜ 收件区左下（bottom 62）｜ 记录栏右下（bottom 26）
+     ｜ 底边一对 6.6px 并排（EX LIBRIS ~48px ＋ 格言 ~130px，可用宽 275px）。
+     ⚠️ 蜡封窄屏定 80px（不是 90）：封上后它是"旋转过的 bbox"（×1.135），90px 时下缘会压到
+        收件信息区只差 2px —— 实测挤，收到 80 后留 5~7px。 */
+  #knowledgeGate .gto{left:var(--ornIn);bottom:62px}
+  #knowledgeGate .gto span{font-size:10px;letter-spacing:.06em}
+  #knowledgeGate .gto b{font-size:7px;letter-spacing:.16em}
+  #knowledgeGate .gletter{font-size:7.2px;line-height:1.46;letter-spacing:.16em}
+  #knowledgeGate .gletter b{font-size:6.8px;letter-spacing:.18em}
+  #knowledgeGate .gletter i{font-size:6.4px;letter-spacing:.16em}
+  #knowledgeGate .gdock{right:var(--ornIn);bottom:26px;width:min(138px,46%);font-size:7.2px;
     gap:4px;letter-spacing:.1em}
   #knowledgeGate .gdock em{letter-spacing:.1em}
-  /* ⚠️ 窄屏信封只有 ~319×245，装饰一件都不能撞：徽章占 x22~58 / 抬头右端离边 64px /
-     记录栏占右下 138px / 两枝月桂在右上与左下 / 题词贴左下底 —— 实测互不相交。 */
+  #knowledgeGate .gdock b{font-size:6.6px;letter-spacing:.14em}
+  #knowledgeGate .glatin{left:var(--ornIn);bottom:7px;font-size:6.6px;letter-spacing:.16em}
+  #knowledgeGate .garch{right:var(--ornIn);bottom:7px;font-size:6.6px;letter-spacing:0}
   #knowledgeGate .gseal{margin-top:20px}
   /* 窄屏下 cover 只截到插画的中段（恰好是最空的一块）→ 取景右移，让书架进画面 */
   #knowledgeGate .gdeco{background-position:74% 30%;opacity:.36}
 }
 /* ⚠️ 矮屏但不算窄屏（例如 1440×720）：信封矮了，可**蜡封是定尺的**（不随 vh 缩）——
-   矮屏把蜡封收一档，免得它相对信封显得过大。
-   ⚠️ 第四轮这里还有一条"抬头行上提 8px"（当时是躲中央纹章的金环）——
-      纹章已删，那条随之取消。 */
+   矮屏把蜡封收一档，免得它相对信封显得过大（第七轮桌面 104 → 矮屏 88）。 */
 @media (max-height:830px) and (min-width:601px){
-  #knowledgeGate .mail{--waxSz:80px}
+  #knowledgeGate .mail{--waxSz:88px}
 }
 
 /* ---- Banner：一张"藏书票"式的抬头 ---- */
@@ -2436,59 +2457,40 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
                       stroke="rgba(138,109,43,.2)" stroke-width=".45"
                       vector-effect="non-scaling-stroke"/>
               </svg>
-              <!-- 月桂线稿（第六轮由四角**减到两角**：右上 / 左下 —— 用户 "装饰减少一些，
-                   保留少量植物线稿和细金边即可"；左上/右下让给徽章与档案记录栏）。
-                   ⚠️ 两份是**同一份路径**，靠 CSS 的 scaleX/scaleY 镜像 —— 只维护一份几何。
-                   ⚠️ 角上的净空是与「徽章 / 编号 / 记录栏 / 题词」一起算过的：动其中一件，
-                      必须重新核这一角（窄屏尤其挤，见 @media 600 里的那组覆盖）。 -->
-                            <span class="env-leaf tr" aria-hidden="true">
-                <svg viewBox="0 0 64 64">
-                <path d="M6 6C20 14 34 26 54 50"/>
-                <g transform="translate(14.3 11.0) rotate(92.4) scale(0.8)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
-                <g transform="translate(14.3 11.0) rotate(-23.6) scale(0.8)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
-                <g transform="translate(24.2 18.6) rotate(98.7) scale(0.94)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
-                <g transform="translate(24.2 18.6) rotate(-17.3) scale(0.94)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
-                <g transform="translate(34.9 28.6) rotate(103.3) scale(1.0)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
-                <g transform="translate(34.9 28.6) rotate(-12.7) scale(1.0)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
-                <g transform="translate(45.2 39.7) rotate(106.5) scale(0.88)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
-                <g transform="translate(45.2 39.7) rotate(-9.5) scale(0.88)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
-                <g transform="translate(52.9 48.6) rotate(50.3) scale(0.82)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
-                </svg>
-              </span>
-              <span class="env-leaf bl" aria-hidden="true">
-                <svg viewBox="0 0 64 64">
-                <path d="M6 6C20 14 34 26 54 50"/>
-                <g transform="translate(14.3 11.0) rotate(92.4) scale(0.8)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
-                <g transform="translate(14.3 11.0) rotate(-23.6) scale(0.8)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
-                <g transform="translate(24.2 18.6) rotate(98.7) scale(0.94)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
-                <g transform="translate(24.2 18.6) rotate(-17.3) scale(0.94)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
-                <g transform="translate(34.9 28.6) rotate(103.3) scale(1.0)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
-                <g transform="translate(34.9 28.6) rotate(-12.7) scale(1.0)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
-                <g transform="translate(45.2 39.7) rotate(106.5) scale(0.88)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
-                <g transform="translate(45.2 39.7) rotate(-9.5) scale(0.88)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
-                <g transform="translate(52.9 48.6) rotate(50.3) scale(0.82)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
-                </svg>
-              </span>
-                            <!-- 左上：小型学院**盾徽**（第六轮由"圆环＋书卷"改成盾形）——
-                   ⚠️ 圆形外环会被读成"网页徽标"，盾形才是"学院纹章"；
-                   与蜡封压印是**同一枚盾形**：抬头徽与火漆印本来就是同一个 device。 -->
+              <!-- ⚠️ 月桂线稿（`.env-leaf`）第七轮**整块删除** —— 用户："保留简洁学院风，
+                   减少叶子、圆环等装饰"、"装饰只做辅助，不要为了填空增加更多植物和边框"。
+                   现在信封上**一件纯装饰都没有**；留白就是留白，不许拿植物填。 -->
+              <!-- 左侧：**收件信息区**（第七轮新增 · 用户："加入真实收件信息，例如 TO ·Trainee、
+                   PERSONAL KNOWLEDGE ARCHIVE，形成一个明确的信息区域"）——
+                   现实里信封正面这个位置就是写收件人的：第一行收件人（衬线、拉丁里字号最大），
+                   第二行所属机构（小字、淡金）。⚠️ 它是"信息"不是"装饰" → 给足字号与对比度。 -->
+              <p class="gto"><span>TO · Trainee</span><b>Personal Knowledge Archive</b></p>
+              <!-- 左上：小型学院**盾徽**（盾形 ＋ 打开的书）——
+                   ⚠️ 与蜡封压印**同一枚 device**（只是尺寸不同）：抬头徽与火漆印本来就是
+                      同一枚院徽，不是两套图案。⚠️ 别改回圆环（会被读成"网页徽标"），
+                      也别再加星／叶冠（用户这轮要求"减少装饰"）。 -->
               <span class="gcrest">
                 <svg viewBox="0 0 26 30" fill="none" stroke="currentColor" stroke-width="1.3"
                      stroke-linecap="round" stroke-linejoin="round">
                   <path d="M2.0 2.0H24.0V14.5C24.0 21.8 17.8 25.7 13.0 28.0C8.2 25.7 2.0 21.8 2.0 14.5Z"/>
-                  <path d="M13.0 4.9L14.8 9.8L20.0 10.0L15.9 13.3L17.3 18.3L13.0 15.4L8.7 18.3L10.1 13.3L6.0 10.0L11.2 9.8Z" fill="currentColor" stroke="none" opacity=".8"/>
+                  <path d="M13.0 10.0Q9.5 6.6 6.0 8.0V19.0Q9.5 20.4 13.0 21.0Z"/>
+                  <path d="M13.0 10.0Q16.5 6.6 20.0 8.0V19.0Q16.5 20.4 13.0 21.0Z"/>
+                  <path d="M13.0 10.0V21.0"/>
                 </svg>
               </span>
-              <!-- 右上：**小型**档案信息（用户："LETTER No.001 和 KNOWLEDGE ARCHIVE
-                   可以保留，但只作为小型档案信息"）→ 只两行；原第三行 `VOL. I · MMXXVI` 已删
-                   （用户只点了这两行，多一行就是"堆装饰"）。 -->
-              <p class="gletter">Letter No.001<b>Knowledge Archive</b></p>
+              <!-- 右上：**小型**档案信息三行（第七轮用户点名"保留 LETTER No.001、
+                   KNOWLEDGE ARCHIVE、VOL. I · MMXXVI" → 第六轮删掉的第三行**加回来**）。
+                   ⚠️ 月桂已删，右端离边就是 --ornIn（原来为躲月桂多缩了 12px）。 -->
+              <p class="gletter">Letter No.001<b>Knowledge Archive</b><i>Vol. I · MMXXVI</i></p>
               <!-- 右下：**档案记录栏** = 真信息（编号 ＋ 收录日期），右对齐贴右下角。
                    ⚠️ 它在**封上信封后仍然可见**（封口 V 只占上半区）—— 所以"真正的信件信息"
                       放这一角；而抬头那几件在封上时会被 V 遮住，这是本版的取舍。
                    ⚠️ 这一角不再放月桂（四角月桂已减到两角），否则 176px 的栏与月桂必撞。 -->
-              <p class="gdock"><span>档案编号<em>K-001</em></span><span>收录日期<em>2026 · 09 · 20</em></span></p>
-              <span class="glatin">Scientia · Sapientia · Veritas</span>
+              <p class="gdock"><span>档案编号<em>K-001</em></span><span>收录日期<em>2026 · 09 · 20</em></span><b>Status · Private</b></p>
+              <!-- 底边落款一对（用户："底部：保留少量 EX LIBRIS / 学院格言"）——
+                   左 `EX LIBRIS`（藏书印惯例在左）＋ 右 学院格言；都压在 .5 以下的存在感。 -->
+              <span class="glatin">Ex Libris</span>
+              <span class="garch">Scientia · Sapientia · Veritas</span>
             </div>
             <!-- 封口：内嵌 SVG 画这个三角（**不用 clip-path** —— 它会把两条斜边上的描边整条切掉，
                  所以之前那两条边是"硬切"的、很假）。
@@ -2615,45 +2617,32 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
                 <circle cx="60" cy="62" r="37" fill="none" stroke="#4a1414"
                         stroke-width=".7" opacity=".38"/>
 
-                <!-- 压印图案：**盾徽 ＋ 星章 ＋ 叶冠**（雕刻凹陷画法 —— 浅红错位打底 + 暗红主体
-                     + 星更深，读作"压在蜡上留的凹印"，不是浮雕贴图）。
-                     ⭐ 2026-09-20 第六轮换掉：用户原话 —— "删除中央圆形'猫头鹰+书本'Logo，
-                        页面已经有猫头鹰角色，不需要重复出现第二只…中央改为真实的红色火漆印章/
-                        学院纹章，纹章可以使用盾徽、字母、叶冠或星章，**不要再次画猫头鹰**"。
-                        于是压印从"猫头鹰缩影"换成 **盾徽（盾形＋五角星＋两枝叶冠托底）**，
-                        与左上抬头徽章是同一枚盾形（不同尺寸、同一 device）。
-                     ⚠️ 所有点位都在 r=37 的压痕圈内（极径最大 ≈29.4）—— 改坐标务必回算，
-                        越出圈就会在王蜡体外侧露出一截（上一版"猫头鹰身子"踩过）。 -->
+                <!-- 压印图案：**盾徽 ＋ 打开的书**（雕刻凹陷画法 —— 浅红错位打底 + 暗红主体，
+                     读作"压在蜡上留的凹印"，不是浮雕贴图）。
+                     ⭐ 第七轮换掉上一版的"盾＋五角星＋两枝叶冠"：用户原话 ——
+                        "**保留并强化火漆印章，作为视觉中心**，印章使用**学院徽章/书本/字母**等图案，
+                         不要猫头鹰 Logo" ＋ "**减少叶子**、圆环等装饰" ＋ "不要为了填空增加更多植物"。
+                        于是：**去掉星与叶冠**，盾内换成**一本打开的书**（＝学院徽章 ＋ 书本），
+                        并把蜡封尺寸 96 → **104px**（这就是"强化"）。
+                     ⚠️ 图案与左上徽章是**同一枚 device**（同盾形＋同书），只是尺寸不同。
+                     ⚠️ 所有点位极径 < 34（压痕圈 r=37）—— 改坐标务必回算，越出圈会在蜡体外露一截。 -->
                 <g>
                   <!-- 凹槽返光：整枚记号向右下错开，读作"刻痕里侧的反光" -->
                   <g fill="#cf7a72" opacity=".30" transform="translate(.7 1)">
-                    <path d="M44.5 37.0H75.5V57.2C75.5 68.9 66.8 75.2 60.0 79.0C53.2 75.2 44.5 68.9 44.5 57.2Z"/>
+                    <path d="M43.0 36.0H77.0V58.6C77.0 71.7 67.5 78.8 60.0 83.0C52.5 78.8 43.0 71.7 43.0 58.6Z"/>
+                    <path d="M60.0 51.0Q54.0 45.6 48.0 48.0V68.0Q54.0 70.4 60.0 71.0Z"/><path d="M60.0 51.0Q66.0 45.6 72.0 48.0V68.0Q66.0 70.4 60.0 71.0Z"/>
                   </g>
                   <!-- 主体：凹印（比蜡体暗一档） -->
                   <g fill="#652121" opacity=".66">
-                    <path d="M44.5 37.0H75.5V57.2C75.5 68.9 66.8 75.2 60.0 79.0C53.2 75.2 44.5 68.9 44.5 57.2Z"/>
+                    <path d="M43.0 36.0H77.0V58.6C77.0 71.7 67.5 78.8 60.0 83.0C52.5 78.8 43.0 71.7 43.0 58.6Z"/>
                   </g>
-                  <!-- 最深处：五角星（再暗一档，才读得出是星章） -->
-                  <g fill="#330c0c" opacity=".68">
-                    <path d="M60.0 40.9L62.9 48.5L71.0 48.9L64.7 54.0L66.8 61.9L60.0 57.4L53.2 61.9L55.3 54.0L49.0 48.9L57.1 48.5Z"/>
+                  <!-- 书：比盾面再深一档（书是压在盾上的第二层凹印） -->
+                  <g fill="#4a1414" opacity=".72">
+                    <path d="M60.0 51.0Q54.0 45.6 48.0 48.0V68.0Q54.0 70.4 60.0 71.0Z"/><path d="M60.0 51.0Q66.0 45.6 72.0 48.0V68.0Q66.0 70.4 60.0 71.0Z"/>
                   </g>
-                  <!-- 叶冠：细线（读作压进去的细纹，不是浮雕） -->
-                  <g stroke="#8e3535" stroke-width="1.1" stroke-linecap="round" fill="none"
-                     opacity=".55">
-                    <path d="M56.5 84.0Q47.0 83.0 38.0 68.0"/>
-                    <path d="M50.8 82.1L50.5 76.1"/>
-                    <path d="M50.8 82.1L46.5 84.5"/>
-                    <path d="M45.6 78.1L46.9 72.5"/>
-                    <path d="M45.6 78.1L41.1 79.2"/>
-                    <path d="M40.7 72.2L42.7 67.6"/>
-                    <path d="M40.7 72.2L36.7 72.4"/>
-                    <path d="M63.5 84.0Q73.0 83.0 82.0 68.0"/>
-                    <path d="M69.2 82.1L74.5 85.1"/>
-                    <path d="M69.2 82.1L69.4 77.2"/>
-                    <path d="M74.4 78.1L80.0 79.5"/>
-                    <path d="M74.4 78.1L73.3 73.6"/>
-                    <path d="M79.3 72.2L84.3 72.5"/>
-                    <path d="M79.3 72.2L77.7 68.4"/>
+                  <!-- 书脊：一条更深的细线 -->
+                  <g stroke="#2e0a0a" stroke-width="1.1" stroke-linecap="round" opacity=".6">
+                    <path d="M60.0 51.0V71.0"/>
                   </g>
                 </g>
               </svg>
