@@ -448,22 +448,24 @@ img{display:block}
   transform:rotate(-7deg) scale(1.55);
   transition:opacity .2s ease-out 1.16s,transform .3s cubic-bezier(.2,1.5,.4,1) 1.16s}
 #knowledgeGate .postmark svg{width:100%;height:100%;display:block}
-/* 猫头鹰：**AI 漫画书插画**（2026-09-20 第二轮：用户"太真实了，漫画化"＋"压盖住信封"）。
-   资产 assets/knowledge-owl.webp（透明底 768×954 / **58KB**，平涂色块＋扇形羽毛纹，同色系）。
-   ⭐ 构图从"88% 宽大头"缩到 **58% 宽**、只露出头部（眼睛＋喙尖在信封沿）——
-      之前写实版胸口太宽太沉，视觉上像"压在信封上"。
-   沿用的机制不变：
-   ⚠️ "探出"用 **clip-path**：裁剪线就是**信封上沿**，从 inset(100%) 长到 inset(-70px) ＝ 向上探出。
-   ⚠️ z-index:2 < 前片(3)：压进信封区的部分被遮住。
+/* 猫头鹰：**AI 漫画书插画·棕色严肃版**（2026-09-20 第三轮定稿：用户"正视我、严肃感、棕色"）。
+   资产 assets/knowledge-owl.webp（透明底 733×893 / **49KB**，咖啡棕＋栗棕＋奶油面盘＋琥珀眼）。
+   演进：SVG 简绘（"太草台班子"）→ 写实插画（"太真实"）→ 绿漫画（"压盖信封"）→ 本版。
+   ⭐⭐ **必须放在 .mail-env 内部**（夹在 信纸(2) 与 前片(3) 之间，DOM 在信纸之后）：
+      knThud 给 mail-env 加 transform（fill:both 解锁后永久保持）→ mail-env 自成
+      stacking context；猫头鹰若留在外面（z:2 兄弟）会盖住**整个信封**（用户截图实锤）。
+      放进来后被前片(3)/封口(4) 正常遮住，任何状态下"从信封背后探出"都成立。
+   ⚠️ "探出"用 **clip-path**：裁剪线就是**信封上沿**，从 inset(100%) 长到 inset(-70px)。
+   ⚠️ **包含块变成 mail-env**（envH 高）→ bottom 基准变了：`calc(100% - 10px)` ＝
+      容器底边在信封上沿略下 10px（等价旧版相对 .mail 的 `calc(var(--envH) - 10px)`）。
    ⚠️ inset 的 -70px 负值：drop-shadow 先渲染后裁剪，不给余量阴影会被裁掉一圈。
-   ⚠️ 它是 `.mail` 的直接子级（不是 `.mail-env` 的子级）——放进 mail-env 会被它的
-      stacking context 锁住，压不过信纸。
-   ⭐⭐ **"衔住"的几何**：容器底边 = 信封上沿略下 10px；img 自身 **translateY(50.4%)** 下沉
-      —— 喙尖（图高 49.6% 处）正好落在信封上沿略下。
-      **50.4% = 1 − 0.496，换图必须重算**（流程：ImageGen 出图 → tmp/owl2/process.py 抠图＋构图预览）。 */
-#knowledgeGate .perchowl{position:absolute;left:21%;right:21%;bottom:calc(var(--envH) - 10px);
-  aspect-ratio:768/954;z-index:2;pointer-events:none;
-  filter:drop-shadow(0 8px 14px rgba(47,93,80,.28));
+   ⭐⭐ **"衔住"几何**：img 自身 **translateY(48.2%)** 下沉 —— 喙尖（图高 51.8% 处）
+      正好落在信封上沿略下。**48.2% = 1 − 0.518，换图必须重算**
+      （网格预览人工定位喙尖；自动检测会被浅色/金色肚羽骗过）。
+   ⚠️ 阴影用**暖棕**（rgba(90,62,40,.30)）—— 旧版青绿阴影是配绿猫头鹰的，棕鸟配棕影。 */
+#knowledgeGate .perchowl{position:absolute;left:20%;right:20%;bottom:calc(100% - 10px);
+  aspect-ratio:733/893;z-index:2;pointer-events:none;
+  filter:drop-shadow(0 8px 14px rgba(90,62,40,.30));
   clip-path:inset(100% -70px -70px -70px);
   transition:clip-path 1.15s cubic-bezier(.24,.9,.3,1) .9s}
 /* 探出完成后的轻微呼吸：挂在**容器**上 —— img 的 transform 已被"下沉"占用，
@@ -475,7 +477,7 @@ img{display:block}
   50%{transform:translateY(-2.5px) rotate(-.2deg)}
 }
 #knowledgeGate .perchowl img{position:absolute;left:0;top:0;width:100%;height:auto;
-  display:block;aspect-ratio:768/954;transform:translateY(50.4%)}
+  display:block;aspect-ratio:733/893;transform:translateY(48.2%)}
 /* ⚠️ aspect-ratio 必须给：lazy 图在加载前没有固有高度（height:auto = 0）→
    零面积元素不进 IntersectionObserver → **懒加载永远不触发**（死锁，实测踩过）。 */
 
@@ -2266,6 +2268,23 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
               </div>
               <div class="err" id="knowledgeGateErr" role="status" aria-live="polite"></div>
             </div>
+            <!-- 猫头鹰（AI 漫画书插画）：⚠️⚠️ **必须在 mail-env 内部** ——
+                 knThud 给 mail-env 加了 transform（fill:both 解锁后永久保持）→
+                 解锁后 mail-env 自成 stacking context（z:auto=0）；猫头鹰若留在外面
+                 （z:2 兄弟）会盖住**整个信封**（用户第二张截图实锤：胸口压住封口 V）。
+                 放进来夹在 信纸(2) 与 前片(3) 之间：z-index:2 + DOM 在信纸之后 →
+                 被前片/封口正常遮住，"从信封背后探出"在任何状态下都成立。 -->
+            <div class="perchowl">
+              <!-- 2026-09-20 用户第三轮定稿：正视我、严肃感、棕色配色
+                   （演进：SVG 简绘→太草台班子；写实插画→太真实；绿漫画→压盖信封）。
+                   ⚠️ 图片比容器**下沉 48.2%**（transform 不占布局）：喙尖（图高 51.8% 处）正好
+                      落在容器底边 = 信封上沿略下方 → 被 env-front(3) 遮住 = "喙衔住信封"。
+                   ⚠️ 48.2% = 1 − 0.518。**换图必须重算**（网格预览人工定位喙尖——
+                      自动检测会被金色/浅色肚羽骗过）。
+                   ⚠️ 摇摆动画 knOwlSway 挂在**容器**上：img 的 transform 已被"下沉"占用，
+                      关键帧会**整体替换** transform —— 挂 img 上会把下沉抵消（猫头鹰跳上去）。 -->
+              <img src="assets/knowledge-owl.webp?v=20260920c" alt="" loading="lazy" decoding="async">
+            </div>
             <div class="env-front">
               <!-- 印刷内框（用户 2026-09-20："信封合起来的时候太单调了"）：
                    正式信封的双细线框 + 四角小方章。放最底、避开封口三角盖住的上半区。 -->
@@ -2376,23 +2395,6 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
                 <ellipse cx="60" cy="107" rx="40" ry="7" fill="#4a1515" opacity=".28"/>
               </svg>
             </div>
-          </div>
-          <!-- 从信封背后探出的大猫头鹰头（用户 2026-09-20：「和信封一样宽的脑袋，在填好
-               密码信封合上时，从信封背后探出脑袋衔住信封」）。
-               ⚠️ z-index:2 低于前片(3) —— 与信封重叠的部分被信封遮住 = "在信封背后"；
-                  露出在信封上沿之上的部分才可见 = "探出脑袋"。
-               ⚠️ 默认 translateY 沉在信封区域里（被前片整个遮住，不可见）；
-                  .unlocked 时才缓缓升起（transition，不是 animation，好配合时序）。
-               ⚠️ 喙尖画进盒子底边之下几像素 → 越过信封上沿 = "衔住信封"。 -->
-          <div class="perchowl">
-            <!-- 2026-09-20 用户："SVG 简绘太草台班子，建议出一个图片挂进去"
-                 → 换成 AI 生成的书插画（水墨绿＋鎏金眼，透明底 WebP 1000×950 / 165KB）。
-                 ⚠️ 图片比容器**下沉 42.3%**（transform 不占布局）：喙尖（图高 57.7% 处）正好
-                    落在容器底边 = 信封上沿略下方 → 被 env-front(3) 遮住 = "喙衔住信封"。
-                 ⚠️ 42.3% = 1 − 0.577。**换图必须重算这个数**（跑 tmp/owl/finalize.py 出构图预览核对）。
-                 ⚠️ 摇摆动画 knOwlSway 挂在**容器**上：img 的 transform 已被"下沉"占用，
-                    关键帧会**整体替换** transform —— 挂 img 上会把下沉抵消（猫头鹰跳上去）。 -->
-            <img src="assets/knowledge-owl.webp?v=20260920b" alt="" loading="lazy" decoding="async">
           </div>
         </div>
         <!-- 解锁后出现的按钮（在信封下方，像一枚拆信刀） -->
