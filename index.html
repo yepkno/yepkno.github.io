@@ -472,17 +472,34 @@ img{display:block}
 #knowledgeGate.unlocked .gscene .gw-tree,
 #knowledgeGate.unlocked .gscene .gw-branch{opacity:0}
 /* ⭐⭐ 解锁后信封**左右各一尊骑士雕像**（用户："为什么我要让合上信封的草图变成左右两个骑士，
-   就是为了**不产生压盖**"）⇒ 必须站在信封盒**之外**（left/right 取负值）：
-   只并肩站岗，不遮信封、不遮信纸。这也是这一版**删掉"从信封背后探出的大猫头鹰"的唯一理由**
-   —— 那只会盖住封口 V 与蜡封。z-index 1（低于前片 3；反正它不在信封盒内）。 */
-#knowledgeGate .gknight{position:absolute;bottom:0;width:71px;height:168px;z-index:1;
-  opacity:0;pointer-events:none;transition:opacity 1.1s ease .9s}
+   就是为了**不产生压盖**"）⇒ 必须站在信封盒**之外**（left/right 取负值）：只并肩站岗，
+   不遮信封、不遮信纸。这也是删掉"从信封背后探出的大猫头鹰"的唯一理由（那只会横切封口 V 与蜡封）。
+   z-index 1（低于前片 3；反正它不在信封盒内）。第十轮起尺寸/位置全部由两侧净空推导，见下。 */
+#knowledgeGate .gknight{
+  /* ⭐ 尺寸从「两侧真实可用空间」推导（不是视口宽）：
+       信封宽 = min(520px, 92vw - 40px)  →  每侧净空 side = (100vw - 信封宽)/2 - 12px
+       再用 side 反推「间距」与「骑士宽」——**保证任何视口都放得下、且不浪费空间**。
+       ⚠️ 为什么不用媒体查询按 vw 收放：
+          · 900 视口时信封仍是 520 宽、两侧各有 190px，`5.6vw` 只给 50px 骑士（闲置 140px，白瞎）；
+          · 601 视口两侧只剩 44px，`5.6vw` 反而给 50px（差点溢出 gatewall，被 overflow:hidden 裁掉）。
+       实测（信封 → 骑士宽×高 / 净空）：1920 → 104×246 / 36 ｜ 1280 → 104×246 / 36
+                                         900 → 104×246 / 28 ｜ 700 → 65×154 / 12
+                                         601 → 26×62 / 6 ｜ 390 → 24×57 / 6（均在视口内）
+       ⚠️ `- 12px` 是给桌面滚动条留的安全余量（`100vw` 含滚动条宽、元素宽不含）。 */
+  --side:calc((100vw - min(520px, 92vw - 40px)) / 2 - 12px);
+  --kGap:clamp(6px, calc(var(--side) * .16), 36px);
+  --kW:clamp(24px, calc(var(--side) - var(--kGap)), 104px);
+  position:absolute;bottom:-2px;width:var(--kW);height:calc(var(--kW) * 180 / 76);z-index:1;
+  opacity:0;pointer-events:none;transition:opacity 1.1s ease .9s;
+  filter:drop-shadow(0 3px 5px rgba(47,93,80,.14))}
 #knowledgeGate .gknight svg{width:100%;height:100%;display:block;fill:none;
-  stroke:rgba(47,93,80,.30);stroke-width:1.35;stroke-linecap:round;stroke-linejoin:round}
-#knowledgeGate .gk-l{left:-84px}
-#knowledgeGate .gk-r{right:-84px}
+  stroke:rgba(47,93,80,.42);stroke-width:1.35;stroke-linecap:round;stroke-linejoin:round}
+#knowledgeGate .gknight svg *{vector-effect:non-scaling-stroke}
+#knowledgeGate .gk-l{left:calc(-1 * (var(--kW) + var(--kGap)))}
+#knowledgeGate .gk-r{right:calc(-1 * (var(--kW) + var(--kGap)))}
 #knowledgeGate .gk-r svg{transform:scaleX(-1)}
 #knowledgeGate.unlocked .gknight{opacity:1}
+
 /* ⭐ 信封**最上方**那行字（解锁后出现）：两侧各一道细金线，像书的章前页。
    放在信封上沿**之上**（`bottom:100%`）→ 不占信封内部任何位置、也不压任何元素。 */
 #knowledgeGate .gwel{position:absolute;left:50%;bottom:calc(100% + 13px);margin:0;
@@ -2569,11 +2586,16 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
               <span class="gknight gk-l" aria-hidden="true">
                 <svg viewBox="0 0 76 180">
                   <path d="M6 180 L70 180 L64 166 L12 166 Z"/>
+                  <!-- 斗篷：从肩甲外缘垂到小腿外侧（骑士/守卫雕像的剪影靠它立住） -->
+                  <path d="M23 70 C 15 90 13 116 18 133 L28 130"/>
+                  <path d="M53 70 C 61 90 63 116 58 133 L48 130"/>
                   <path d="M12 166 L64 166 L60 154 L16 154 Z"/>
                   <path d="M27 110 L27 152 L34 152 L34 118 L42 118 L42 152 L49 152 L49 110"/>
                   <path d="M25 110 L51 110 L49 98 L27 98 Z"/>
                   <path d="M27 98 C 25 86 27 70 32 62 L44 62 C 49 70 51 86 49 98 Z"/>
                   <path d="M28 92 L48 92"/>
+                  <!-- 胸甲中缝：把圆锥形躯干切成两块甲片 -->
+                  <path d="M38 63 L38 92"/>
                   <path d="M33 62 Q25 62 23 70"/>
                   <path d="M43 62 Q51 62 53 70"/>
                   <path d="M34 58 L42 58 L42 63 L34 63 Z"/>
@@ -2583,6 +2605,7 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
                   <path d="M38 34 Q33 24 40 13 Q46 25 44 34"/>
                   <path d="M58 10 L58 180"/>
                   <path d="M58 10 L53 23 L58 28 L63 23 Z"/>
+                  <path d="M58 28 L52 37 M58 28 L64 37"/>
                   <path d="M44 70 Q52 74 56 84"/>
                   <path d="M33 74 Q26 82 29 92"/>
                 </svg>
@@ -2590,11 +2613,16 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
               <span class="gknight gk-r" aria-hidden="true">
                 <svg viewBox="0 0 76 180">
                   <path d="M6 180 L70 180 L64 166 L12 166 Z"/>
+                  <!-- 斗篷：从肩甲外缘垂到小腿外侧（骑士/守卫雕像的剪影靠它立住） -->
+                  <path d="M23 70 C 15 90 13 116 18 133 L28 130"/>
+                  <path d="M53 70 C 61 90 63 116 58 133 L48 130"/>
                   <path d="M12 166 L64 166 L60 154 L16 154 Z"/>
                   <path d="M27 110 L27 152 L34 152 L34 118 L42 118 L42 152 L49 152 L49 110"/>
                   <path d="M25 110 L51 110 L49 98 L27 98 Z"/>
                   <path d="M27 98 C 25 86 27 70 32 62 L44 62 C 49 70 51 86 49 98 Z"/>
                   <path d="M28 92 L48 92"/>
+                  <!-- 胸甲中缝：把圆锥形躯干切成两块甲片 -->
+                  <path d="M38 63 L38 92"/>
                   <path d="M33 62 Q25 62 23 70"/>
                   <path d="M43 62 Q51 62 53 70"/>
                   <path d="M34 58 L42 58 L42 63 L34 63 Z"/>
@@ -2604,6 +2632,7 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
                   <path d="M38 34 Q33 24 40 13 Q46 25 44 34"/>
                   <path d="M58 10 L58 180"/>
                   <path d="M58 10 L53 23 L58 28 L63 23 Z"/>
+                  <path d="M58 28 L52 37 M58 28 L64 37"/>
                   <path d="M44 70 Q52 74 56 84"/>
                   <path d="M33 74 Q26 82 29 92"/>
                 </svg>
