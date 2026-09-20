@@ -399,14 +399,21 @@ img{display:block}
   box-shadow:inset 0 2px 5px rgba(88,74,50,.3);
   background:linear-gradient(180deg,rgba(96,82,58,.22),rgba(96,82,58,.04) 55%,transparent)}
 #knowledgeGate.open .env-front::after{opacity:1}
-/* 右下"档案线"（三道）：2026-09-20 第四轮**左移让位**给角上的月桂线稿（原来是 right:24px）。
-   ⚠️ 必须与右下角月桂保持净空：线宽 38%/max 168px、右端离边 92px，月桂占 38~84px —— 不挪就会盖在月桂上。 */
-#knowledgeGate .env-front::before{content:"";position:absolute;
-  right:clamp(78px,8vw,92px);bottom:clamp(38px,4.4vh,48px);
-  width:38%;max-width:168px;height:24px;
-  background:repeating-linear-gradient(180deg,rgba(110,104,90,.42) 0 1px,transparent 1px 12px);
-  -webkit-mask-image:linear-gradient(90deg,transparent,#000 26%,#000 100%);
-  mask-image:linear-gradient(90deg,transparent,#000 26%,#000 100%)}
+/* 右下：**档案记录栏**（2026-09-20 第五轮，替换原来的"三道纯装饰横线"）。
+   用户："装饰只作辅助；这些信息要有实际视觉意义，不要只是随意堆英文" →
+   改成两行「中文标签 ＋ 引导线 ＋ 真值」：引导线留着（档案线的质感还在），
+   但它同时是**填写栏的引导线**，功能与装饰合一。
+   ⚠️ 右端离边 = `--ornIn + --leafSz + 12px`（与右上抬头、左上徽记同一条竖线），
+      并且必须与右下角月桂净空（月桂占右 38~84px，本栏右端在 96px 处）。 */
+#knowledgeGate .gdock{position:absolute;right:calc(var(--ornIn) + var(--leafSz) + 12px);
+  bottom:clamp(28px,4vh,40px);width:min(196px,40%);margin:0;
+  display:grid;gap:clamp(4px,.8vh,8px);font-family:var(--serif);
+  font-size:clamp(8px,.72vw,9.5px);line-height:1;letter-spacing:.14em;
+  color:rgba(47,93,80,.66)}
+#knowledgeGate .gdock span{display:flex;align-items:center;gap:9px}
+#knowledgeGate .gdock span::after{content:"";order:1;flex:1;height:1px;
+  background:linear-gradient(90deg,rgba(176,138,62,.5),rgba(176,138,62,.14))}
+#knowledgeGate .gdock em{order:2;font-style:normal;letter-spacing:.16em;color:rgba(138,109,43,.85)}
 /* 封口（上三角）：闭合时压在信封体上，开门时绕上边翻起。
    ⚠️ 形状用**内嵌 SVG** 画，不用 clip-path —— clip-path 会把两条斜边上的描边**整条切掉**，
       所以之前那两条边是"硬切"的、看着很假（用户："合上后信封上部分也感觉太假了"）。
@@ -466,7 +473,7 @@ img{display:block}
    只维护一份路径、不会写错相位，也不必给每个角手搓一条独立曲线。
    基样：茎从角点 (6,6) 沿对角线伸到 (54,50)，左右交替 3 对叶 + 尖端一叶（共 9 片）。 */
 #knowledgeGate .env-leaf{position:absolute;width:var(--leafSz);height:var(--leafSz);
-  color:#2f5d50;opacity:.34;pointer-events:none}
+  color:#2f5d50;opacity:.24;pointer-events:none}
 #knowledgeGate .env-leaf svg{display:block;width:100%;height:100%;overflow:visible;
   fill:none;stroke:currentColor;stroke-width:1.05;stroke-linecap:round}
 #knowledgeGate .env-leaf.tl{left:var(--ornIn);top:var(--ornIn)}
@@ -488,9 +495,11 @@ img{display:block}
 #knowledgeGate .gletter{position:absolute;
   right:calc(var(--ornIn) + var(--leafSz) + 12px);top:var(--ornIn);margin:0;
   text-align:right;font-family:var(--serif);font-size:clamp(8px,.72vw,9.5px);
-  line-height:1.6;letter-spacing:.24em;text-transform:uppercase;color:rgba(176,138,62,.68)}
+  line-height:1.5;letter-spacing:.24em;text-transform:uppercase;color:rgba(176,138,62,.68)}
 #knowledgeGate .gletter b{display:block;font-weight:400;font-size:clamp(7.5px,.68vw,9px);
   letter-spacing:.3em;color:rgba(47,93,80,.5)}
+#knowledgeGate .gletter i{display:block;font-style:normal;font-size:clamp(7px,.64vw,8.5px);
+  letter-spacing:.26em;color:rgba(176,138,62,.6)}
 /* 底边一对落款：左 = 拉丁题词，右 = 藏书印（同基线、同字号，读作"信笺的下缘"） */
 #knowledgeGate .glatin{position:absolute;left:22px;bottom:6px;margin:0;font-family:var(--serif);
   font-size:10px;letter-spacing:.3em;color:rgba(138,109,43,.72);text-transform:uppercase}
@@ -506,7 +515,8 @@ img{display:block}
   transition:opacity .55s ease .4s}
 /* ⚠️ 分两档淡入：开门时先**半隐**（自己待着时是一枚很淡的"印位"，不抢信纸），
    解锁、蜡封落下的同一拍才升到全亮度 —— 那时它才是"蜡封周围那一圈纹章"。 */
-#knowledgeGate.open .env-medal{opacity:.6}
+#knowledgeGate.open .env-medal{opacity:.92}
+#knowledgeGate .env-medal text{font-family:var(--serif)}
 #knowledgeGate.unlocked .env-medal{opacity:1}
 #knowledgeGate .gseal{margin-top:22px;width:min(300px,62vw);
   display:flex;align-items:center;justify-content:center}
@@ -528,23 +538,26 @@ img{display:block}
   transform:rotate(-7deg) scale(1.55);
   transition:opacity .2s ease-out 1.16s,transform .3s cubic-bezier(.2,1.5,.4,1) 1.16s}
 #knowledgeGate .postmark svg{width:100%;height:100%;display:block}
-/* 猫头鹰：**AI 漫画书插画·棕色严肃版**（2026-09-20 第三轮定稿：用户"正视我、严肃感、棕色"）。
-   资产 assets/knowledge-owl.webp（透明底 733×893 / **49KB**，咖啡棕＋栗棕＋奶油面盘＋琥珀眼）。
-   演进：SVG 简绘（"太草台班子"）→ 写实插画（"太真实"）→ 绿漫画（"压盖信封"）→ 本版。
+/* 猫头鹰：**AI 学院插画·棕色（2026-09-20 第四轮）**。
+   容器 left/right 15% → 露出约 193px（含帽、头、肩线）。
+   资产 assets/knowledge-owl.webp（透明底 720×605 / **117KB**，咖啡棕＋栗棕＋奶油面盘＋琥珀眼，
+   戴低调学院帽、披斗篷 —— 手绘不规整羽纹）。
+   演进：SVG 简绘（"太草台班子"）→ 写实插画（"太真实"）→ 绿漫画（"压盖信封"）→
+   棕漫画（"卡通吉祥物感"）→ **本版：精细学院插画**（用户："像被精细描绘的学院猫头鹰插画，
+   而不是拟人吉祥物"）。
    ⭐⭐ **必须放在 .mail-env 内部**（夹在 信纸(2) 与 前片(3) 之间，DOM 在信纸之后）：
       knThud 给 mail-env 加 transform（fill:both 解锁后永久保持）→ mail-env 自成
       stacking context；猫头鹰若留在外面（z:2 兄弟）会盖住**整个信封**（用户截图实锤）。
       放进来后被前片(3)/封口(4) 正常遮住，任何状态下"从信封背后探出"都成立。
    ⚠️ "探出"用 **clip-path**：裁剪线就是**信封上沿**，从 inset(100%) 长到 inset(-70px)。
-   ⚠️ **包含块变成 mail-env**（envH 高）→ bottom 基准变了：`calc(100% - 10px)` ＝
-      容器底边在信封上沿略下 10px（等价旧版相对 .mail 的 `calc(var(--envH) - 10px)`）。
-   ⚠️ inset 的 -70px 负值：drop-shadow 先渲染后裁剪，不给余量阴影会被裁掉一圈。
-   ⭐⭐ **"衔住"几何**：img 自身 **translateY(48.2%)** 下沉 —— 喙尖（图高 51.8% 处）
-      正好落在信封上沿略下。**48.2% = 1 − 0.518，换图必须重算**
-      （网格预览人工定位喙尖；自动检测会被浅色/金色肚羽骗过）。
-   ⚠️ 阴影用**暖棕**（rgba(90,62,40,.30)）—— 旧版青绿阴影是配绿猫头鹰的，棕鸟配棕影。 */
-#knowledgeGate .perchowl{position:absolute;left:20%;right:20%;bottom:calc(100% - 10px);
-  aspect-ratio:733/893;z-index:2;pointer-events:none;
+   ⚠️ **包含块是 mail-env**（envH 高）→ `bottom:calc(100% - 10px)` ＝
+      容器底边在信封上沿略下 10px。inset 的 -70px 负值：drop-shadow 先渲染后裁剪，不留余量会被裁掉。
+   ⭐⭐ **"衔住"几何**：img **translateY(36.6%)** 下沉 —— 喙尖（图高 63.4% 处）正好落在信封上沿略下。
+      **36.6% = 1 − 0.634，换图必须重算**（网格预览人工定位喙尖；自动检测会被浅色肚羽骗过）。
+      露出多少由「喙尖在原图的绝对像素 × 容器宽 / 原图宽」决定（与底部裁多少无关）。
+   ⚠️ 阴影用**暖棕**（rgba(90,62,40,.30)）—— 旧版青绿阴影是配绿猫头鹰的。 */
+#knowledgeGate .perchowl{position:absolute;left:15%;right:15%;bottom:calc(100% - 10px);
+  aspect-ratio:720/605;z-index:2;pointer-events:none;
   filter:drop-shadow(0 8px 14px rgba(90,62,40,.30));
   clip-path:inset(100% -70px -70px -70px);
   transition:clip-path 1.15s cubic-bezier(.24,.9,.3,1) .9s}
@@ -557,7 +570,7 @@ img{display:block}
   50%{transform:translateY(-2.5px) rotate(-.2deg)}
 }
 #knowledgeGate .perchowl img{position:absolute;left:0;top:0;width:100%;height:auto;
-  display:block;aspect-ratio:733/893;transform:translateY(48.2%)}
+  display:block;aspect-ratio:720/605;transform:translateY(36.6%)}
 /* ⚠️ aspect-ratio 必须给：lazy 图在加载前没有固有高度（height:auto = 0）→
    零面积元素不进 IntersectionObserver → **懒加载永远不触发**（死锁，实测踩过）。 */
 
@@ -659,9 +672,15 @@ img{display:block}
      月桂占右 22~52px、藏书印贴底 8px、档案线右端离边 60px（与月桂留 8px 净空）。 */
   #knowledgeGate .garch{right:16px;font-size:8.5px;letter-spacing:.18em}
   #knowledgeGate .garch span{display:none}      /* 窄屏只留 "EX LIBRIS" —— 全称会与左题词撞上 */
-  #knowledgeGate .gletter{font-size:8px;letter-spacing:.16em}
-  #knowledgeGate .gletter b{font-size:7.5px;letter-spacing:.2em}
-  #knowledgeGate .env-front::before{right:60px;bottom:26px;width:32%;max-width:none;height:22px}
+  /* ⚠️ 窄屏信封只有 319×245，抬头三行会**撞上徽记的上弧铭文**（实测叠字）→
+     上提到 18px、并收字号行高，给铭文让出净空。 */
+  #knowledgeGate .gletter{top:18px;font-size:7.5px;line-height:1.42;letter-spacing:.14em}
+  #knowledgeGate .gletter b{font-size:7px;letter-spacing:.18em}
+  #knowledgeGate .gletter i{font-size:6.5px;letter-spacing:.14em}
+  /* 窄屏记录栏：右端离边 60px（与抬头/徽记同一条竖线）、宽 44% —— 仍与右下月桂净空 */
+  #knowledgeGate .gdock{right:60px;bottom:24px;width:min(142px,44%);font-size:7.5px;
+    gap:4px;letter-spacing:.1em}
+  #knowledgeGate .gdock em{letter-spacing:.1em}
   #knowledgeGate .gseal{margin-top:20px}
   /* 窄屏下 cover 只截到插画的中段（恰好是最空的一块）→ 取景右移，让书架进画面 */
   #knowledgeGate .gdeco{background-position:74% 30%;opacity:.36}
@@ -2385,15 +2404,17 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
                  放进来夹在 信纸(2) 与 前片(3) 之间：z-index:2 + DOM 在信纸之后 →
                  被前片/封口正常遮住，"从信封背后探出"在任何状态下都成立。 -->
             <div class="perchowl">
-              <!-- 2026-09-20 用户第三轮定稿：正视我、严肃感、棕色配色
-                   （演进：SVG 简绘→太草台班子；写实插画→太真实；绿漫画→压盖信封）。
-                   ⚠️ 图片比容器**下沉 48.2%**（transform 不占布局）：喙尖（图高 51.8% 处）正好
+              <!-- 2026-09-20 第四轮：换成**精细学院插画**（用户："像被精细描绘的学院猫头鹰插画，
+                   而不是猫头鹰拟人吉祥物"）。演进：SVG 简绘 → 写实插画 → 绿漫画 → 棕漫画 → 本版。
+                   改法：眼睛不再正圆对称、眉羽大幅弱化、头略小、羽纹改为手绘不规整层次，
+                   学院帽与斗篷画成插画里自然穿着的服饰（哑光、淡金滚边）。
+                   ⚠️ 图片比容器**下沉 36.6%**（transform 不占布局）：喙尖（图高 63.4% 处）正好
                       落在容器底边 = 信封上沿略下方 → 被 env-front(3) 遮住 = "喙衔住信封"。
-                   ⚠️ 48.2% = 1 − 0.518。**换图必须重算**（网格预览人工定位喙尖——
+                   ⚠️ 36.6% = 1 − 0.634。**换图必须重算**（网格预览人工定位喙尖——
                       自动检测会被金色/浅色肚羽骗过）。
                    ⚠️ 摇摆动画 knOwlSway 挂在**容器**上：img 的 transform 已被"下沉"占用，
                       关键帧会**整体替换** transform —— 挂 img 上会把下沉抵消（猫头鹰跳上去）。 -->
-              <img src="assets/knowledge-owl.webp?v=20260920c" alt="" loading="lazy" decoding="async">
+              <img src="assets/knowledge-owl.webp?v=20260920d" alt="" loading="lazy" decoding="async">
             </div>
             <div class="env-front">
               <!-- 印刷内框（用户 2026-09-20："信封合起来的时候太单调了"）：
@@ -2404,10 +2425,10 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
                       线框本身保留 —— 它是"正式信封"的底子，去掉方章后角上才留给月桂。 -->
               <svg class="env-border" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
                 <rect x="4" y="4" width="92" height="92" fill="none"
-                      stroke="rgba(138,109,43,.4)" stroke-width=".45"
+                      stroke="rgba(138,109,43,.32)" stroke-width=".45"
                       vector-effect="non-scaling-stroke"/>
                 <rect x="6.4" y="6.4" width="87.2" height="87.2" fill="none"
-                      stroke="rgba(138,109,43,.26)" stroke-width=".45"
+                      stroke="rgba(138,109,43,.2)" stroke-width=".45"
                       vector-effect="non-scaling-stroke"/>
               </svg>
               <!-- 四角月桂线稿（2026-09-20 第四轮 · 用户："四角加入很淡的植物/月桂叶线稿"）。
@@ -2477,9 +2498,11 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
                      stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.2c3-1 5.5-.4 8 1.4 2.5-1.8 5-2.4 8-1.4v10.4c-3-1-5.5-.4-8 1.4-2.5-1.8-5-2.4-8-1.4z"/><path d="M12 7.6v10.4"/></svg>
               </span>
               <!-- 右上：信函编号 + 档案馆名（档案室给每封信的抬头） -->
-              <p class="gletter">Letter No.001<b>Knowledge Archive</b></p>
+              <p class="gletter">Letter No.001<b>Knowledge Archive</b><i>Vol. I · MMXXVI</i></p>
               <!-- 右下：藏书印（与左下拉丁题词同基线，读作"信笺的下缘"）。
                    ⚠️ 窄屏会隐藏 "· Archivum"：全称会与左题词在 318px 宽的信封上撞车）。 -->
+              <!-- 右下：档案记录栏（标签 ＋ 引导线 ＋ 真值）—— 第五轮替掉三道纯装饰横线 -->
+              <p class="gdock"><span>档案编号<em>K-001</em></span><span>收录日期<em>2026 · 09 · 20</em></span></p>
               <p class="garch">Ex Libris<span> · Archivum</span></p>
               <span class="glatin">Scientia · Sapientia · Veritas</span>
             </div>
@@ -2543,14 +2566,42 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
                     用户要的"蜡封周围有纹章"就永远看不到。压在封口之上、蜡封之下才对。
                  ⚠️ 初始 opacity:0，`.open` 才淡入（合着信封时不该先露一枚纹章）。 -->
             <svg class="env-medal" viewBox="0 0 180 180" aria-hidden="true" fill="none">
-              <circle cx="90" cy="90" r="64" stroke="rgba(176,138,62,.30)" stroke-width="1"
-                      stroke-dasharray="1.6 6.4"/>
-              <circle cx="90" cy="90" r="56.5" stroke="rgba(47,93,80,.22)" stroke-width=".9"/>
-              <g fill="rgba(176,138,62,.42)">
-                <rect x="87.5" y="17.5" width="5" height="5" transform="rotate(45 90 20)"/>
-                <rect x="157.5" y="87.5" width="5" height="5" transform="rotate(45 160 90)"/>
-                <rect x="87.5" y="157.5" width="5" height="5" transform="rotate(45 90 160)"/>
-                <rect x="17.5" y="87.5" width="5" height="5" transform="rotate(45 20 90)"/>
+              <defs>
+                <!-- 环上铭文的两条弧：上弧顺时针走（字正），下弧逆时针走 —— 两条都读得正 -->
+                <path id="knArcTop" d="M30 90A60 60 0 0 1 150 90"/>
+                <path id="knArcBot" d="M30 90A60 60 0 0 0 150 90"/>
+              </defs>
+              <!-- 外圈：虚线金环（纯装饰，最淡的一层） -->
+              <circle cx="90" cy="90" r="75" stroke="rgba(176,138,62,.20)" stroke-width=".9"
+                      stroke-dasharray="1.4 6.2"/>
+              <!-- 印边：外环 ＝ 铭文外沿，内环 ＝ 铭文内沿（印记的"边"） -->
+              <circle cx="90" cy="90" r="69" stroke="rgba(47,93,80,.30)" stroke-width="1"/>
+              <circle cx="90" cy="90" r="46" stroke="rgba(47,93,80,.22)" stroke-width=".8"/>
+              <!-- 环上铭文（**真信息**：档案馆名 ／ 创始年与卷次） -->
+              <text font-size="8.4" letter-spacing="1.5" fill="rgba(47,93,80,.68)">
+                <textPath href="#knArcTop" startOffset="50%" text-anchor="middle">ARCHIVUM · COGNITIONIS</textPath>
+              </text>
+              <text font-size="8.4" letter-spacing="1.5" fill="rgba(176,138,62,.80)">
+                <textPath href="#knArcBot" startOffset="50%" text-anchor="middle">MMXXVI · FOLIO I</textPath>
+              </text>
+              <!-- 印记本体：书 ＋ 猫头鹰（= 左上徽记／蜡封压印同一枚记号） -->
+              <g transform="translate(90 86) scale(1.25) translate(-60 -58)"
+                 stroke="rgba(47,93,80,.62)" stroke-width="1.3" stroke-linecap="round"
+                 stroke-linejoin="round">
+                <g fill="rgba(250,246,236,.95)" stroke-width="1.5">
+                <path d="M60 38C52 38 45 41 42 47C37 52 35 59 37 65C39 71 48 75 60 75C72 75 81 71 83 65C85 59 83 52 78 47C75 41 68 38 60 38Z"/>
+                <path d="M38 68C44 64 52 63 60 66L60 81C52 78 44 79 38 82Z"/>
+                <path d="M82 68C76 64 68 63 60 66L60 81C68 78 76 79 82 82Z"/>
+                <path d="M60 66V81"/>
+                <path d="M43 70.5H54M43 75H52"/>
+                <path d="M66 70.5H77M68 75H77"/>
+                </g>
+                <path d="M46.5 42C45 38.5 42.5 35.5 39 33.5" fill="none" stroke-width="3.1"/><path d="M73.5 42C75 38.5 77.5 35.5 81 33.5" fill="none" stroke-width="3.1"/>
+                <circle cx="50.6" cy="54" r="6.3" fill="none" stroke="rgba(47,93,80,.72)" stroke-width="1.8"/>
+                <circle cx="69.4" cy="54" r="6.3" fill="none" stroke="rgba(47,93,80,.72)" stroke-width="1.8"/>
+                <circle cx="50.6" cy="54" r="2.9" fill="rgba(47,93,80,.8)" stroke="none"/>
+                <circle cx="69.4" cy="54" r="2.9" fill="rgba(47,93,80,.8)" stroke="none"/>
+                <path d="M60 61.5L62.1 66.4L57.9 66.4Z" fill="rgba(47,93,80,.85)" stroke="none"/>
               </g>
             </svg>
             <div class="postmark" id="knPostmark">
@@ -2631,23 +2682,30 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
                      ⚠️ 再整体缩到 .87 并绕压痕圆心缩 —— 否则身子下缘会**越出 r=37 的圈**
                         （实测：身子在 y94 处半宽 26 > 圈在该高度的半宽 18.6）。 -->
                 <g transform="translate(60 62) scale(.87) translate(-60 -62)">
-                  <g fill="#cf7a72" opacity=".3" transform="translate(.6 1)">
-                    <path d="M45 40 L41 28 C 48 32 53 37 56 40 C 58 39 62 39 64 40
-                             C 67 37 72 32 79 28 L75 40 C 82 45 86 54 86 63
-                             C 86 81 75 94 60 94 C 45 94 34 81 34 63 C 34 54 38 45 45 40 Z"/>
+                  <!-- 上光层：整枚记号向右下错开 1px 的浅色 —— 读作"凹槽的里侧返光" -->
+                  <g fill="#cf7a72" opacity=".34" transform="translate(.7 1)">
+                    <path d="M60 38C52 38 45 41 42 47C37 52 35 59 37 65C39 71 48 75 60 75C72 75 81 71 83 65C85 59 83 52 78 47C75 41 68 38 60 38Z"/><path d="M38 68C44 64 52 63 60 66L60 81C52 78 44 79 38 82Z"/><path d="M82 68C76 64 68 63 60 66L60 81C68 78 76 79 82 82Z"/>
                   </g>
-                  <g fill="#652121" opacity=".66">
-                    <path d="M45 40 L41 28 C 48 32 53 37 56 40 C 58 39 62 39 64 40
-                             C 67 37 72 32 79 28 L75 40 C 82 45 86 54 86 63
-                             C 86 81 75 94 60 94 C 45 94 34 81 34 63 C 34 54 38 45 45 40 Z"/>
+                  <!-- 主体：凹印（比蜡体暗一档） -->
+                  <g fill="#5d1a1a" opacity=".72">
+                    <path d="M60 38C52 38 45 41 42 47C37 52 35 59 37 65C39 71 48 75 60 75C72 75 81 71 83 65C85 59 83 52 78 47C75 41 68 38 60 38Z"/><path d="M38 68C44 64 52 63 60 66L60 81C52 78 44 79 38 82Z"/><path d="M82 68C76 64 68 63 60 66L60 81C68 78 76 79 82 82Z"/><path d="M60 66V81"/>
                   </g>
-                  <g fill="#3d1010" opacity=".55">
-                    <circle cx="52" cy="54" r="3.6"/>
-                    <circle cx="68" cy="54" r="3.6"/>
-                    <path d="M60 58.6 l 3.4 4.4 h -6.8 Z"/>
+                  <!-- 最深处：眼与喙（再暗一档，才读得出是猫头鹰） -->
+                  <g fill="#330c0c" opacity=".72">
+                    <path d="M46.5 42C45 38.5 42.5 35.5 39 33.5" fill="none" stroke="#cf7a72"
+                          stroke-width="3.2" opacity=".5"/>
+                    <path d="M73.5 42C75 38.5 77.5 35.5 81 33.5" fill="none" stroke="#cf7a72"
+                          stroke-width="3.2" opacity=".5"/>
+                    <circle cx="50.6" cy="54" r="6.3"/><circle cx="69.4" cy="54" r="6.3"/>
+                    <path d="M60 61.5L62.2 66.6L57.8 66.6Z"/>
+                  </g>
+                  <!-- 书页上的字迹：更浅的细线，读作压进去的线 -->
+                  <g stroke="#8e3535" stroke-width="1.1" stroke-linecap="round" opacity=".55">
+                    <path d="M43 70.5H54"/><path d="M43 75H52"/>
+                    <path d="M66 70.5H77"/><path d="M68 75H77"/>
                   </g>
                 </g>
-              </svg>
+              
             </div>
           </div>
         </div>
