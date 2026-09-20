@@ -789,9 +789,10 @@ function openKnowledge(d) {
 //     不进首屏关键路径（首屏仍是 9 请求 / 0.44 MB），却让门一露脸时全是解码好的位图。
 function warmGateImages() {
   var list = [
-    "assets/forest-deep.webp?v=20260920e",
+    "assets/forest-wide.webp?v=20260920f",
+    "assets/branch-fade.webp?v=20260920g",
     "assets/crest-post.webp?v=20260920d",
-    "assets/branch-line.webp?v=20260920c",
+    
     "assets/owl-line.webp",
     "assets/knowledge-bg.jpg?v=20260920a",
     "assets/knight-l.webp?v=20260920a",
