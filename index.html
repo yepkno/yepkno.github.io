@@ -332,6 +332,28 @@ img{display:block}
   background:url("assets/knowledge-bg.jpg?v=20260920a") center 24%/cover no-repeat;
   opacity:.26;
   box-shadow:inset 0 0 150px 60px rgba(248,243,232,.95)}
+/* ⭐ 左下角**双语语录**（2026-09-20 批一 · 用户："主背景左下角太空了，加一段语录，中英双文，
+   备注是谁说的"）。⚠️ 它是**纸面印刷物**，不是 UI：不给按钮感、不加背景块、不抢中央信封；
+      灰墨 ＋ 左侧一道细金竖线（拉出"引文"的排面），层级 z-index:2（在墨迹 canvas 之上、
+      证书金框之下）→ 墨迹从它"背后"飘过时不会被切断。
+   ⚠️ 位置避开中央信封：`max-width` = `min(340px, 100vw − 56px)`。
+      ⭐ **别用 30vw** —— 手机 390px 时它只有 117px，英文语录会折成 6 行的一根窄柱
+      （署名还会断成"阿不思 · 邓布利"/"多"）。`100vw − 56px` 在桌面上被 340px 卡住（视觉不变），
+      在手机上自动铺到"左右各留 26px"，**一个媒体查询都不用加**。 */
+#knowledgeGate .gquote{position:absolute;z-index:2;pointer-events:none;
+  left:clamp(26px,4.4vw,74px);bottom:clamp(24px,5.2vh,58px);margin:0;
+  max-width:min(340px,calc(100vw - 56px));padding-left:14px;
+  border-left:1px solid rgba(176,138,62,.34);
+  opacity:0;transition:opacity 1.1s ease .55s}
+#knowledgeGate.enter .gquote{opacity:1}
+#knowledgeGate .gq-en{display:block;font-family:var(--serif);font-style:italic;
+  font-size:clamp(9.5px,.8vw,11.5px);line-height:1.95;letter-spacing:.02em;
+  color:rgba(47,93,80,.62)}
+#knowledgeGate .gq-cn{display:block;margin-top:7px;font-family:var(--serif);
+  font-size:clamp(11px,.95vw,13.5px);line-height:1.85;letter-spacing:.07em;
+  color:rgba(47,93,80,.70)}
+#knowledgeGate .gq-by{display:block;margin-top:7px;text-align:right;white-space:nowrap;
+  font-size:clamp(9px,.76vw,10.5px);letter-spacing:.14em;color:rgba(176,138,62,.62)}
 /* ② 证书式双细金框 + 四角十字章（十字用墨绿，与鎏金框拉开一层） */
 #knowledgeGate .gframe{position:absolute;z-index:3;pointer-events:none;
   inset:clamp(16px,2.8vw,34px);
@@ -377,6 +399,9 @@ img{display:block}
   /* 信封正面装饰（四角月桂 / 徽记 / 信函编号 / 藏书印）的尺寸与缩进：随视口收放。
      ⚠️ 别写死 px —— 信封宽 = min(520px,92vw-40)，写死的话窄屏装饰相对变大、把留白挤没。 */
   --ornIn:clamp(26px,2.9vw,38px);--crestSz:clamp(34px,3.2vw,42px);
+  /* 左上邮戳的油墨色（2026-09-20 批一）。⭐ 想换成红戳：把下面的 rgba 改成
+     朱红系（例如 rgba(158,58,38,.72)）即可 —— 只有这一处。 */
+  --stampInk:rgba(84,90,88,.72);
   /* 蜡封尺寸（改它只动这一处）。**第七轮 96 → 104**：用户"保留并**强化**火漆印章，
      作为视觉中心" —— 尺寸就是"强化"的那一半，另一半是压印图案（见下方 .postmark）。 */
   --waxSz:104px;
@@ -394,88 +419,102 @@ img{display:block}
    随信封宽高比拉伸，vector-effect 保证描边不被拉粗） */
 #knowledgeGate .env-border{position:absolute;inset:9px;width:calc(100% - 18px);height:calc(100% - 18px);
   display:block;pointer-events:none}
-/* ⭐⭐ 中央「森林 · 猫头鹰」线描动图（2026-09-20 第九轮 · 用户："中间这个图书的简绘太草率了，
-   能不能加一个动图，就是一片森林，飞来三四个猫头鹰，找到树枝站住，然后就静止，类似 live 图，
-   采取线描简绘风；并且输入密码正确的时候，猫头鹰飞走，信封合上，渐变成两边各两个骑士雕像，
-   信封最上面出现一段文字 WELCOME TO KNOWLEDGE'S SEA"）。
-   ⚠️ 它**取代**了原「打开的书＋羽毛笔＋星徽」那版水印（用户嫌"太草率"）。
-   ⚠️ 仍是**纯纸面底纹**：不给 z-index、DOM 排在所有信息元素之前 —— 绝不压字。
-   ⚠️ 尺寸 22% → **38% 信封宽**：一幅森林＋四只鸟在 22% 里根本看不清。
-      高度 = 38%×(130/260) ≈ 19% 信封高，正好落在"盾徽之下、收件信息区之上"那条净空带里。
-   ⭐ "live 图"＝**只有鸟会动**：树林/树枝/小叶全程静止；四只鸟依次飞入 → 落枝 → 站住 →
-      **彻底静止**（扑翅是**有限次数**关键帧，跑完就停，绝不 infinite、绝不循环）。
-   ⭐⭐ 定位写在**外层 `<g>`**、动画写在内层 `<g>` —— CSS `transform`（动画）会**覆盖** SVG 的
-      `transform` 属性：写在同一个元素上，动画一开始四只鸟会全塌到 viewBox 原点叠成一只（实测踩过）。 */
-#knowledgeGate .gscene{position:absolute;left:50%;top:50%;width:46%;
-  transform:translate(-50%,-50%);aspect-ratio:260/130;pointer-events:none}
-#knowledgeGate .gscene svg{width:100%;height:100%;display:block;overflow:visible}
-/* 三层景深：远松最淡 → 背景林 → 站杆最实 */
-#knowledgeGate .gscene .gw-far{stroke:rgba(47,93,80,.11);stroke-width:1.1}
-#knowledgeGate .gscene .gw-tree{stroke:rgba(47,93,80,.17);stroke-width:1.1}
-#knowledgeGate .gscene .gw-branch{stroke:rgba(47,93,80,.25);stroke-width:1.12}
-/* 整只猫头鹰的描边色挂在 `.ko` 上（子元素 stroke:inherit）→ 改浓淡只动一处 */
-#knowledgeGate .gscene .ko{stroke:rgba(47,93,80,.52);stroke-width:1.2;
-  transform-box:fill-box;transform-origin:50% 50%}
-#knowledgeGate .gscene .kbody,
-#knowledgeGate .gscene .kthin,
-#knowledgeGate .gscene .kw{stroke:inherit;fill:none}
-#knowledgeGate .gscene .kdisc{stroke:inherit;fill:none;stroke-width:1}
-#knowledgeGate .gscene .keye{stroke:inherit;fill:none;stroke-width:1.15}
-#knowledgeGate .gscene .kpup{fill:rgba(47,93,80,.52);stroke:none}
-#knowledgeGate .gscene .kbeak{fill:rgba(47,93,80,.40);stroke:none}
-/* ⭐ 第十轮：四只鸟从"手绘 SVG 简笔"换成**精致的线描插画**（assets/owl-line.webp，透明墨绿）。
-   ⚠️ 图是**透明 WebP**、不是白底：它要贴在 SVG 里，而 multiply 在 `<image>` 上不可靠。
-   ⚠️ 换图后**没有翅膀路径**了，所以"扑翅"改成整只鸟的**轻微起伏**（`knPulse`）——
-      保留"扇动"的节奏（同样的有限次数与 delay），而不是僵硬平移。
-   ⚠️ 缩放要 `transform-box:fill-box`，否则 `<image>` 会绕 SVG 原点缩放（飞出去）。 */
-#knowledgeGate .gscene .ko image{transform-box:fill-box;transform-origin:50% 50%;
+/* ⭐⭐ 中央「森林 · 猫头鹰」（2026-09-20 批一重做）——
+   用户三条：① 树太丑、**不要 SVG**（"用别的合适的格式"）② "猫头鹰太靠下了、站位占的空间太小了，
+   在不压盖其他要素的情况下尽量铺满" ③ "飞来一卡一卡的，飞走不卡"。
+   ⭐ 做法：**树林/树枝/猫头鹰全部换成图片**（forest-line.webp ×3 丛 ＋ branch-line.webp ＋ owl-line.webp ×4）。
+      为什么不留在 SVG 里：SVG 的 `<image>` 在缩放动画中**每帧都要重新栅格化**（主线程、还会糊），
+      换成 HTML `<img>` ＋ `will-change:transform` → 交给合成器，飞入才顺（同时用 frame_probe.py 量过前后）。
+   ⭐ 森林 = **三丛**（左/中/右，高度递减 ＋ 右丛镜像）→ 错落出纵深，合起来铺满整条净空带；
+      单张整幅拉伸会变成"一排同样高的竹竿"，单张裁成 4:1 又只剩枝梢（两版都试过、都难看）。
+   ⚠️ 几何：场景盒 = 信封宽 88%、比例 916:238（= 净空带的 4:1）→ 桌面 458×119，
+      落在"邮戳之下(y100)、收件信息区之上(y228)"那条带里，上下各留 4~5px。
+      **所有子元素的位置/尺寸都写成场景盒的百分比** → 窄屏整体等比缩，不必再维护一套媒体查询。
+   ⭐ "live 图"＝只有鸟会动：树与枝全程静止；四只鸟依次飞入 → 落枝 → 站住 → **彻底静止**
+      （扑翅是**有限次数**关键帧，跑完就停，绝不 infinite）。
+   ⭐⭐ 分层（命门）：**定位/倾斜写外层 `.koh`，动画写内层 `img`** ——
+      定位与动画写在同一元素上会被动画的 transform 整个覆盖（旧版 SVG 版踩过：四只鸟全塌到原点叠成一只）。
+      内层 img 挂**两条**动画：`knFlyIn*`（transform）＋ `knPulse`（**独立的 `scale` 属性**）→ 互不覆盖。
+   ⚠️ 鸟的透明度 `.74` 挂在 `.koh`（外层）上，不能挂 img ——
+      img 上的 `opacity:0 → 1` 关键帧会把它覆盖成"完全不透明"。 */
+#knowledgeGate .gscene{position:absolute;left:50%;top:32.4%;width:88%;aspect-ratio:916/238;
+  transform:translateX(-50%);pointer-events:none}
+#knowledgeGate .gscene img{position:absolute;display:block;pointer-events:none}
+/* 三丛树：高度 97.5% / 72% / 84% 错落；右丛镜像。⚠️ 基础 opacity 只写在各丛自己的规则里，
+   不要再写一条 `.gf{opacity:1}` —— 它会以"同优先级后置"把三丛的浓淡全部抹平。 */
+#knowledgeGate .gf{bottom:0;height:auto;transition:opacity .8s ease .42s}
+#knowledgeGate .gf-l{left:-2%;height:97.5%;opacity:.46}
+#knowledgeGate .gf-m{left:39.5%;height:72%;opacity:.34}
+#knowledgeGate .gf-r{right:-1.5%;height:84%;opacity:.42;transform:scaleX(-1)}
+#knowledgeGate.unlocked .gf{opacity:0}
+/* 树枝：横贯整幅（容器 = 场景盒的 102% 宽，两端各溢出 1% 让枝端"出画"）。
+   ⭐ 四只鸟挂在**树枝容器内部** → 落脚偏移只写一次百分比，不必逐鸟换算场景盒坐标。
+      落脚线实测在枝图高度的 52.2% 处（见 build2.py 的剖面输出）→ 鸟的 bottom = 100% − 52.2% = 47.8%。
+   ⭐ 鸟的 x 取 22% / 48% / 74% / 95%：这四处是剖面里"枝干上方没有叶片"的位置
+      （12~16、38~44、62~66、86~88 处有向上翘的叶子，鸟站上去会像"被叶子从肚子上穿出来"）。 */
+#knowledgeGate .gperch{position:absolute;left:-1%;right:-1%;bottom:39%}
+#knowledgeGate .gperch > img.gb{position:static;width:100%;height:auto;opacity:.52;
+  transition:opacity .8s ease .42s}
+#knowledgeGate.unlocked .gperch > img.gb{opacity:0}
+#knowledgeGate .koh{position:absolute;bottom:47.8%;height:88%;transform:translateX(-50%);
   opacity:.74}
+#knowledgeGate .koh img{position:static;height:100%;width:auto;will-change:transform;
+  backface-visibility:hidden}
+#knowledgeGate .koh1{left:22%;transform:translateX(-50%) rotate(-1.6deg)}
+#knowledgeGate .koh2{left:48%;transform:translateX(-50%) rotate(.9deg)}
+#knowledgeGate .koh3{left:74%;transform:translateX(-50%) rotate(-1.1deg)}
+#knowledgeGate .koh4{left:95%;transform:translateX(-50%) rotate(1.4deg)}
+/* 扑翅：**独立 scale 属性**（不是 transform）→ 才能和飞入/飞离的 transform 叠加而不互相覆盖。
+   ⚠️ scale 属性要 Chrome 104+ / Safari 14.1+（本站在用的都是现代浏览器）。 */
 @keyframes knPulse{
-  0%,100%{transform:scale(1) translateY(0)}
-  50%{transform:scale(1.05,1.09) translateY(-1.6px)}}
-/* 飞入：从画面外侧斜掠 → 落枝 → 一沉 → 站住。左右交替四条航线＋各自 delay，
-   读作"一只一只找到树枝站住"，而不是四只一起砸下来。 */
+  0%,100%{scale:1}
+  50%{scale:1.05 1.09}}
+/* 飞入：从画面外侧斜掠 → 滑翔 → 落枝 → 轻微一沉 → 站住。左右交替四条航线 ＋ 各自 delay。
+   2026-09-20 批一改：位移单位从"SVG 用户单位"换成**自身盒子的百分比**（图片元素上无 SVG 坐标系），
+   并**把关键帧从 4 帧加到 6 帧、缓动换成 (.4,.1,.3,1)** —— 用户报的"一卡一卡"里，
+   有一段是"长距离位移只有 3 个中间帧、缓动又前松后紧"读出来的顿挫感。 */
 @keyframes knFlyInL{
-  0%{transform:translate(-150px,-124px) rotate(-24deg) scale(.78);opacity:0}
-  14%{opacity:1}
-  55%{transform:translate(-72px,-58px) rotate(-14deg) scale(.88)}
-  82%{transform:translate(-8px,-7px) rotate(-3deg) scale(.985)}
-  90%{transform:translate(0,2.4px) rotate(.6deg) scale(1)}
+  0%{transform:translate(-420%,-200%) rotate(-26deg) scale(.74);opacity:0}
+  10%{opacity:1}
+  38%{transform:translate(-208%,-104%) rotate(-17deg) scale(.82)}
+  62%{transform:translate(-92%,-42%) rotate(-9deg) scale(.9)}
+  82%{transform:translate(-22%,-9%) rotate(-2.5deg) scale(.97)}
+  92%{transform:translate(0,4%) rotate(1.2deg) scale(1.015)}
   100%{transform:translate(0,0) rotate(0) scale(1)}}
 @keyframes knFlyInR{
-  0%{transform:translate(152px,-136px) rotate(22deg) scale(.78);opacity:0}
-  14%{opacity:1}
-  55%{transform:translate(74px,-64px) rotate(13deg) scale(.88)}
-  82%{transform:translate(8px,-7px) rotate(3deg) scale(.985)}
-  90%{transform:translate(0,2.4px) rotate(-.6deg) scale(1)}
+  0%{transform:translate(430%,-215%) rotate(24deg) scale(.74);opacity:0}
+  10%{opacity:1}
+  38%{transform:translate(214%,-110%) rotate(16deg) scale(.82)}
+  62%{transform:translate(94%,-45%) rotate(8deg) scale(.9)}
+  82%{transform:translate(24%,-10%) rotate(2.5deg) scale(.97)}
+  92%{transform:translate(0,4%) rotate(-1.2deg) scale(1.015)}
   100%{transform:translate(0,0) rotate(0) scale(1)}}
-#knowledgeGate .gscene .ko1{animation:knFlyInL 1.25s cubic-bezier(.35,.05,.25,1) .25s both}
-#knowledgeGate .gscene .ko2{animation:knFlyInR 1.25s cubic-bezier(.35,.05,.25,1) .68s both}
-#knowledgeGate .gscene .ko3{animation:knFlyInL 1.25s cubic-bezier(.35,.05,.25,1) 1.05s both}
-#knowledgeGate .gscene .ko4{animation:knFlyInR 1.25s cubic-bezier(.35,.05,.25,1) 1.40s both}
-#knowledgeGate .gscene .ko1 image,#knowledgeGate .gscene .ko3 image{
-  animation:knPulse .2s ease-in-out .25s 6}
-#knowledgeGate .gscene .ko2 image,#knowledgeGate .gscene .ko4 image{
-  animation:knPulse .2s ease-in-out .68s 6}
-/* ⭐ 解锁：**鸟先各自飞走** → 树林与树枝随后淡出（"渐变成骑士"的那一半） */
+#knowledgeGate .koh1 img{animation:knFlyInL 1.25s cubic-bezier(.4,.1,.3,1) .25s both,
+                                  knPulse .2s ease-in-out .25s 6}
+#knowledgeGate .koh2 img{animation:knFlyInR 1.25s cubic-bezier(.4,.1,.3,1) .68s both,
+                                  knPulse .2s ease-in-out .68s 6}
+#knowledgeGate .koh3 img{animation:knFlyInL 1.25s cubic-bezier(.4,.1,.3,1) 1.05s both,
+                                  knPulse .2s ease-in-out 1.05s 6}
+#knowledgeGate .koh4 img{animation:knFlyInR 1.25s cubic-bezier(.4,.1,.3,1) 1.40s both,
+                                  knPulse .2s ease-in-out 1.40s 6}
+/* ⭐ 解锁：**鸟先各自飞走** → 树与枝随后淡出（"渐变成骑士"的那一半） */
 @keyframes knFlyOutL{
   0%{transform:translate(0,0) rotate(0) scale(1);opacity:1}
-  16%{transform:translate(-4px,-12px) rotate(-5deg) scale(1.02);opacity:1}
-  100%{transform:translate(-148px,-126px) rotate(-22deg) scale(.74);opacity:0}}
+  16%{transform:translate(-9%,-22%) rotate(-5deg) scale(1.03);opacity:1}
+  100%{transform:translate(-460%,-215%) rotate(-22deg) scale(.74);opacity:0}}
 @keyframes knFlyOutR{
   0%{transform:translate(0,0) rotate(0) scale(1);opacity:1}
-  16%{transform:translate(4px,-12px) rotate(5deg) scale(1.02);opacity:1}
-  100%{transform:translate(150px,-134px) rotate(21deg) scale(.74);opacity:0}}
-#knowledgeGate.unlocked .gscene .ko1{animation:knFlyOutL .95s cubic-bezier(.4,.02,.72,.42) .02s both}
-#knowledgeGate.unlocked .gscene .ko3{animation:knFlyOutL .95s cubic-bezier(.4,.02,.72,.42) .16s both}
-#knowledgeGate.unlocked .gscene .ko2{animation:knFlyOutR .95s cubic-bezier(.4,.02,.72,.42) .08s both}
-#knowledgeGate.unlocked .gscene .ko4{animation:knFlyOutR .95s cubic-bezier(.4,.02,.72,.42) .22s both}
-#knowledgeGate.unlocked .gscene .ko image{animation:knPulse .19s ease-in-out .02s 5}
-#knowledgeGate .gscene .gw-far,#knowledgeGate .gscene .gw-tree,
-#knowledgeGate .gscene .gw-branch{opacity:1;transition:opacity .8s ease .42s}
-#knowledgeGate.unlocked .gscene .gw-far,
-#knowledgeGate.unlocked .gscene .gw-tree,
-#knowledgeGate.unlocked .gscene .gw-branch{opacity:0}
+  16%{transform:translate(9%,-22%) rotate(5deg) scale(1.03);opacity:1}
+  100%{transform:translate(470%,-225%) rotate(21deg) scale(.74);opacity:0}}
+#knowledgeGate.unlocked .koh1 img{animation:knFlyOutL .95s cubic-bezier(.4,.02,.72,.42) .02s both,
+                                            knPulse .19s ease-in-out .02s 5}
+#knowledgeGate.unlocked .koh3 img{animation:knFlyOutL .95s cubic-bezier(.4,.02,.72,.42) .16s both,
+                                            knPulse .19s ease-in-out .16s 5}
+#knowledgeGate.unlocked .koh2 img{animation:knFlyOutR .95s cubic-bezier(.4,.02,.72,.42) .08s both,
+                                            knPulse .19s ease-in-out .08s 5}
+#knowledgeGate.unlocked .koh4 img{animation:knFlyOutR .95s cubic-bezier(.4,.02,.72,.42) .22s both,
+                                            knPulse .19s ease-in-out .22s 5}
+/* 解锁后树/枝只淡出、不位移 —— 位移交给两尊骑士的淡入（`.gknight`）。 */
 /* ⭐⭐ 骑士雕像（第十轮改版）：用户给了实物图（`03 pictrues` 的「骑士雕像装饰图案左/右」），
    并要求"**放在信封上**" —— 不再站在信封外的地上，而是压在信封纸面的左右两侧。
    ⚠️ 位置全用 **%**（信封宽/高的百分比）→ 窄屏自动随信封缩，**不需要任何媒体查询**
@@ -592,20 +631,23 @@ img{display:block}
    中央**只有那枚红色火漆**（--waxSz 104px，"强化"）。
    ⚠️ 留白仍是大头 —— 再加元素之前先问"这块能不能空着 / 这条信息有意义吗"。
    ⚠️ 尺寸全走 --ornIn / --crestSz（窄屏在媒体查询里再收一档），别写死 px。 */
-/* 左上：小型学院**盾徽**（盾形 ＋ 打开的书）。⭐ 它与蜡封压印是**同一枚 device**（只尺寸不同）：
-   抬头徽与火漆印本来就是同一枚院徽，不是两套图案。
-   ⚠️ 别改回圆环（会被读成"网页徽标"）；⚠️ 也别再加星／叶冠（用户这轮要求"减少装饰"）。 */
-/* 第十轮：用户给了实物图 → 信封左上角换成「城堡图案」图片（assets/crest.webp）。
-   ⚠️ 只取原图**中间的城堡图案**：外圈与环上的字没有采用 —— ① 那是 HOGWARTS（华纳商标），
-      不该出现在公开站点；② 在 ~60px 的显示尺寸下，那圈粗黑边会糊成一个黑饼。
-   ⚠️ `mix-blend-mode:multiply` 让白底自动消失（图＝白底＋墨绿线，信封是浅色纸）——
-      比抠图更稳：抗锯齿灰边与纸色相乘，边缘不会有白毛。
-   ⚠️ 图案是**横向**的（宽:高 ≈ 1.2），所以宽度取 --crestSz 的 1.5 倍、高度自动。 */
+/* 左上：**KNOWLEDGE 邮戳**（2026-09-20 批一 · 用户："这个徽章不用霍格沃兹也没关系，
+   你给替换成 KNOWLEDGE 嘛，但是外围的圆环不能去掉，它是一个邮戳形式，最好是红色或者灰色"）。
+   ⭐ 选**灰墨**：中央那枚火漆印是全片唯一的红 —— 左上再来一枚红戳会分掉"唯一视觉中心"；
+      而且真实的邮戳本来就是灰黑/蓝黑油墨。要换红只改 `--stampInk` 一处（在 .mail 上）。
+   ⚠️ 改用**内联 SVG** 画（圆环 ＋ 一行字 ＋ 两道短线），不再用位图：
+      ① 上一版是 300×251 的城堡图，本身源自 HOGWARTS 衍生图 —— 公开站点不该带它，已删资产；
+      ② 矢量在任何尺寸都锐利，还省掉一次解码（门一露脸就少一份主线程压力）。
+   ⚠️ `textLength` + `lengthAdjust="spacing"`：字宽由 CSS 定不了，用这个**锁死整行宽度**，
+      换字体也不会撑出圆环（只调字距、不变形字形）。
+   ⚠️ 压印感：整枚**逆时针转 -9°** —— 手盖的戳不会正得像网页徽标。 */
 #knowledgeGate .env-front .gcrest{position:absolute;
   left:var(--ornIn);top:calc(var(--ornIn) + 2px);
-  width:calc(var(--crestSz) * 1.5);height:auto;display:block;pointer-events:none;
-  mix-blend-mode:multiply}
-#knowledgeGate .gcrest img{width:100%;height:auto;display:block}
+  width:calc(var(--crestSz) * 1.6);height:auto;display:block;pointer-events:none;
+  color:var(--stampInk);transform:rotate(-9deg)}
+#knowledgeGate .gcrest svg{width:100%;height:auto;display:block}
+#knowledgeGate .gcrest text{font-family:var(--serif);font-size:13px;letter-spacing:0;
+  fill:currentColor}
 /* 右上：**小型**档案信息三行。⭐ 第三行 `VOL. I · MMXXVI` 在第六轮被删过，第七轮**加回来** ——
    用户这次明确点名要保留这三行。
    ⚠️ 月桂已删，所以右端离边就是 --ornIn（原来为躲月桂多缩了 12px，这条别照抄旧公式）。 */
@@ -814,7 +856,7 @@ img{display:block}
         写死 px 反而会在矮屏上把输入行推进遮住段。 */
   #knowledgeGate .mail{--envH:clamp(190px,29vh,246px);--cardH:clamp(186px,27vh,236px);--reveal:.60;
     /* 信封装饰在窄屏一起收：信封只有 ~319px 宽，不收就会把留白挤没 */
-    --ornIn:22px;--crestSz:34px}
+    --ornIn:22px;--crestSz:29px}
   #knowledgeGate .mail-card .gsub{display:none}
   /* ⚠️ 蜡封窄屏收一档（居中负 margin 由 calc(--waxSz/-2) 自动跟着走）；
         ⚠️ 别再把 right/top 写回去 —— 它是"居中定位"，写回 right/top 会跑偏。 */
@@ -824,6 +866,11 @@ img{display:block}
      ｜ 底边一对 6.6px 并排（EX LIBRIS ~48px ＋ 格言 ~130px，可用宽 275px）。
      ⚠️ 蜡封窄屏定 80px（不是 90）：封上后它是"旋转过的 bbox"（×1.135），90px 时下缘会压到
         收件信息区只差 2px —— 实测挤，收到 80 后留 5~7px。 */
+  /* ⚠️ 批一：左上角改**邮戳**后，它从"横向 1.5×"变成"近正方 1.6×"，下缘由 y66 长到 y78；
+     而窄屏信封只有 319×245，骑士高 78.9px —— 挤不进"邮戳下缘→收件区上缘"那段（仅剩 78.6px）。
+     于是窄屏两件一起收：邮戳 34→29（下缘回到 y70.4）＋ 骑士 14%→13%、上移到 31%
+     （实测净空：邮戳 5.6px、骑士底距收件区 7.7px）。回归里"骑士不压邮戳"那条当场抓到的。 */
+  #knowledgeGate .gknight{width:13%;top:31%}
   #knowledgeGate .gto{left:var(--ornIn);bottom:62px}
   #knowledgeGate .gto span{font-size:10px;letter-spacing:.06em}
   #knowledgeGate .gto b{font-size:7px;letter-spacing:.16em}
@@ -839,10 +886,9 @@ img{display:block}
   #knowledgeGate .gseal{margin-top:20px}
   /* 窄屏下 cover 只截到插画的中段（恰好是最空的一块）→ 取景右移，让书架进画面 */
   #knowledgeGate .gdeco{background-position:74% 30%;opacity:.30}
-  /* ⚠️ 窄屏场景收一档并**上移**：信封只有 319×245 时，46% 的场景（146×73）下缘会压到
-     左下「收件信息区」（回归实测 to=True）。收 44% ＋ 上移到 45.5% 后与收件区留 6px、
-     与左上徽记留 11px。桌面（520×324）不需要动 —— 那里 46%/50% 本来就有 6~10px 净空。 */
-  #knowledgeGate .gscene{width:44%;top:45.5%}
+  /* ⚠️ 窄屏场景（2026-09-20 批一重算）：信封只有 319×245、邮戳占 y24~70、收件区 top≈157
+     —— 场景收 80% 并下移到 35%：盒底 152（离收件区 5px）、鸟头约 77（离邮戳下缘 7px）。 */
+  #knowledgeGate .gscene{width:80%;top:35%}
 }
 /* ⚠️ 矮屏但不算窄屏（例如 1440×720）：信封矮了，可**蜡封是定尺的**（不随 vh 缩）——
    矮屏把蜡封收一档，免得它相对信封显得过大（第七轮桌面 104 → 矮屏 88）。 */
@@ -2515,6 +2561,15 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
            只画水墨；这样墨是叠在插画之上的（否则会被 15.5% 的插画层蒙住）。 -->
       <div class="gdeco" aria-hidden="true"></div>
       <canvas id="knowledgeGateWave" aria-hidden="true"></canvas>
+      <!-- ⭐ 左下角**双语语录**（2026-09-20 批一 · 用户提案）——
+           用户原话："主背景左小角太空了，加一段语录，中英双文，备注是谁说的"。
+           ⚠️ 挂在这里（`.gdeco` 之后、canvas 之前）是**故意的**：它就是纸上印着的一段话；
+              层级 `z-index:2`（在墨迹 canvas 之上）→ 墨点从它背后飘过，笔画的完整度不被切断。 -->
+      <p class="gquote">
+        <span class="gq-en">Working hard is important. But there is something that matters even more, believing in yourself.</span>
+        <span class="gq-cn">努力很重要，然而更重要的是：相信自己。</span>
+        <span class="gq-by">—— 阿不思 · 邓布利多</span>
+      </p>
       <div class="gframe" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
       <div class="tscrim" aria-hidden="true"></div>
       <div class="gstage">
@@ -2569,26 +2624,34 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
                       stroke="rgba(138,109,43,.2)" stroke-width=".45"
                       vector-effect="non-scaling-stroke"/>
               </svg>
-              <!-- ⭐⭐ 中央「森林 · 猫头鹰」线描动图（2026-09-20 第九轮）——
-                   用户："中间这个图书的简绘太草率了，能不能加一个动图，就是一片森林，
-                   飞来三四个猫头鹰，找到树枝站住，然后就静止，类似 live 图，采取线描简绘风"。
-                   ⚠️ 它取代了原本「打开的书＋羽毛笔＋星徽」那版水印（用户嫌"太草率"）。
-                   ⭐ "live 图"＝**只有鸟会动**：树林/树枝/小叶全程静止；四只鸟依次飞入、
-                      落枝、站住，然后**彻底静止**（扑翅是有限次数关键帧，跑完就停）。
-                   ⚠️ 定位在最外层 `<g>`、动画在内层 `<g>`：CSS transform 会覆盖 SVG transform 属性。
-                   ⚠️ 仍是纯纸面底纹（DOM 在内框之后、所有信息之前）→ 压不到任何字。 -->
+              <!-- ⭐⭐ 中央「森林 · 猫头鹰」**图片版**（2026-09-20 批一重做）——
+                   用户："树太丑了，也不要 svg 了，用别的合适的格式吧"、
+                   "猫头鹰太靠下了，并且站位占的空间太小了，在不压盖其他要素的情况下尽量铺满"。
+                   ⚠️ 树是**三丛**同一张资产（高度递减、右丛镜像）→ 错落出纵深；
+                      别改成"一张整幅拉满"：整树拉伸会变成一排同样高的竹竿（试过、难看）。
+                   ⚠️ 这些图**保留 `loading="lazy"`**（首屏不必为门里的一幕付流量），
+                      但必须在 knowledge.js 的 **warmGateImages()** 里预取＋解码 ——
+                      门一露脸就要飞入，若那一刻才开始下载/解码，动画窗口里就会掉帧。 -->
               <span class="gscene" aria-hidden="true">
-                <svg class="gw" viewBox="0 0 260 130" fill="none" stroke-linecap="round" stroke-linejoin="round">
-  <g class="gw-far"><path d="M14.0 130.0 L14.0 117.3"/><path d="M-3.0 117.3 L14.0 32.0 L31.0 117.3 Z"/><path d="M9.6 69.7 Q14.0 62.9 18.4 69.7"/><path d="M5.2 95.2 Q14.0 88.3 22.8 95.2"/><path d="M1.4 116.8 Q14.0 109.9 26.6 116.8"/><path d="M249.0 130.0 L249.0 118.8"/><path d="M234.0 118.8 L249.0 44.0 L264.0 118.8 Z"/><path d="M245.1 77.1 Q249.0 71.1 252.9 77.1"/><path d="M241.2 99.5 Q249.0 93.5 256.8 99.5"/><path d="M237.9 118.4 Q249.0 112.4 260.1 118.4"/></g>
-  <g class="gw-tree"><path d="M30.0 130.0 L30.0 124.0"/><path d="M19.0 124.0 L30.0 84.0 L41.0 124.0 Z"/><path d="M27.1 101.7 Q30.0 98.5 32.9 101.7"/><path d="M24.3 113.7 Q30.0 110.5 35.7 113.7"/><path d="M46.0 130.0 L46.0 121.7"/><path d="M32.0 121.7 L46.0 66.0 L60.0 121.7 Z"/><path d="M42.4 90.6 Q46.0 86.2 49.6 90.6"/><path d="M38.7 107.3 Q46.0 102.8 53.3 107.3"/><path d="M35.6 121.4 Q46.0 116.9 56.4 121.4"/><path d="M62.0 130.0 L62.0 125.3"/><path d="M52.0 125.3 L62.0 94.0 L72.0 125.3 Z"/><path d="M59.4 107.9 Q62.0 105.3 64.6 107.9"/><path d="M78.0 130.0 L78.0 122.7"/><path d="M65.0 122.7 L78.0 74.0 L91.0 122.7 Z"/><path d="M74.6 95.6 Q78.0 91.6 81.4 95.6"/><path d="M71.2 110.1 Q78.0 106.2 84.8 110.1"/><path d="M144.0 130.0 L144.0 125.8"/><path d="M135.0 125.8 L144.0 98.0 L153.0 125.8 Z"/><path d="M141.7 110.3 Q144.0 108.1 146.3 110.3"/><path d="M160.0 130.0 L160.0 123.5"/><path d="M148.0 123.5 L160.0 80.0 L172.0 123.5 Z"/><path d="M156.9 99.2 Q160.0 95.8 163.1 99.2"/><path d="M153.8 112.2 Q160.0 108.8 166.2 112.2"/><path d="M178.0 130.0 L178.0 124.8"/><path d="M168.0 124.8 L178.0 90.0 L188.0 124.8 Z"/><path d="M175.4 105.4 Q178.0 102.6 180.6 105.4"/><path d="M172.8 115.8 Q178.0 113.0 183.2 115.8"/><path d="M196.0 130.0 L196.0 122.2"/><path d="M182.0 122.2 L196.0 70.0 L210.0 122.2 Z"/><path d="M192.4 93.1 Q196.0 88.9 199.6 93.1"/><path d="M188.7 108.7 Q196.0 104.5 203.3 108.7"/><path d="M185.6 121.9 Q196.0 117.7 206.4 121.9"/><path d="M214.0 130.0 L214.0 125.3"/><path d="M204.0 125.3 L214.0 94.0 L224.0 125.3 Z"/><path d="M211.4 107.9 Q214.0 105.3 216.6 107.9"/><path d="M232.0 130.0 L232.0 123.2"/><path d="M220.0 123.2 L232.0 78.0 L244.0 123.2 Z"/><path d="M228.9 98.0 Q232.0 94.4 235.1 98.0"/><path d="M225.8 111.5 Q232.0 107.9 238.2 111.5"/><path d="M248.0 130.0 L248.0 121.2"/><path d="M233.0 121.2 L248.0 62.0 L263.0 121.2 Z"/><path d="M244.1 88.2 Q248.0 83.4 251.9 88.2"/><path d="M240.2 105.9 Q248.0 101.1 255.8 105.9"/><path d="M236.9 120.8 Q248.0 116.1 259.1 120.8"/></g>
-  <g class="gw-branch"><path d="M0 86 Q64 90 128 84 Q192 70 256 50 L256 51.6 Q192 73 128 88 Q64 93 0 92 Z"/><path d="M196 72 Q204 58 216 51"/><path d="M92 83 Q100 70 112 65"/><path d="M226 62 Q236 55 248 52"/><path d="M47 87.6 A5 2.2 0 1 0 57 87.6 A5 2.2 0 1 0 47 87.6 Z"/></g>
-  <path d="M0 0 Q6 -7 14 -5.6 Q10 3.4 0 0 Z" transform="translate(218 51) rotate(-34)"/><path d="M0 0 Q6 -7 14 -5.6 Q10 3.4 0 0 Z" transform="translate(250 52) rotate(-26)"/><path d="M0 0 Q6 -7 14 -5.6 Q10 3.4 0 0 Z" transform="translate(112 65) rotate(-38)"/><path d="M0 0 Q6 -7 14 -5.6 Q10 3.4 0 0 Z" transform="translate(196 77) rotate(-30)"/>
-  <g transform="translate(62.0 86.5) rotate(-1.2) scale(0.96)"><g class="ko ko1"><image href="assets/owl-line.webp" x="-10.4" y="-38" width="20.8" height="44"
-                         preserveAspectRatio="xMidYMax meet"/></g></g><g transform="translate(112.0 84.3) rotate(0.8) scale(1.04)"><g class="ko ko2"><image href="assets/owl-line.webp" x="-10.4" y="-38" width="20.8" height="44"
-                         preserveAspectRatio="xMidYMax meet"/></g></g><g transform="translate(162.0 75.1) rotate(-1.6) scale(0.97)"><g class="ko ko3"><image href="assets/owl-line.webp" x="-10.4" y="-38" width="20.8" height="44"
-                         preserveAspectRatio="xMidYMax meet"/></g></g><g transform="translate(206.0 63.7) rotate(1.0) scale(1.05)"><g class="ko ko4"><image href="assets/owl-line.webp" x="-10.4" y="-38" width="20.8" height="44"
-                         preserveAspectRatio="xMidYMax meet"/></g></g>
-</svg>
+                <img class="gf gf-l" src="assets/forest-line.webp?v=20260920c" alt=""
+                     width="458" height="279" decoding="async" loading="lazy">
+                <img class="gf gf-m" src="assets/forest-line.webp?v=20260920c" alt=""
+                     width="458" height="279" decoding="async" loading="lazy">
+                <img class="gf gf-r" src="assets/forest-line.webp?v=20260920c" alt=""
+                     width="458" height="279" decoding="async" loading="lazy">
+                <!-- 树枝容器：四只鸟挂在它**内部**，落脚偏移只写一次百分比（见 CSS 注释） -->
+                <span class="gperch">
+                  <img class="gb" src="assets/branch-line.webp?v=20260920c" alt=""
+                       width="974" height="134" decoding="async" loading="lazy">
+                  <span class="koh koh1"><img src="assets/owl-line.webp" alt=""
+                        width="160" height="339" decoding="async" loading="lazy"></span>
+                  <span class="koh koh2"><img src="assets/owl-line.webp" alt=""
+                        width="160" height="339" decoding="async" loading="lazy"></span>
+                  <span class="koh koh3"><img src="assets/owl-line.webp" alt=""
+                        width="160" height="339" decoding="async" loading="lazy"></span>
+                  <span class="koh koh4"><img src="assets/owl-line.webp" alt=""
+                        width="160" height="339" decoding="async" loading="lazy"></span>
+                </span>
               </span>
               <!-- ⭐ 解锁后：中央场景渐隐 → 信封**左右各一尊骑士雕像**淡入。
                    用户："让合上信封的草图变成左右两个骑士，就是为了**不产生压盖**" ——
@@ -2614,9 +2677,14 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
                    ⚠️ 与蜡封压印**同一枚 device**（只是尺寸不同）：抬头徽与火漆印本来就是
                       同一枚院徽，不是两套图案。⚠️ 别改回圆环（会被读成"网页徽标"），
                       也别再加星／叶冠（用户这轮要求"减少装饰"）。 -->
-              <span class="gcrest">
-                <img src="assets/crest.webp?v=20260920a" alt="" loading="lazy" decoding="async"
-                     width="300" height="251">
+              <span class="gcrest" aria-hidden="true">
+                <svg viewBox="0 0 100 100" aria-hidden="true">
+                  <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" stroke-width="3"/>
+                  <path d="M25 27.5H75M25 72.5H75" stroke="currentColor" stroke-width="1.7"
+                        stroke-linecap="round"/>
+                  <text x="50" y="55.6" text-anchor="middle" textLength="76"
+                        lengthAdjust="spacing">KNOWLEDGE</text>
+                </svg>
               </span>
               <!-- 右上：**小型**档案信息三行（第七轮用户点名"保留 LETTER No.001、
                    KNOWLEDGE ARCHIVE、VOL. I · MMXXVI" → 第六轮删掉的第三行**加回来**）。
@@ -2897,6 +2965,6 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 
 <script src="docs.js?v=20260920c"></script>
 <script src="app.js?v=20260920f"></script>
-<script src="knowledge.js?v=20260920p"></script>
+<script src="knowledge.js?v=20260920q"></script>
 </body>
 </html>

@@ -615,7 +615,10 @@ function showKnowledgeGate() {
   void g.offsetWidth;
   g.classList.add("open");                 // 封口翻起 →（延时）信纸抽出
   document.body.style.overflow = "hidden";
-  knowledgeWave.start();
+  // ⚠️ 墨迹 canvas **延后一拍**再起（2026-09-20 批一）：它自己要 setup/size/画头几帧，
+  //    与"门露脸 ＋ 四只鸟起飞"挤在同一帧里会互相拖 —— 实测帧间隔尖峰就落在这一拍。
+  //    延 60ms 内眼看不出来（墨是氛围），却把这段主线程开销让到了飞入动画之前。
+  setTimeout(function () { knowledgeWave.start(); }, 60);
   setTimeout(function () { if (inp) inp.focus(); }, 1480);   // 等信纸抽到位再落焦点
 }
 
@@ -776,7 +779,39 @@ function openKnowledge(d) {
   kd.scrollTop = 0;
 }
 
-// ---------- 6. 事件绑定 ----------
+// ---------- 6. 空闲预热门的图片（2026-09-20 批一：治"猫头鹰飞来一卡一卡、飞走不卡"）----------
+//   症状为什么是"飞来卡、飞走不卡"：飞入发生在**门刚露脸**的那一刻，而那一刻同时压着三件事 ——
+//     ① 门的书卷插画 knowledge-bg.jpg（310 KB）首次解码
+//     ② 树上那几张 `<img>` 首次解码（懒加载 ⇒ 正好排在露脸这一刻）
+//     ③ 墨迹 canvas 的 setup/size/头几帧
+//   飞离发生在几秒之后，这些都早已冷启动完毕 → 所以"飞走不卡"。
+//   治法：**页面 load 之后、浏览器空闲时**把门的图预先取回并 `decode()` ——
+//     不进首屏关键路径（首屏仍是 9 请求 / 0.44 MB），却让门一露脸时全是解码好的位图。
+function warmGateImages() {
+  var list = [
+    "assets/forest-line.webp?v=20260920c",
+    "assets/branch-line.webp?v=20260920c",
+    "assets/owl-line.webp",
+    "assets/knowledge-bg.jpg?v=20260920a",
+    "assets/knight-l.webp?v=20260920a",
+    "assets/knight-r.webp?v=20260920a"
+  ];
+  list.forEach(function (u) {
+    var im = new Image();
+    im.src = u;
+    if (im.decode) im.decode().catch(function () {});   // 失败也无妨：真打开时浏览器会自己再解
+  });
+}
+(function warmGateLater() {
+  var go = function () {
+    if (window.requestIdleCallback) requestIdleCallback(warmGateImages, { timeout: 2500 });
+    else setTimeout(warmGateImages, 900);
+  };
+  if (document.readyState === "complete") go();
+  else window.addEventListener("load", go);
+})();
+
+// ---------- 7. 事件绑定 ----------
 (function bindKnowledge() {
   var ex = document.getElementById("knowledgeExit");
   var gok = document.getElementById("knowledgeGateOk");
