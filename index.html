@@ -448,37 +448,37 @@ img{display:block}
   transform:rotate(-7deg) scale(1.55);
   transition:opacity .2s ease-out 1.16s,transform .3s cubic-bezier(.2,1.5,.4,1) 1.16s}
 #knowledgeGate .postmark svg{width:100%;height:100%;display:block}
-/* 衔着信封的大猫头鹰头（线描）——用户："猫头鹰能不能加入" → 之后两次收紧：
-   "虽然是简绘的，但是也太简单了，高级一点" → 重画细节；
-   "这个猫头鹰也不协调，你不如用一个大的猫头鹰头衔在嘴里" → **只画头（不画身体）**、
-   **尺寸放大一档**、**喙尖压过信封上沿**（所以读作"猫头鹰衔着这封信"）。
-   ⚠️ 只画头是关键：整只站着的小猫头鹰在信封边上像一张贴纸；头 + 喙衔住信口，比例才协调。
-   ⚠️ 它是 `.mail` 的直接子级（不是 `.mail-env` 的子级）：`.mail-env` 自己是 stacking context，
-      放进去的话再高的 z-index 也压不过信纸（z-index 5），会被整只盖住。
-   位置用 `bottom` 算：信封上沿 = 距 mail 底 `--envH`，bottom = envH - 6px（让喙尖低于信口 6px = "衔住"）。
-   z-index 7：压过信纸(5)与前片(6)，所以信抽出来时它仍咬在最前面。 */
-/* 从信封背后探出的大猫头鹰头（2026-09-20 用户：和信封一样宽的脑袋，合上时从背后探出衔住信封）。
+/* 猫头鹰：**AI 书插画**（2026-09-20 用户："SVG 简绘太草台班子，建议出一个图片挂进去"）。
+   资产 assets/knowledge-owl.webp（透明底 1000×950 / 165KB，水墨绿＋鎏金眼，与门同一色系）。
+   沿用的机制不变：
    ⚠️ "探出"用 **clip-path**，不用 translateY：裁剪线就是**信封上沿**（盒子底边贴着信封顶），
-      从 inset(100%) 过渡到 inset(0) ＝ 猫头鹰从信封上沿**向上生长出来** —— 这才是
-      "从信封背后探出"的物理（translateY 会把整只推到信封区域里，矮视口下还会从信封底部漏出来）。
-   ⚠️ z-index:2 < 前片(3)：喙尖越过信封上沿的那一小截若压进信封区，被前片遮住 = "咬在信封上"。
-   ⚠️ inset 的上下留 -70px 负值：drop-shadow 是先渲染后裁剪，不给余量阴影会被裁掉一圈。
-   时序：封口 0.58s 合上 → 猫头鹰 0.9s 探出（1.15s）→ 蜡封 1.14s 落下时它已经咬住了。 */
-#knowledgeGate .perchowl{position:absolute;left:3%;right:3%;bottom:calc(var(--envH) - 18px);
-  aspect-ratio:520/250;z-index:2;color:#2f5d50;pointer-events:none;
-  filter:drop-shadow(0 10px 20px rgba(47,93,80,.26));
+      从 inset(100%) 过渡到 inset(-70px) ＝ 猫头鹰从信封上沿**向上生长出来**。
+   ⚠️ z-index:2 < 前片(3)：压进信封区的部分被前片遮住 = "在信封背后 / 咬在信封上"。
+   ⚠️ inset 的 -70px 负值：drop-shadow 先渲染后裁剪，不给余量阴影会被裁掉一圈。
+   ⚠️ 它是 `.mail` 的直接子级（不是 `.mail-env` 的子级）——放进 mail-env 会被它的
+      stacking context 锁住，压不过信纸。
+   时序：封口 0.58s 合上 → 猫头鹰 0.9s 探出（1.15s）→ 蜡封 1.14s 落下时它已经咬住了。
+   ⭐⭐ **"衔住"的几何**：容器底边 = 信封上沿略下 10px；图片自身再 **translateY(42.3%)** 下沉
+      （transform 不占布局）—— 喙尖（在图高 57.7% 处）正好落在信封上沿略下方。
+      **42.3% = 1 − 0.577，换图必须重算**（流程：tmp/owl/mat.py 抠图 → finalize.py 出构图预览核对）。 */
+#knowledgeGate .perchowl{position:absolute;left:6%;right:6%;bottom:calc(var(--envH) - 10px);
+  aspect-ratio:1000/950;z-index:2;pointer-events:none;
+  filter:drop-shadow(0 10px 18px rgba(47,93,80,.30));
   clip-path:inset(100% -70px -70px -70px);
   transition:clip-path 1.15s cubic-bezier(.24,.9,.3,1) .9s}
-#knowledgeGate.unlocked .perchowl{clip-path:inset(-70px -70px -70px -70px)}
-/* 探出完成后的轻微呼吸（幅度要小 —— 大脑袋晃大了会很怪） */
-#knowledgeGate.unlocked .perchowl svg{animation:knOwlSway 5.6s ease-in-out 2.2s infinite}
+/* 探出完成后的轻微呼吸：挂在**容器**上 —— img 的 transform 已被"下沉 42.3%"占用，
+   关键帧会**整体替换** transform，挂 img 上会把下沉抵消（猫头鹰跳回原位）。 */
+#knowledgeGate.unlocked .perchowl{clip-path:inset(-70px -70px -70px -70px);
+  animation:knOwlSway 5.6s ease-in-out 2.2s infinite}
 @keyframes knOwlSway{
   0%,100%{transform:translateY(0) rotate(0deg)}
   50%{transform:translateY(-2.5px) rotate(-.2deg)}
 }
-/* ⚠️ overflow:visible 必须留：喙尖画在 viewBox 之外（往下多画一段），
-   被裁掉的话"衔住信封"这件事就没了。 */
-#knowledgeGate .perchowl svg{width:100%;height:100%;display:block;overflow:visible}
+#knowledgeGate .perchowl img{position:absolute;left:0;top:0;width:100%;height:auto;
+  display:block;aspect-ratio:1000/950;transform:translateY(42.3%)}
+/* ⚠️ aspect-ratio 必须给：lazy 图在加载前没有固有高度（height:auto = 0）→
+   零面积元素不进 IntersectionObserver → **懒加载永远不触发**（死锁，实测踩过）。
+   显式给宽高比后，未加载也有盒子 → 进视口即开始加载。 */
 
 /* 抽出态：封口翻起 + 信纸升起（并把前片提到信纸之上，留在信封里的那段才藏得住）
    ⚠️ 封口翻起时加投影：不然它和背景纸色几乎同色，"信封开了"这件事看不见
@@ -2386,51 +2386,14 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
                   .unlocked 时才缓缓升起（transition，不是 animation，好配合时序）。
                ⚠️ 喙尖画进盒子底边之下几像素 → 越过信封上沿 = "衔住信封"。 -->
           <div class="perchowl">
-            <svg viewBox="0 0 520 250" fill="none" stroke="currentColor" stroke-width="2.4"
-                 stroke-linecap="round" stroke-linejoin="round">
-              <defs>
-                <radialGradient id="knOwlFace" cx="50%" cy="38%" r="64%">
-                  <stop offset="0" stop-color="#fffaf0" stop-opacity=".97"/>
-                  <stop offset="1" stop-color="#efe4cb" stop-opacity=".18"/>
-                </radialGradient>
-                <linearGradient id="knOwlBody" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0" stop-color="#5d9180" stop-opacity=".2"/>
-                  <stop offset="1" stop-color="#265043" stop-opacity=".4"/>
-                </linearGradient>
-              </defs>
-              <!-- 头轮廓：**宽扁**（和信封一样宽，高只有宽的一半）。
-                   耳簇与轮廓合成同一条线（角鸮剪影）—— 独立小三角贴上去会像犄角。
-                   ⚠️ 耳尖别太高太尖：又高又尖读成"猫耳"（已踩过），短钝外撇才是鸮。 -->
-              <path d="M120 72
-                       C 116 52 104 34 86 20   C 78 44 72 62 72 82
-                       C 44 100 22 132 22 164  C 22 210 118 248 260 250
-                       C 402 248 498 210 498 164  C 498 132 476 100 448 82
-                       C 448 62 442 44 434 20   C 416 34 404 52 400 72
-                       C 362 58 312 52 260 52   C 208 52 158 58 120 72 Z"
-                    fill="url(#knOwlBody)"/>
-              <!-- 面盘：宽心形，顶部中间只浅凹一丝 -->
-              <path d="M260 224 C 168 224 108 202 108 152 C 108 112 152 82 226 77
-                       c 8 17 60 17 68 0 C 368 82 412 112 412 152 C 412 202 352 224 260 224 Z"
-                    fill="url(#knOwlFace)" stroke-opacity=".35"/>
-              <!-- 额头中缝：面盘凹口到喙根的一道淡纹（角鸮的额纹，也填补两眼间的空） -->
-              <path d="M260 86 C 258 108 258 140 260 170" stroke-opacity=".28"/>
-              <!-- 眉脊：从耳簇根斜向喙的两道弧（猫头鹰的"X"脸就靠它） -->
-              <path d="M96 112 C 150 88 208 84 246 97" stroke-opacity=".6"/>
-              <path d="M424 112 C 370 88 312 84 274 97" stroke-opacity=".6"/>
-              <!-- 眼：**沉静凝视**而非卡通大眼 —— 瞳孔收小、高光只剩一丝 -->
-              <circle cx="186" cy="142" r="24"/>
-              <circle cx="334" cy="142" r="24"/>
-              <circle cx="186" cy="142" r="17" fill="#b08a3e" fill-opacity=".38" stroke="none"/>
-              <circle cx="334" cy="142" r="17" fill="#b08a3e" fill-opacity=".38" stroke="none"/>
-              <circle cx="186" cy="142" r="9" fill="currentColor" stroke="none"/>
-              <circle cx="334" cy="142" r="9" fill="currentColor" stroke="none"/>
-              <circle cx="180" cy="136" r="2.6" fill="#fffdf7" stroke="none" opacity=".8"/>
-              <circle cx="328" cy="136" r="2.6" fill="#fffdf7" stroke="none" opacity=".8"/>
-              <!-- 喙：短钩喙，尖端画到 viewBox 底边之外 → 越过信封上沿 = 衔住信封 -->
-              <path d="M260 178 c 16 0 25 8.5 22 21 c -2 11 -10 22 -22 36
-                       c -12 -14 -20 -25 -22 -36 c -3 -12.5 6 -21 22 -21 z"
-                    fill="currentColor" fill-opacity=".75" stroke="none"/>
-            </svg>
+            <!-- 2026-09-20 用户："SVG 简绘太草台班子，建议出一个图片挂进去"
+                 → 换成 AI 生成的书插画（水墨绿＋鎏金眼，透明底 WebP 1000×950 / 165KB）。
+                 ⚠️ 图片比容器**下沉 42.3%**（transform 不占布局）：喙尖（图高 57.7% 处）正好
+                    落在容器底边 = 信封上沿略下方 → 被 env-front(3) 遮住 = "喙衔住信封"。
+                 ⚠️ 42.3% = 1 − 0.577。**换图必须重算这个数**（跑 tmp/owl/finalize.py 出构图预览核对）。
+                 ⚠️ 摇摆动画 knOwlSway 挂在**容器**上：img 的 transform 已被"下沉"占用，
+                    关键帧会**整体替换** transform —— 挂 img 上会把下沉抵消（猫头鹰跳上去）。 -->
+            <img src="assets/knowledge-owl.webp?v=20260920a" alt="" loading="lazy" decoding="async">
           </div>
         </div>
         <!-- 解锁后出现的按钮（在信封下方，像一枚拆信刀） -->
