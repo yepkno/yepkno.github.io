@@ -552,9 +552,8 @@ img{display:block}
 
 /* 蜡封位置：压在**信封正中**（略偏上），落在封口 V 之上 —— 现实里火漆就压在封口尖上。
    它是信封上**唯一的纹章**（第六轮删掉了外面那圈"环＋铭文"的圆形印记）。
-   ⭐ 起手从"1.55 倍砸下来"改到 **.92**（第七轮定 .88，**第八轮按用户给的曲线改成
-   `scale(0.92 → 1.03 → 1)`** ＋ 阴影变化）。上一版"1.55 → 原大 + 强回弹
-   cubic-bezier(.2,1.5,.4,1)"正是要被换掉的那种夸张缩放。
+   ⭐ 起手的缩放**只.** 是"还没压平"的 .94（第七轮 .88 ／ 第八轮 .92 都偏"弹"）——
+   演进史：1.55 倍砸下来 → .88 → .92 → **.94（单调收敛，不再冲过 1）**。
    ⚠️ `transform` 与 `filter` 必须与 `knStamp` 的 **100% 帧逐字一致**
       （动画带 `both`，结束态就停在这两个值上；不一致会导致结束瞬间跳一下）。
    ⚠️ -7° 的歪角全程保持（火漆不会盖得端端正正）；启动时机 **1.18s**
@@ -562,7 +561,7 @@ img{display:block}
 #knowledgeGate .postmark{position:absolute;left:50%;top:44%;
   width:var(--waxSz);height:var(--waxSz);z-index:8;
   margin:calc(var(--waxSz) / -2) 0 0 calc(var(--waxSz) / -2);opacity:0;pointer-events:none;
-  transform-origin:center;transform:rotate(-7deg) scale(.92);
+  transform-origin:center;transform:rotate(-7deg) translateY(0) scale(.94);
   filter:drop-shadow(0 2px 5px rgba(74,32,20,.26))}
 #knowledgeGate .postmark svg{width:100%;height:100%;display:block}
 /* 猫头鹰：**AI 学院绘本插画（2026-09-20 第六轮）**。
@@ -634,12 +633,12 @@ img{display:block}
   100% {transform:translateY(var(--openY)) rotate(-1.1deg)}
 }
 
-/* ⭐⭐ 合上态的**完整时序**（第八轮去掉"信封一颤"后的定稿，单位 s）：
+/* ⭐⭐ 合上态的**完整时序**（第八轮之二"去爆闪"后的定稿，单位 s）：
      ① 信纸平滑收回            knReturn  0     ~ 0.60
      ② 封口翻回并**轻微回弹**      过渡     0.58  ~ 1.18（缓动带一点过冲 → 回弹）
-     ③ 封口完全闭合后**火漆淡入 + 压印**  knStamp 1.18  ~ 1.64（.92 → 1.03 → 1 ＋ 阴影收拢）
-     ④ 火漆完成后延迟 .32s → 按钮**淡入并上移 8px**  knEnter 1.96 ~ 2.46
-     ⑤ 同时金边**轻微亮起一次**后恢复              knFrame 1.96 ~ 3.01
+     ③ 封口完全闭合后**火漆"压上来"**  knStamp 1.18  ~ 1.86（.94 → 1，单调收敛 ＋ 阴影收紧）
+     ④ 火漆完成后延迟 .30s → 按钮**淡入并上移 8px**  knEnter 2.16 ~ 2.66
+     ⑤ 同时金边**轻微亮起一次**后恢复              knFrame 2.16 ~ 3.21
    目标是"信件密封 → 查阅档案按钮出现"是一个**连续叙事**，而不是两段互不相干的动画。
    ⚠️ 改任一步的时长，后面每一步的 delay 都要跟着改（它们是硬编码的绝对时间）。
    ⚠️⚠️ **第八轮删掉了 `knThud`**（`.mail-env` 被合上时"咚"地往下颤 3px）：用户原话 ——
@@ -661,20 +660,28 @@ img{display:block}
       是"合上时手一松"的量；再往上就成"夸张弹跳"了（用户明确排除）。 */
 #knowledgeGate.unlocked .env-flap{transform:perspective(1000px) rotateX(0deg);z-index:4;
   transition:transform .6s cubic-bezier(.3,1.3,.42,1) .58s,z-index 0s .58s}
-/* ③ 火漆**压印**（第八轮按用户给的曲线重写）：
-   `scale(.92 → 1.03 → 1)` —— 用户原话"使用 scale(0.92 → 1.03 → 1)，**配合轻微阴影变化**"。
-   上一版是 .88 → 1.04（离"压印完成"的量还差一点，且没有阴影参与）。
-   阴影表达式：落下时最散（`0 4px 9px`）→ 触纸那一刻最紧最实（`0 1px 3px`，α .42）→ 回弹后
-   略散（`0 2px 5px`，α .26）。**"轻微"是硬要求** —— 不要把 α 推过 .45，也不要加第二层大晕。
-   ⚠️ `.postmark` 基础样式里的 `filter` 必须和 100% 帧**逐字一致**，否则动画结束时会有一次跳变。
-   ⚠️ 动画用 `both`：结束后保留 100% 帧（＝基础值），所以不会有"回弹到无阴影"的闪烁。 */
-#knowledgeGate.unlocked .postmark{animation:knStamp .46s cubic-bezier(.32,.86,.4,1) 1.18s both}
+/* ③ 火漆**"封存"而不是"闪现"**（2026-09-20 第八轮之二 · 用户："信收进信封再密封这个动作
+   不要加爆闪的特效，换个更自然协调的动画特效"）。
+   ⚠️ 被换掉的那版为什么是"爆闪"：逐帧抓过实锤 —— 解锁后 **1.16s 信封上什么都没有，
+      1.32s 已经是一枚全饱和的暗红蜡块**。根因三条叠加：
+        ① `opacity` 只在**前 17%**（.46s × 38%）里从 0 冲到 1 —— 160ms 内"由无到全"；
+        ② `scale` **冲过 1**（.92 → 1.03 → 1）—— 过冲就是"弹一下"；
+        ③ 阴影**来回跳**（.30 → .42 → .26）—— 又给了一下"闪"。
+   ✅ 现在：① 淡入**拉长到 70% 的时长**（.68s × .7 ≈ .48s），蜡是"从纸面慢慢显出来"的；
+           ② `scale` **单调收敛 .94 → 1（绝不越过 1）** —— 读作"被压平摊开"，不是"弹一下"；
+           ③ 阴影**单调收紧**（.08 → .20 → .26），不来回；
+           ④ 顺带加 5px 的 `translateY`（从上往下落 5px）—— 给"盖上去"一点物理感。
+      缓动选 `cubic-bezier(.3,.6,.3,1)`（减速收尾 = 沉降感），时长 .46s → **.68s**。
+   ⚠️ `.postmark` 基础样式里的 `transform` / `filter` 必须和 100% 帧**逐字一致**，
+      否则动画结束时会有一次跳变。动画用 `both`：结束停在 100% 帧（＝基础值），无闪烁。
+   ⚠️ 改完**必须逐帧回看**（这版就是靠逐帧对比抓出来的）：启动 1.18s → 结束 1.86s。 */
+#knowledgeGate.unlocked .postmark{animation:knStamp .68s cubic-bezier(.3,.6,.3,1) 1.18s both}
 @keyframes knStamp{
-  0%  {opacity:0;transform:rotate(-7deg) scale(.92);
-       filter:drop-shadow(0 4px 9px rgba(74,32,20,.30))}
-  38% {opacity:1;transform:rotate(-7deg) scale(1.03);
-       filter:drop-shadow(0 1px 3px rgba(74,32,20,.42))}
-  100%{opacity:1;transform:rotate(-7deg) scale(1);
+  0%  {opacity:0;transform:rotate(-7deg) translateY(-5px) scale(.94);
+       filter:drop-shadow(0 5px 12px rgba(74,32,20,.08))}
+  70% {opacity:.94;transform:rotate(-7deg) translateY(-1px) scale(.995);
+       filter:drop-shadow(0 3px 8px rgba(74,32,20,.20))}
+  100%{opacity:1;transform:rotate(-7deg) translateY(0) scale(1);
        filter:drop-shadow(0 2px 5px rgba(74,32,20,.26))}
 }
 /* 解锁后不再"把输入行收拢成一条线"（那是旅游攻略门的手法）——这里由信纸收回承担 */
@@ -682,8 +689,10 @@ img{display:block}
 #knowledgeGate.unlocked .gok{opacity:1;pointer-events:none}
 /* ④⑤ 按钮：淡入 + 上移 8px，同时金边亮一次。
    ⚠️ **不用**共享的 `gentIn`（那是旅游攻略门"一条线长成按钮"的 scale(.64,.08)+blur(5px)，
-      属于另一套叙事）—— 这里要的是"信已封好，请你拆阅"的克制入场。 */
-#knowledgeGate.unlocked .genter{animation:knEnter .5s cubic-bezier(.2,.9,.3,1) 1.96s both}
+      属于另一套叙事）—— 这里要的是"信已封好，请你查阅"的克制入场。
+   ⚠️ delay **1.96 → 2.16s**（第八轮之二）：火漆时长从 .46 拉到 .68，结束点从 1.64 挪到 **1.86**，
+      再留 .30s 的呼吸（落在用户第 7 轮要求的 0.25~0.4s 里）。**改火漆时长必须同步改这里。** */
+#knowledgeGate.unlocked .genter{animation:knEnter .5s cubic-bezier(.2,.9,.3,1) 2.16s both}
 @keyframes knEnter{
   0%  {opacity:0;transform:translateY(8px)}
   100%{opacity:1;transform:translateY(0)}
@@ -692,10 +701,11 @@ img{display:block}
    只把金色**提亮一档再落回**：不发光（不加 box-shadow / blur）、不循环、只跑一次。
    ⚠️⚠️ 填充模式必须是 **`backwards`、不能是 `both`**：`both` 会把 100% 帧（.62）永久钉住，
       而**动画值优先于普通声明** → 第八轮新加的 `:hover::before{…,.9}` 会被它整条吃掉
-      （用户要的"hover 边框轻微变亮"就永远不生效）。`backwards` 只在 1.96s 的延迟期垫上
+      （用户要的"hover 边框轻微变亮"就永远不生效）。`backwards` 只在延迟期垫上
       0% 帧（＝基础值 .62，与静态一致），跑完自动交还给普通级联 → hover 正常。
-      0% / 100% 两帧本就等于基础值，所以改成 backwards **看不出任何差别**。 */
-#knowledgeGate.unlocked .genter::before{animation:knFrame 1.05s ease-out 1.96s backwards}
+      0% / 100% 两帧本就等于基础值，所以改成 backwards **看不出任何差别**。
+   ⚠️ delay 与 `knEnter` **必须同刻**（2.16s）—— 两者是同一拍"按钮出现"的两面。 */
+#knowledgeGate.unlocked .genter::before{animation:knFrame 1.05s ease-out 2.16s backwards}
 @keyframes knFrame{
   0%  {background:rgba(176,138,62,.62)}
   28% {background:rgba(214,182,116,.94)}
