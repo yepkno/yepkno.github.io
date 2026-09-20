@@ -288,14 +288,23 @@ img{display:block}
 #knowledgeGate .gok{color:rgba(92,86,74,.58)}
 #knowledgeGate .gok:hover{color:#2f5d50}
 #knowledgeGate .err{color:#a33b2a;text-shadow:none}
-/* 解锁后长出的「进入」按钮：墨绿→鎏金渐变 + 纸色内芯（hover 亮起） */
-#knowledgeGate .genter::before{background:linear-gradient(100deg,#2f5d50,#3f7a68 52%,#b08a3e)}
-#knowledgeGate .genter .genter-in{background:#fbf7ee;color:#2b2a26}
-#knowledgeGate .genter:hover .genter-in{background:transparent;color:#fbf7ee}
-#knowledgeGate .genter::after{background:
-  radial-gradient(38% 74% at 16% 50%,rgba(47,93,80,.85),transparent 72%),
-  radial-gradient(34% 68% at 52% 50%,rgba(176,138,62,.78),transparent 74%),
-  radial-gradient(40% 74% at 86% 50%,rgba(63,122,104,.72),transparent 72%)}
+/* 「拆阅」按钮：**学院徽章式**（2026-09-20 第三轮，用户："按钮比较普通，需要与整个学院风视觉统一"）。
+   ⚠️ 三条硬约束（用户明确排除的）：**不要发光** → 把共享的 `::after` 模糊彩雾整条 `display:none`；
+   **不要明显渐变** → 纯墨绿底（不是渐变）＋ 极细金描边 ＋ 两根发丝线；
+   **不做成现代 SaaS／夸张游戏按钮** → 方角（2~3px）、衬线、字距 .2em、不用 pill 圆角。
+   徽章式点缀（必须极克制）：文字前一枚 5px 金菱形，文字后一支细描边箭头，间距 12px。
+   ⚠️ hover 只把墨绿**加深一档**（不发光、不换色系）；键盘可达性仍靠共享的 :focus-visible 焦点环。 */
+#knowledgeGate .genter{padding:1.5px;border-radius:3px}
+#knowledgeGate .genter::before{background:rgba(176,138,62,.62);border-radius:3px}
+#knowledgeGate .genter::after{display:none}
+#knowledgeGate .genter .genter-in{display:flex;align-items:center;gap:12px;
+  padding:11px 26px;border-radius:2px;background:#2f5d50;color:#f4efe2;
+  font-family:var(--serif);font-size:15px;font-weight:500;letter-spacing:.2em;
+  box-shadow:inset 0 0 0 1px rgba(240,234,220,.13),inset 0 1px 0 rgba(255,255,255,.08)}
+#knowledgeGate .genter:hover .genter-in{background:#3a6c5d;color:#fffdf6}
+#knowledgeGate .ge-orn{flex:none;width:5px;height:5px;background:rgba(214,182,116,.85);
+  transform:rotate(45deg)}
+#knowledgeGate .ge-arrow{flex:none;width:20px;height:11px;color:rgba(226,198,140,.9)}
 
 /* ---- 排面（2026-09-20 用户："太单调了"）：让纸面有学院该有的细节 ----
    原来只有几团墨 + 一张空纸，于是这里补四件：① 背景书卷插画（复用门户那张简绘，
@@ -344,9 +353,13 @@ img{display:block}
    信封里、一半抽出来"（原来 .96 几乎整张抽离，看着像"信纸压在信封上"）。
    推导：信纸底边最终高度 = (envH-cardH)/2 + 抽出量，要求它 = envH - cardH*(1-reveal)，
    所以 抽出量 = (envH-cardH)/2 + cardH*reveal，padding-top = envH + cardH*reveal。
-   ⚠️ 改 `--reveal` 时**这两个式子必须一起改**（它们是同一个几何的两半）。 */
-#knowledgeGate .mail{--envH:clamp(212px,33vh,320px);--cardH:clamp(200px,26vh,232px);
-  --reveal:.62;
+   2026-09-20 第三轮（用户三条）：① **信纸太小、存在感不够** → --cardH 与 --envH 一起放大
+   （信纸必须 ≤ 信封高，否则会从信封下沿探出去）；② **抽出不够** → --reveal .62 → **.56**
+   （"大约一半留在里面、一半露出来"）；③ 排版重做（见下方 .mail-card 内容样式）。
+   ⚠️ 改 `--reveal` 时**这两个式子必须一起改**（它们是同一个几何的两半）。
+   ⚠️ 窄屏 / 矮屏另有覆盖（矮屏会把 --reveal 抬起来 + 藏掉说明行，保证输入行落在露出段）。 */
+#knowledgeGate .mail{--envH:clamp(236px,36vh,352px);--cardH:clamp(228px,34vh,332px);
+  --reveal:.58;
   --openY:calc((var(--cardH) - var(--envH)) / 2 - var(--cardH) * var(--reveal));
   position:relative;width:min(520px,calc(92vw - 40px));margin:0 auto;
   padding-top:calc(var(--envH) + var(--cardH) * var(--reveal))}
@@ -402,24 +415,38 @@ img{display:block}
    ⚠️ 宽度**必须明显窄于信封**（现 74%）—— 否则抽出来时会把翻起的封口整片盖住，
      看着就只是"一个盒子上面放了张纸"，读不出"信是从信封里抽出来的"。
    ⚠️ 阴影随高度走：信纸升得越高影子越大越散（原来是一路不变的，看着像贴图）。 */
-#knowledgeGate .mail-card{position:absolute;left:13%;right:13%;
+#knowledgeGate .mail-card{position:absolute;left:11.5%;right:11.5%;
   bottom:calc((var(--envH) - var(--cardH)) / 2);
   height:var(--cardH);z-index:2;overflow:hidden;
   display:flex;flex-direction:column;align-items:center;
-  justify-content:flex-start;padding:12px 16px 0;border-radius:2px;
+  justify-content:flex-start;padding:clamp(12px,1.5vh,18px) 26px 0;border-radius:2px;
   background:linear-gradient(170deg,#fffefb,#f9f2e4);
   border:1px solid rgba(176,138,62,.3);
   box-shadow:0 7px 16px rgba(47,93,80,.15);
   transform:translateY(0) rotate(0deg);
   transition:box-shadow .55s ease .28s}
-/* ⚠️ 信纸只露出上半段（--reveal）→ 内容必须**靠上排**，密码表单落在露出段；
-      原来的垂直居中会把输入框排进被信封前片遮住的下半段（用户看到"输入框消失了"）。
-      露出段高度 ≈ cardH*reveal ≈ 130px，装下 眉标+标题+说明+输入行 正好。 */
-#knowledgeGate .mail-card .geyebrow{margin-bottom:5px}
-#knowledgeGate .mail-card .gtitle{margin:0 0 4px;line-height:1.25}
-#knowledgeGate .mail-card .gsub{margin:0 0 8px;line-height:1.3}
-/* ⚠️ .gsync 继承共享样式的 margin-top:30px —— 在信纸里这 30px 会把输入行推进遮住段 */
-#knowledgeGate .mail-card .gsync{margin-top:10px}
+/* 信纸上的排版（2026-09-20 第三轮，用户："文字比较拥挤，字体和排版也不够精致"）：
+   ① 一律走站内**古典衬线栈** `--serif`（Noto Serif SC / 思源宋体 / 宋体），不是无衬线；
+   ② 层级靠**字号差 + 颜色差 + 间距**拉开，不靠加粗堆叠：
+      眉标 11px/字距.42em/鎏金 → 标题衬线/墨黑 → 一道 52px 细金抬头线 → 说明行/灰/行高 1.65 → 输入行；
+   ③ 左右各留 26px 内边距 —— **正文永不贴纸边**。
+   ⚠️ 内容必须**靠上排**：信纸只露出 cardH*reveal（≈175px），下半段被信封前片遮住。
+   ⭐⭐ **纵向节奏一律用 `vh` 参与 clamp**（不是固定 px）：露出段 = cardH*reveal 是**随 vh 缩的**，
+      内容若写死 px，矮屏（720/768）就会溢出、输入行被信封前片吃掉（实测 900 高时超了 11px）。
+      用 vh 之后矮屏自动收拢，**不需要再为每种屏高写覆盖**。 */
+#knowledgeGate .mail-card .geyebrow{margin-bottom:clamp(7px,1vh,12px);font-size:11px;line-height:1;
+  letter-spacing:.42em;text-indent:.42em}
+#knowledgeGate .mail-card .gtitle{margin:0;font-family:var(--serif);font-weight:500;
+  font-size:clamp(19px,min(2.6vw,3.1vh),27px);line-height:1.2;letter-spacing:.06em;text-indent:.06em}
+/* 标题下的细金抬头线（学院信笺的惯用做法）；用 ::after 就不必加 DOM */
+#knowledgeGate .mail-card .gtitle::after{content:"";display:block;width:52px;height:1px;
+  margin:clamp(7px,1vh,12px) auto 0;
+  background:linear-gradient(90deg,transparent,rgba(176,138,62,.62),transparent)}
+#knowledgeGate .mail-card .gsub{margin:0;font-family:var(--serif);
+  font-size:clamp(11px,1.35vh,12px);line-height:1.65;letter-spacing:.06em;color:#6f6a5c}
+/* ⚠️ .gsync 继承共享样式的 margin-top:30px —— 在信纸里会把输入行推进遮住段 */
+#knowledgeGate .mail-card .gsync{margin-top:clamp(9px,1.6vh,16px)}
+#knowledgeGate .mail-card .err{margin-top:8px;font-family:var(--serif)}
 /* 徽记 / 题词 / 落款：都镶在信封前片的下缘（避开封口的三角区） */
 #knowledgeGate .env-front .gcrest{position:absolute;left:22px;bottom:22px;
   width:56px;height:56px;display:flex;align-items:center;justify-content:center;color:#2f5d50}
@@ -440,11 +467,12 @@ img{display:block}
 /* 邮戳：解锁后"咚"地盖上去（双圆环 + 环形文字 + 书卷纹章）。
    2026-09-20 用户："邮戳可以搭载信封的中间那里嘛" → 从右上角挪到**信封正中**（略偏上），
    落在封口的 V 之上 —— 现实里邮戳本来就会盖过封口。 */
-/* 蜡封：解锁后"咚"地压在信封正中（用户："邮戳用蜡封的"）。
-   落下感：从 1.55 倍压到原大（比油墨戳的 1.8 收一点 —— 火漆是重的、迟缓的），
-   只带一点点歪（-7°，火漆不会盖得端端正正），时机与 knThud（信封一颤）同步 1.14s。 */
-#knowledgeGate .postmark{position:absolute;left:50%;top:44%;width:112px;height:112px;z-index:8;
-  margin:-56px 0 0 -56px;color:#2f5d50;opacity:0;pointer-events:none;transform-origin:center;
+/* 蜡封：解锁后"咚"地压在信封正中。
+   落下感：从 1.55 倍压到原大（火漆是重的、迟缓的），只带一点点歪（-7°，不会盖得端端正正），
+   时机与 knThud（信封一颤）同步 1.14s。
+   ⚠️ 尺寸 112 → **96**（用户 2026-09-20："蜡封整体不要太大，不要成为整个信封最抢眼的元素"）。 */
+#knowledgeGate .postmark{position:absolute;left:50%;top:44%;width:96px;height:96px;z-index:8;
+  margin:-48px 0 0 -48px;opacity:0;pointer-events:none;transform-origin:center;
   transform:rotate(-7deg) scale(1.55);
   transition:opacity .2s ease-out 1.16s,transform .3s cubic-bezier(.2,1.5,.4,1) 1.16s}
 #knowledgeGate .postmark svg{width:100%;height:100%;display:block}
@@ -552,13 +580,24 @@ img{display:block}
 /* 说明行也不换行：信纸窄，换行会把眉标挤到 overflow:hidden 之外（都被回归里的裁剪断言量过） */
 #knowledgeGate .gsub{white-space:nowrap;font-size:clamp(11px,1.4vw,14px)}
 #knowledgeGate .gstage{padding:4px 20px 2px}
-@media (max-height:640px){
-  #knowledgeGate .mail{--envH:clamp(160px,26vh,220px)}
-  #knowledgeGate .gseal{margin-top:12px}
+/* ⚠️⚠️ 矮屏（≤860 高）：露出段 = cardH*reveal 会**跟着 vh 一起缩**，而信纸内容是**固定 px** ——
+   不处理的话输入行会被信封前片吃掉（回归里有硬断言"输入行完整落在露出段"）。
+   对策：矮屏把 --reveal 抬起来 + 藏掉说明行；更矮（≤700）再整体收一档尺寸与间距。
+   ⚠️ 回归跑在 900 高，所以这两条**不会掩盖正常高度的表现**。
+   ⚠️ 纵向节奏已全部改成 vh 参与 clamp（见 .mail-card 注释），所以这里**只需**处理露出比例
+      与说明行，不必再逐个写间距覆盖。 */
+@media (max-height:860px){
+  #knowledgeGate .mail{--reveal:.66}
+  #knowledgeGate .mail-card .gsub{display:none}
 }
 @media (max-width:600px){
+  /* 窄屏信纸：只调「信封/信纸尺寸 + 露出比例 + 藏说明行」——
+     ⚠️ 不要再在这里写 padding / 字号覆盖：纵向节奏已经是 vh 参与 clamp 的，会自适应；
+        写死 px 反而会在矮屏上把输入行推进遮住段。 */
+  #knowledgeGate .mail{--envH:clamp(190px,29vh,246px);--cardH:clamp(186px,27vh,236px);--reveal:.60}
+  #knowledgeGate .mail-card .gsub{display:none}
   /* ⚠️ 邮戳现在是"居中 + 负 margin"定位，窄屏只改尺寸，别再把 right/top 写回去（会跑偏） */
-  #knowledgeGate .postmark{width:88px;height:88px;margin:-44px 0 0 -44px}
+  #knowledgeGate .postmark{width:80px;height:80px;margin:-40px 0 0 -40px}
   #knowledgeGate .env-front .gcrest{width:46px;height:46px;left:16px;bottom:20px}
   #knowledgeGate .glatin{left:16px;font-size:9px;letter-spacing:.24em}
   #knowledgeGate .env-front::before{right:16px;bottom:26px;width:40%}
@@ -2259,6 +2298,9 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
             <div class="mail-card" id="knLetter">
               <div class="geyebrow">知识文档</div>
               <h2 class="gtitle">请输入访问密码</h2>
+              <!-- 说明行（正文）：2026-09-20 第三轮加回 —— 用户要"标题与正文形成明显层级"。
+                   信纸放大 + 抽出更多之后，露出段装得下它了（矮屏 / 窄屏会隐藏，见媒体查询）。 -->
+              <p class="gsub">输入栏目口令，即可进入文库</p>
               <div class="gsync">
                 <div class="gfield" id="knowledgeGateField">
                   <input type="password" id="knowledgeGatePwd" placeholder="密码" autocomplete="off"
@@ -2348,58 +2390,120 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
                       stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
               </svg>
             </div>
-            <!-- 蜡封（火漆印章）：解锁后"咚"地压在信封正中（用户 2026-09-20："邮戳用蜡封的"）。
-                 火漆的语言 = **不规则的厚蜡边 + 中央凹印**（不是油墨戳的细线）：
-                 深红蜡体（径向渐变 + 上缘高光 + 底部投影 = 立体），
-                 中心凹印一圈猫头鹰缩影（凹印是暗的，靠"边缘亮一圈"读出来）。
-                 ⚠️ 蜡的边缘故意不圆 —— 用多段贝塞尔捏出溢出的疙瘩边，太圆就像塑料贴纸。 -->
+            <!-- 蜡封（火漆）：解锁后"咚"地压在信封正中。
+                 2026-09-20 用户定稿："看起来比较假、塑料感/3D 感太强，不像真正压在信封上的火漆"。
+                 五条改法（**下次改之前先读**）：
+                 ① **删掉塑料高光** —— 原来那道亮粉色的"上缘高光"是罪魁（像珠子）。
+                    现在明暗只靠「整体极缓的径向明暗」+「一圈极薄的边缘厚度」；
+                 ② **厚度 = 侧壁**：同形轮廓向下错 1.6px 压一层暗色 → 薄薄一圈侧壁，
+                    读作"一坨蜡摊在纸上"，不是球；
+                 ③ **凹印是"压进去"的**：印面比蜡体暗一档；压痕**上半一道暗弧**（入光侧落在阴影里）、
+                    **下半一道极淡微亮**（转折返光）—— 这是雕刻凹陷的标准画法；
+                    猫头鹰缩影 = 先错开 +0.6/1px 铺一层浅红（下缘返光），再压主体暗红（**不是**浮雕贴图）；
+                 ④ **投影克制**：硬椭圆 → 一片几乎看不见的软晕（径向渐变淡出）；
+                 ⑤ **尺寸收一档**（96 / 窄屏 80）：不能比信封本身更抢眼。
+                 ⚠️ 回归绑死：必须保留 `id="knWax"` 与 `<circle r="37">`，否则蜡封断言会挂。 -->
             <div class="postmark" id="knPostmark">
               <svg viewBox="0 0 120 120" aria-hidden="true">
                 <defs>
-                  <radialGradient id="knWax" cx="42%" cy="34%" r="78%">
-                    <stop offset="0" stop-color="#c05252"/>
-                    <stop offset=".52" stop-color="#9a3535"/>
-                    <stop offset="1" stop-color="#6e2222"/>
+                  <!-- 蜡体：暗酒红。中心偏左上、衰减极缓（整体明暗，不是高光点） -->
+                  <radialGradient id="knWax" cx="40%" cy="34%" r="84%">
+                    <stop offset="0" stop-color="#a63c39"/>
+                    <stop offset=".55" stop-color="#8d2e2d"/>
+                    <stop offset="1" stop-color="#6b2020"/>
                   </radialGradient>
-                  <radialGradient id="knWaxImp" cx="46%" cy="40%" r="80%">
-                    <stop offset="0" stop-color="#7c2a2a"/>
-                    <stop offset="1" stop-color="#5c1d1d"/>
+                  <!-- 凹印底面：比蜡体暗一档、更少饱和（压下去的那一片） -->
+                  <radialGradient id="knWaxImp" cx="44%" cy="38%" r="86%">
+                    <stop offset="0" stop-color="#792727"/>
+                    <stop offset="1" stop-color="#5f1d1d"/>
+                  </radialGradient>
+                  <!-- 边缘厚度：上淡下暗的一条极薄渐变（只有这一层"光"，且压得极低） -->
+                  <linearGradient id="knWaxRim" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#d98b85" stop-opacity=".15"/>
+                    <stop offset=".5" stop-color="#000000" stop-opacity="0"/>
+                    <stop offset="1" stop-color="#3d1010" stop-opacity=".3"/>
+                  </linearGradient>
+                  <!-- 投影：软到几乎看不见 -->
+                  <radialGradient id="knWaxShadow" cx="50%" cy="50%" r="50%">
+                    <stop offset="0" stop-color="#5a2a1c" stop-opacity=".24"/>
+                    <stop offset=".6" stop-color="#5a2a1c" stop-opacity=".1"/>
+                    <stop offset="1" stop-color="#5a2a1c" stop-opacity="0"/>
                   </radialGradient>
                 </defs>
-                <!-- 蜡体：不规则边缘（火漆倒出来自然摊开的样子） -->
+
+                <!-- 投影：一片软晕，只让蜡和纸之间有一点点层次 -->
+                <ellipse cx="60" cy="103" rx="53" ry="13" fill="url(#knWaxShadow)"/>
+
+                <!-- 侧壁（厚度）：同形轮廓下移 1.6px，只露薄薄一圈 -->
                 <path d="M60 6 C 74 5 84 12 94 18 C 104 24 113 34 113 48
                          C 114 56 118 62 113 70 C 109 79 112 88 104 94
                          C 96 101 90 110 78 112 C 68 114 62 118 54 113
                          C 44 116 33 111 26 104 C 18 97 8 92 8 80
                          C 5 71 9 63 8 55 C 7 43 12 33 20 26
                          C 27 19 33 9 45 8 C 50 4 55 7 60 6 Z"
-                      fill="url(#knWax)" stroke="#5a1c1c" stroke-width="1"/>
-                <!-- 上缘高光：火漆干透前的光 -->
-                <path d="M30 26 C 38 16 50 10 62 10 C 74 10 84 15 90 22
-                         C 82 18 74 16 63 16 C 50 16 38 19 30 26 Z"
-                      fill="#e8a5a5" opacity=".5"/>
-                <!-- 凹印外圈：一圈压下去的环（暗底 + 下缘一线亮 = 凹陷感） -->
-                <circle cx="60" cy="62" r="37" fill="url(#knWaxImp)"/>
-                <circle cx="60" cy="62" r="37" fill="none" stroke="#4d1717" stroke-width="1.4"/>
-                <circle cx="60" cy="62" r="35" fill="none" stroke="#c05a5a" stroke-width=".8" opacity=".6"/>
-                <!-- 凹印内容：猫头鹰缩影（线条用暗色压在凹印上） -->
-                <g fill="none" stroke="#3f1414" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M45 44 C 42 38 39 34 35 31 C 35 37 36 41 38 45 Z M 75 44 C 78 38 81 34 85 31 C 85 37 84 41 82 45 Z"/>
-                  <circle cx="60" cy="52" r="13"/>
-                  <circle cx="54.5" cy="51" r="3.4"/>
-                  <circle cx="65.5" cy="51" r="3.4"/>
-                  <path d="M60 55 l 3 3.4 h -6 Z" fill="#3f1414" stroke="none"/>
-                  <path d="M48 76 C 52 66 55 61 60 55 C 65 61 68 66 72 76 C 66 71 54 71 48 76 Z" fill="#3f1414" stroke="none" opacity=".85"/>
+                      transform="translate(0 1.6)" fill="#4b1616" opacity=".5"/>
+                <!-- 蜡体本体（不规则边缘：火漆倒出来自然摊开的样子） -->
+                <path d="M60 6 C 74 5 84 12 94 18 C 104 24 113 34 113 48
+                         C 114 56 118 62 113 70 C 109 79 112 88 104 94
+                         C 96 101 90 110 78 112 C 68 114 62 118 54 113
+                         C 44 116 33 111 26 104 C 18 97 8 92 8 80
+                         C 5 71 9 63 8 55 C 7 43 12 33 20 26
+                         C 27 19 33 9 45 8 C 50 4 55 7 60 6 Z"
+                      fill="url(#knWax)"/>
+                <!-- 边缘起伏：上缘淡、下缘暗，只薄薄一圈（不是球面高光） -->
+                <path d="M60 6 C 74 5 84 12 94 18 C 104 24 113 34 113 48
+                         C 114 56 118 62 113 70 C 109 79 112 88 104 94
+                         C 96 101 90 110 78 112 C 68 114 62 118 54 113
+                         C 44 116 33 111 26 104 C 18 97 8 92 8 80
+                         C 5 71 9 63 8 55 C 7 43 12 33 20 26
+                         C 27 19 33 9 45 8 C 50 4 55 7 60 6 Z"
+                      fill="url(#knWaxRim)"/>
+                <path d="M60 6 C 74 5 84 12 94 18 C 104 24 113 34 113 48
+                         C 114 56 118 62 113 70 C 109 79 112 88 104 94
+                         C 96 101 90 110 78 112 C 68 114 62 118 54 113
+                         C 44 116 33 111 26 104 C 18 97 8 92 8 80
+                         C 5 71 9 63 8 55 C 7 43 12 33 20 26
+                         C 27 19 33 9 45 8 C 50 4 55 7 60 6 Z"
+                      fill="none" stroke="#5a1c1c" stroke-width=".6" opacity=".45"/>
+
+                <!-- 压痕：印面暗一档 + 上半暗弧 + 下半一线微亮（凹陷 + 转折返光） -->
+                <circle cx="60" cy="62" r="37" fill="url(#knWaxImp)" opacity=".93"/>
+                <path d="M24.6 57.5 A37 37 0 0 1 95.4 57.5" fill="none" stroke="#411010"
+                      stroke-width="2.1" opacity=".3" stroke-linecap="round"/>
+                <path d="M25.4 66.5 A37 37 0 0 0 94.6 66.5" fill="none" stroke="#cf7a72"
+                      stroke-width="1" opacity=".26" stroke-linecap="round"/>
+                <circle cx="60" cy="62" r="37" fill="none" stroke="#4a1414"
+                        stroke-width=".7" opacity=".38"/>
+
+                <!-- 凹印内容：猫头鹰缩影（雕刻凹陷画法 —— 浅红错位打底 + 暗红主体 + 眼/喙更深）。
+                     ⚠️ 剪影必须**一笔连通**（耳簇→头→身）：第一版把"头圆 + 胸梯形"分开画，
+                        中间留了缝，缩小后读成"小幽灵"而不是猫头鹰（放大实测过）。
+                     ⚠️ 再整体缩到 .87 并绕压痕圆心缩 —— 否则身子下缘会**越出 r=37 的圈**
+                        （实测：身子在 y94 处半宽 26 > 圈在该高度的半宽 18.6）。 -->
+                <g transform="translate(60 62) scale(.87) translate(-60 -62)">
+                  <g fill="#cf7a72" opacity=".3" transform="translate(.6 1)">
+                    <path d="M45 40 L41 28 C 48 32 53 37 56 40 C 58 39 62 39 64 40
+                             C 67 37 72 32 79 28 L75 40 C 82 45 86 54 86 63
+                             C 86 81 75 94 60 94 C 45 94 34 81 34 63 C 34 54 38 45 45 40 Z"/>
+                  </g>
+                  <g fill="#652121" opacity=".66">
+                    <path d="M45 40 L41 28 C 48 32 53 37 56 40 C 58 39 62 39 64 40
+                             C 67 37 72 32 79 28 L75 40 C 82 45 86 54 86 63
+                             C 86 81 75 94 60 94 C 45 94 34 81 34 63 C 34 54 38 45 45 40 Z"/>
+                  </g>
+                  <g fill="#3d1010" opacity=".55">
+                    <circle cx="52" cy="54" r="3.6"/>
+                    <circle cx="68" cy="54" r="3.6"/>
+                    <path d="M60 58.6 l 3.4 4.4 h -6.8 Z"/>
+                  </g>
                 </g>
-                <!-- 底部投影：蜡是厚的、坐在信封上 -->
-                <ellipse cx="60" cy="107" rx="40" ry="7" fill="#4a1515" opacity=".28"/>
               </svg>
             </div>
           </div>
         </div>
         <!-- 解锁后出现的按钮（在信封下方，像一枚拆信刀） -->
         <button type="button" class="genter" id="knowledgeGateEnter" hidden>
-          <span class="genter-in">拆阅 · 进入知识文库</span>
+          <span class="genter-in"><span class="ge-orn" aria-hidden="true"></span>拆阅 · 进入知识文库<svg class="ge-arrow" viewBox="0 0 22 12" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round"><path d="M1 6h17.6M13.4 1.5 18 6l-4.6 4.5"/></svg></span>
         </button>
         <div class="gseal" aria-hidden="true"><span>Ex Libris</span></div>
       </div>
