@@ -249,125 +249,87 @@ var knowledgeWave = (function () {
     }
   }
 
-  // ---- 魔法学院小物：猫头鹰 / 飘浮蜡烛 / 星尘 ----
-  // 2026-09-20 用户："能不能再加入一点哈利波特的元素，比如猫头鹰啥的"。
-  // ⚠️ 只做**通用的魔法学院意象**（猫头鹰、飘浮烛火、星尘），**不复刻任何影视作品的美术、
-  //    徽标或字体** —— 公开站点上照搬他人 IP 的具体形象有版权风险，"学院味"靠意象就够。
-  // 猫头鹰用**线描**（与页面那张学院简绘同一种笔法），比填色剪影更像这页的东西。
-  var owls = [], candles = [], stars = [], dust = [];
-  var owlGap = 0, candleGap = 0;
+  // ---- 魔法学院小物：羽毛笔 / 飘浮蜡烛 / 星尘 ----
+  // 2026-09-20 用户："加入一点哈利波特的元素，比如猫头鹰" → 先做了漂浮的线描猫头鹰；
+  // 同日用户又："漂浮的那个简绘猫头鹰换个别的吧"（线描小鸟飘在天上认不出来）
+  // → 换成**羽毛笔**：斜着缓缓飘过画面，笔尖在空气里拖出一条会淡去的墨线（"在空中写字"），
+  //   正好和水墨底子是一路的。猫头鹰没丢：改成**栖在信封上沿的静态猫头鹰**
+  //   （index.html 的 `.perchowl`）+ **邮戳正中的猫头鹰印记**。
+  // ⚠️ 只做**通用的魔法学院意象**，不复刻任何影视作品的美术、徽标或字体（版权）。
+  var quills = [], candles = [], stars = [], inkTrail = [];
+  var quillGap = 0, candleGap = 0, trailFade = 0;
 
-  function spawnOwl() {
+  function spawnQuill() {
     var dir = Math.random() < .5 ? 1 : -1;
-    // ⚠️ 飞行高度要**让开中间那块文字**：窄屏文字块几乎占满横向，
-    //    所以窄屏把航道压到最上面（.05~.19H），宽屏留一条 .10~.28H 的带。
+    // 航道让开中间的文字块：窄屏压到最上面，宽屏留一条带
     var band = W < 900 ? [.05, .19] : [.10, .28];
-    owls.push({
-      x: dir > 0 ? -W * .14 : W * 1.14,
+    quills.push({
+      x: dir > 0 ? -W * .1 : W * 1.1,
       y: H * (band[0] + Math.random() * (band[1] - band[0])),
       dir: dir,
-      s: Math.min(W, H) * (.075 + Math.random() * .03),
-      // ⚠️ 速度别太慢：0.00052W/帧 ≈ 45px/s，横穿要 40s —— 用户会觉得它"卡在边上"。
-      //    现在约 100~150px/s，横穿 13~16s，正好是一只慢悠悠飞过的猫头鹰。
-      v: (W * .00105 + Math.random() * W * .0004) * dir,
+      s: Math.min(W, H) * (.05 + Math.random() * .022),
+      v: (W * .00095 + Math.random() * W * .0004) * dir,
       ph: Math.random() * 6.2832,
       t: 0
     });
-    if (owls.length > 1) owls.shift();
+    if (quills.length > 1) quills.shift();
+    inkTrail = [];                       // 换一支笔 → 重新起一条墨线
   }
 
-  function drawOwl(o) {
-    var s = o.s, x = o.x, y = o.y + Math.sin(o.t * .0022 + o.ph) * s * .5;
-    var flap = Math.sin(o.t * .0075 + o.ph);            // -1..1：翼尖上下扇
-    var cs = "36,80,68", a = .6, d = o.dir;
-    function ink(al) { return "rgba(" + cs + "," + (a * al) + ")"; }
-    ctx.lineWidth = Math.max(1, s * .05);
+  // 返回笔尖的世界坐标（给墨线尾迹用）
+  function drawQuill(q) {
+    var s = q.s, d = q.dir;
+    // ⚠️ 上下摆动的频率要够快：墨线是笔尖轨迹，摆得太慢会拉成一条**笔直的杂线**
+    //（第一版 0.0026 + 0.8s 振幅，截图上看就是一条横线，不像"写出来的"）
+    var x = q.x, y = q.y + Math.sin(q.t * .0075 + q.ph) * s * .5;
+    var tilt = -0.45 * d + Math.sin(q.t * .0018 + q.ph) * .07;   // 笔身倾角（笔尖朝行进方向）
+    var cs = "36,80,68", a = .62, L = s * 2.7;                   // L = 羽毛全长
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(tilt);
     ctx.lineJoin = "round";
     ctx.lineCap = "round";
-    ctx.strokeStyle = ink(1);
-    ctx.fillStyle = ink(1);
-
-    // 尾羽：从身体后下方拖出的三根短线
-    ctx.beginPath();
-    for (var tf = 0; tf < 3; tf++) {
-      var ty = y + s * (.5 + tf * .15);
-      ctx.moveTo(x - d * s * .14, ty);
-      ctx.lineTo(x - d * s * (1.05 - tf * .1), ty + s * (.26 - tf * .09));
-    }
-    ctx.stroke();
-
-    // 双翼：**向后**扫出（⚠️ 别画成左右对称——那样左翼被头挡住，整只会像"飞猫"）
-    var tip = flap * s * .48;
-    ctx.fillStyle = ink(.24);
-    ctx.beginPath();                                     // 近翼
-    ctx.moveTo(x + d * s * .3, y - s * .05);
-    ctx.quadraticCurveTo(x - d * s * .35, y - s * .6 + tip, x - d * s * 1.5, y - s * .62 + tip);
-    ctx.quadraticCurveTo(x - d * s * .78, y + s * .1, x - d * s * .02, y + s * .34);
-    ctx.closePath(); ctx.fill(); ctx.stroke();
-    ctx.beginPath();                                     // 远翼
-    ctx.moveTo(x + d * s * .3, y - s * .26);
-    ctx.quadraticCurveTo(x - d * s * .26, y - s * .95 + tip, x - d * s * 1.15, y - s * 1.1 + tip);
-    ctx.quadraticCurveTo(x - d * s * .6, y - s * .4, x + d * s * .02, y + s * .12);
-    ctx.closePath(); ctx.fill(); ctx.stroke();
-    ctx.strokeStyle = ink(.8);                           // 翼尖三根飞羽
-    ctx.beginPath();
-    for (var wf = 0; wf < 3; wf++) {
-      var fx = x - d * s * (.95 + wf * .16), fy = y - s * (.52 - wf * .05) + tip;
-      ctx.moveTo(fx, fy);
-      ctx.lineTo(fx - d * s * (.34 - wf * .06), fy - s * (.16 - wf * .05));
-    }
-    ctx.stroke();
-
-    // ⚠️ 头要**大**（猫头鹰的头几乎与身体同宽，画小了就像别的动物）
-    var hx = x + d * s * .78, hy = y - s * .44, hr = s * .54;
-    ctx.strokeStyle = ink(1);
-    ctx.beginPath(); ctx.arc(hx, hy, hr, 0, 6.2832); ctx.stroke();      // 头
-    ctx.beginPath(); ctx.arc(hx + d * hr * .1, hy + hr * .06, hr * .6, 0, 6.2832); ctx.stroke();  // 脸盘
-    ctx.beginPath();                                     // 双耳簇
-    ctx.moveTo(hx - hr * .74, hy - hr * .62); ctx.lineTo(hx - hr * .5, hy - hr * 1.42);
-    ctx.lineTo(hx - hr * .1, hy - hr * .94);
-    ctx.moveTo(hx + hr * .42, hy - hr * .8); ctx.lineTo(hx + hr * .6, hy - hr * 1.52);
-    ctx.lineTo(hx + hr * .92, hy - hr * .8);
-    ctx.stroke();
-    // 眼：外圈 + 实心瞳（"大眼"是猫头鹰最好认的一笔）
-    var ey = hy - hr * .06, e1 = hx - d * hr * .3, e2 = hx + d * hr * .34;
-    ctx.beginPath(); ctx.arc(e1, ey, hr * .22, 0, 6.2832); ctx.stroke();
-    ctx.beginPath(); ctx.arc(e2, ey, hr * .22, 0, 6.2832); ctx.stroke();
-    ctx.beginPath(); ctx.arc(e1, ey, hr * .1, 0, 6.2832); ctx.fill();
-    ctx.beginPath(); ctx.arc(e2, ey, hr * .1, 0, 6.2832); ctx.fill();
-    ctx.beginPath();                                     // 喙
-    ctx.moveTo(hx + d * hr * .62, hy + hr * .14);
-    ctx.lineTo(hx + d * hr * .98, hy + hr * .36);
-    ctx.lineTo(hx + d * hr * .56, hy + hr * .48);
-    ctx.closePath(); ctx.fill();
-
-    // 身体 + 胸前两道羽纹
-    var by = y + s * .12;
-    ctx.beginPath();
-    ctx.ellipse(x, by, s * .42, s * .62, d * .1, 0, 6.2832);
-    ctx.stroke();
-    ctx.strokeStyle = ink(.45);
-    ctx.beginPath();
-    ctx.moveTo(x - s * .16, by + s * .08); ctx.quadraticCurveTo(x, by + s * .28, x + s * .18, by + s * .08);
-    ctx.moveTo(x - s * .13, by + s * .28); ctx.quadraticCurveTo(x, by + s * .46, x + s * .15, by + s * .28);
-    ctx.stroke();
-
-    // ⭐ 爪下抓着一封小信 —— "送信猫头鹰"，与中央那封信是同一条叙事
-    var lx = x - d * s * .05, ly = y + s * .84, ew = s * .64, eh = s * .46;
-    ctx.strokeStyle = ink(.85);
-    ctx.lineWidth = Math.max(.8, s * .04);
-    ctx.beginPath();
-    ctx.moveTo(x - s * .17, y + s * .62); ctx.lineTo(lx - s * .1, ly - s * .02);
-    ctx.moveTo(x + s * .17, y + s * .62); ctx.lineTo(lx + s * .1, ly - s * .02);
-    ctx.stroke();
-    ctx.fillStyle = "rgba(252,247,236,.94)";
-    ctx.fillRect(lx - ew / 2, ly, ew, eh);
-    ctx.strokeStyle = ink(.85);
-    ctx.strokeRect(lx - ew / 2, ly, ew, eh);
-    ctx.beginPath();
-    ctx.moveTo(lx - ew / 2, ly); ctx.lineTo(lx, ly + eh * .58); ctx.lineTo(lx + ew / 2, ly);
-    ctx.stroke();
     ctx.lineWidth = Math.max(1, s * .05);
+    // 羽片（叶形）：四段二次曲线合围
+    ctx.fillStyle = "rgba(" + cs + "," + (a * .16) + ")";
+    ctx.strokeStyle = "rgba(" + cs + "," + a + ")";
+    ctx.beginPath();
+    ctx.moveTo(0, L * .44);
+    ctx.quadraticCurveTo(-L * .36, L * .02, -L * .075, -L * .58);
+    ctx.quadraticCurveTo(-L * .02, -L * .68, 0, -L * .68);
+    ctx.quadraticCurveTo(L * .02, -L * .68, L * .075, -L * .58);
+    ctx.quadraticCurveTo(L * .36, L * .02, 0, L * .44);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    // 羽轴
+    ctx.beginPath();
+    ctx.moveTo(0, L * .46);
+    ctx.lineTo(0, -L * .66);
+    ctx.stroke();
+    // 羽枝：几道斜线（越靠笔尖越短）
+    ctx.strokeStyle = "rgba(" + cs + "," + (a * .45) + ")";
+    ctx.lineWidth = Math.max(.7, s * .03);
+    ctx.beginPath();
+    for (var i = 0; i < 8; i++) {
+      var ty = -L * .5 + i * L * .12;
+      var wd = L * .26 * (1 - Math.abs(i - 2.6) / 4.6);
+      if (wd < 0) continue;
+      ctx.moveTo(0, ty); ctx.lineTo(-wd, ty + L * .06);
+      ctx.moveTo(0, ty); ctx.lineTo(wd, ty + L * .06);
+    }
+    ctx.stroke();
+    // 笔尖
+    ctx.fillStyle = "rgba(" + cs + "," + (a * .9) + ")";
+    ctx.beginPath();
+    ctx.moveTo(-s * .07, L * .44);
+    ctx.lineTo(s * .07, L * .44);
+    ctx.lineTo(0, L * .62);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+    // 局部点 (0, L*.62) 旋转后的世界坐标
+    return [x - L * .62 * Math.sin(tilt), y + L * .62 * Math.cos(tilt)];
   }
 
   // 飘浮蜡烛：烛身 + 会抖的火苗 + 一圈暖光（用缓存贴图做光晕，省一次 createRadialGradient）
@@ -430,18 +392,7 @@ var knowledgeWave = (function () {
     }
   }
 
-  // 尾迹金尘：猫头鹰飞过留下的一串极淡金点
-  function drawDust() {
-    for (var i = dust.length - 1; i >= 0; i--) {
-      var d = dust[i];
-      d.a -= .0055;
-      d.x -= d.vx; d.y -= .12;
-      if (d.a <= 0) { dust.splice(i, 1); continue; }
-      ctx.fillStyle = "rgba(176,138,62," + d.a + ")";
-      ctx.beginPath(); ctx.arc(d.x, d.y, d.r, 0, 6.2832); ctx.fill();
-    }
-    if (dust.length > 90) dust.splice(0, dust.length - 90);
-  }
+  // （原来的 drawDust 金尘已随猫头鹰一起去掉，墨线在 step 里直接描）
 
   // ---- 沿金框游走的一道描金流光 ----
   // 一段约 40% 框长的金色光带沿证书内框缓缓绕行（约 15s 一圈），两端渐隐（彗尾）。
@@ -608,19 +559,33 @@ var knowledgeWave = (function () {
       if (cd.y < -60) { candles.splice(ci, 1); continue; }
       drawCandle(cd);
     }
-    owlGap++;
-    if (owlGap > 380) { owlGap = 0; spawnOwl(); }          // 约 6.3s 飞过一只
-    for (var oi = owls.length - 1; oi >= 0; oi--) {
-      var ow = owls[oi];
-      ow.t++; ow.x += ow.v;
-      if (ow.x < -W * .3 || ow.x > W * 1.3) { owls.splice(oi, 1); continue; }
-      drawOwl(ow);
-      if (ow.t % 7 === 0)                                  // 尾迹金尘（跟在尾羽后面）
-        dust.push({ x: ow.x - ow.dir * ow.s * 1.1, y: ow.y + ow.s * .7,
-                    r: Math.random() * 1.4 + .5, a: .22, vx: ow.v * 3 });
+    // 羽毛笔：缓缓飘过，笔尖在空气里写下一条墨线（约 3.3s 一支）
+    quillGap++;
+    if (quillGap > 200) { quillGap = 0; spawnQuill(); }
+    for (var qi = quills.length - 1; qi >= 0; qi--) {
+      var ql = quills[qi];
+      ql.t++; ql.x += ql.v;
+      if (ql.x < -W * .25 || ql.x > W * 1.25) { quills.splice(qi, 1); continue; }
+      var np = drawQuill(ql);
+      if (ql.t % 3 === 0) inkTrail.push({ x: np[0], y: np[1] });
+      if (inkTrail.length > 46) inkTrail.shift();      // 尾迹短一点，别拉成一条长直线
+    }
+    // 墨线尾迹：笔尖走过的一串点连成的淡墨线；笔走了就一边淡出、一边从旧端收短
+    if (quills.length) trailFade = Math.min(1, trailFade + .07);
+    else {
+      trailFade = Math.max(0, trailFade - .022);
+      if (inkTrail.length && nt % 2 === 0) inkTrail.shift();
+    }
+    if (inkTrail.length > 1 && trailFade > .01) {
+      ctx.strokeStyle = "rgba(36,80,68," + (.2 * trailFade) + ")";
+      ctx.lineWidth = 1.3;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(inkTrail[0].x, inkTrail[0].y);
+      for (var ti = 1; ti < inkTrail.length; ti++) ctx.lineTo(inkTrail[ti].x, inkTrail[ti].y);
+      ctx.stroke();
     }
     drawStars();
-    drawDust();
 
     // 描金流光（沿证书内框绕行；"减少动效"时不动，静帧靠墨与藤撑着）
     if (!REDUCE) {
@@ -654,8 +619,8 @@ var knowledgeWave = (function () {
     measureFrame();                        // 量一次金框的实际位置（给描金流光用）
     gilt = 0;
     blooms = []; flourishes = []; specks = [];
-    owls = []; candles = []; dust = [];
-    owlGap = 150; candleGap = 0;           // 蜡烛开场就来，猫头鹰约 2.5s 后掠过
+    quills = []; candles = []; inkTrail = [];
+    quillGap = 150; candleGap = 0;          // 蜡烛开场就来，羽毛笔约 2.5s 后飘过
     bloomGap = 60; flourishGap = 210;      // 开门后很快就有第一滴墨、第一枝藤
     mx = my = ax = ay = -9999; aura = 0; lastMx = lastMy = -9999; trailGap = 0;
     spawnCandle(true); spawnCandle(true);  // 常驻两支飘浮蜡烛

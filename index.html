@@ -347,34 +347,44 @@ img{display:block}
 #knowledgeGate .env-back{position:absolute;inset:0;border-radius:3px;
   background:linear-gradient(160deg,#ece1c9,#dfd2b4);
   box-shadow:inset 0 0 44px rgba(120,104,74,.22)}
-/* 信封前片：整块纸（信纸闭合时被它完全遮住）＋ 右下角的三道"地址线" */
+/* 信封前片：整块纸（信纸闭合时被它完全遮住）＋ 右下角的三道"地址线" ＋ 顶缘一道"信口" */
 #knowledgeGate .env-front{position:absolute;inset:0;z-index:3;border-radius:3px;
   background:linear-gradient(158deg,#fdfaf1 0%,#f4ecdc 100%);
   border:1px solid rgba(176,138,62,.42);
   box-shadow:0 1px 0 rgba(255,255,255,.7) inset,0 14px 30px rgba(47,93,80,.13)}
+/* ⚠️ 顶缘的"信口"（2026-09-20 用户："信封抽出的时候完全看不出来是抽出来的"）：
+   前片顶边压一道内阴影 + 一条深线，信纸抽出来时才看得出是**从这条口子里出来的**。
+   前片在抽出态 z-index 高于信纸，所以这条阴影会压在信纸下沿上 —— 正是要的效果。 */
+#knowledgeGate .env-front::after{content:"";position:absolute;left:0;right:0;top:0;height:16px;
+  border-radius:3px 3px 0 0;pointer-events:none;
+  box-shadow:inset 0 2px 5px rgba(88,74,50,.3);
+  background:linear-gradient(180deg,rgba(96,82,58,.22),rgba(96,82,58,.04) 55%,transparent)}
 #knowledgeGate .env-front::before{content:"";position:absolute;right:24px;bottom:28px;
   width:44%;max-width:190px;height:26px;
   background:repeating-linear-gradient(180deg,rgba(110,104,90,.42) 0 1px,transparent 1px 12px);
   -webkit-mask-image:linear-gradient(90deg,transparent,#000 26%,#000 100%);
   mask-image:linear-gradient(90deg,transparent,#000 26%,#000 100%)}
-/* 封口（上三角）：闭合时压在信纸上，开门时绕上边翻起 */
-#knowledgeGate .env-flap{position:absolute;left:0;right:0;top:0;height:52%;z-index:4;
+/* 封口（上三角）：闭合时压在信纸上，开门时绕上边翻起。
+   ⚠️ 两个取值是为了"看得出开了"：高度 62%（原来是 52%，翻起来只剩两条细边）；
+   翻开只到 -158°（原来 -177° 贴平，投影上几乎看不见），留一点角度才有"翻开的一片"。
+   填充也比信纸深一档，好和信纸分开。 */
+#knowledgeGate .env-flap{position:absolute;left:0;right:0;top:0;height:62%;z-index:4;
   transform-origin:top center;transform:rotateX(0deg);
-  background:linear-gradient(180deg,#f8f2e5,#e8ddc4);
-  border:1px solid rgba(176,138,62,.34);border-top:0;
+  background:linear-gradient(180deg,#f0e5cd,#d6c5a1);
+  border:1px solid rgba(176,138,62,.58);border-top:0;
   -webkit-clip-path:polygon(0 0,100% 0,50% 100%);clip-path:polygon(0 0,100% 0,50% 100%);
-  transition:transform .68s cubic-bezier(.22,.9,.24,1) .26s,z-index 0s .6s}
+  transition:transform .68s cubic-bezier(.22,.9,.24,1) .26s,z-index 0s .6s,filter .3s}
 /* 信纸：密码表单在这一层。
-   ⚠️ 宽度**必须窄于信封**（84%）—— 否则抽出来时会把翻起的封口整片盖住，
+   ⚠️ 宽度**必须明显窄于信封**（现 74%）—— 否则抽出来时会把翻起的封口整片盖住，
      看着就只是"一个盒子上面放了张纸"，读不出"信是从信封里抽出来的"。 */
-#knowledgeGate .mail-card{position:absolute;left:10%;right:10%;
+#knowledgeGate .mail-card{position:absolute;left:13%;right:13%;
   bottom:calc((var(--envH) - var(--cardH)) / 2);
   height:var(--cardH);z-index:1;overflow:hidden;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   padding:12px 16px;border-radius:2px;
-  background:linear-gradient(170deg,#fffdf7,#f8f1e2);
+  background:linear-gradient(170deg,#fffefb,#f9f2e4);
   border:1px solid rgba(176,138,62,.3);
-  box-shadow:0 10px 26px rgba(47,93,80,.16);
+  box-shadow:0 16px 34px rgba(47,93,80,.22),0 2px 6px rgba(47,93,80,.14);
   transform:translateY(0);
   transition:transform .92s cubic-bezier(.2,.9,.2,1) .46s,z-index 0s .6s}
 /* 徽记 / 题词 / 落款：都镶在信封前片的下缘（避开封口的三角区） */
@@ -394,15 +404,29 @@ img{display:block}
 #knowledgeGate .gseal span{padding:0 12px;font-size:10px;letter-spacing:.32em;text-indent:.32em;
   color:rgba(110,104,90,.7);text-transform:uppercase}
 
-/* 邮戳：解锁后"咚"地盖上去（双圆环 + 环形文字 + 书卷纹章） */
-#knowledgeGate .postmark{position:absolute;right:18px;top:16px;width:102px;height:102px;z-index:8;
-  color:#2f5d50;opacity:0;pointer-events:none;transform-origin:center;
+/* 邮戳：解锁后"咚"地盖上去（双圆环 + 环形文字 + 书卷纹章）。
+   2026-09-20 用户："邮戳可以搭载信封的中间那里嘛" → 从右上角挪到**信封正中**（略偏上），
+   落在封口的 V 之上 —— 现实里邮戳本来就会盖过封口。 */
+#knowledgeGate .postmark{position:absolute;left:50%;top:44%;width:112px;height:112px;z-index:8;
+  margin:-56px 0 0 -56px;color:#2f5d50;opacity:0;pointer-events:none;transform-origin:center;
   transform:rotate(-13deg) scale(1.8);
   transition:opacity .26s ease-out 1.16s,transform .34s cubic-bezier(.2,1.5,.4,1) 1.16s}
-#knowledgeGate .postmark svg{width:100%;height:100%;display:block;opacity:.8}
+#knowledgeGate .postmark svg{width:100%;height:100%;display:block;opacity:.82}
+/* 栖在信封上沿的猫头鹰（线描，静态）——用户："猫头鹰能不能加入"。
+   ⚠️ 它是 `.mail` 的直接子级（不是 `.mail-env` 的子级）：`.mail-env` 自己是 stacking context，
+      放进去的话再高的 z-index 也压不过信纸（z-index 5），会被整只盖住。
+   位置用 `bottom` 算：信封上沿 = 距 mail 底 `--envH`，所以 bottom = envH - 4px 让爪子正好落在沿上。
+   z-index 7：压过信纸(5)与前片(6)，所以信抽出来时它仍站在最前面（像栖在信封口上）。 */
+#knowledgeGate .perchowl{position:absolute;right:2px;bottom:calc(var(--envH) - 4px);
+  width:64px;height:72px;z-index:7;color:#2f5d50;pointer-events:none;
+  filter:drop-shadow(0 6px 12px rgba(47,93,80,.22))}
+#knowledgeGate .perchowl svg{width:100%;height:100%;display:block}
 
-/* 抽出态：封口翻起 + 信纸升起（并把前片提到信纸之上，留在信封里的那段才藏得住） */
-#knowledgeGate.open .env-flap{transform:rotateX(-177deg);z-index:0}
+/* 抽出态：封口翻起 + 信纸升起（并把前片提到信纸之上，留在信封里的那段才藏得住）
+   ⚠️ 封口翻起时加投影：不然它和背景纸色几乎同色，"信封开了"这件事看不见
+      （用户原话："这个信封抽出的时候，完全看不出来是抽出来的"）。 */
+#knowledgeGate.open .env-flap{transform:rotateX(-158deg);z-index:0;
+  filter:drop-shadow(0 10px 16px rgba(47,93,80,.22))}
 #knowledgeGate.open .mail-card{transform:translateY(var(--openY));z-index:5}
 #knowledgeGate.open .env-front{z-index:6}
 
@@ -447,13 +471,12 @@ img{display:block}
   #knowledgeGate .gseal{margin-top:12px}
 }
 @media (max-width:600px){
-  #knowledgeGate .postmark{width:84px;height:84px;right:12px;top:12px}
+  /* ⚠️ 邮戳现在是"居中 + 负 margin"定位，窄屏只改尺寸，别再把 right/top 写回去（会跑偏） */
+  #knowledgeGate .postmark{width:88px;height:88px;margin:-44px 0 0 -44px}
+  #knowledgeGate .perchowl{width:46px;height:52px;right:0}
   #knowledgeGate .env-front .gcrest{width:46px;height:46px;left:16px;bottom:20px}
   #knowledgeGate .glatin{left:16px;font-size:9px;letter-spacing:.24em}
   #knowledgeGate .env-front::before{right:16px;bottom:26px;width:40%}
-}
-@media (max-width:600px){
-  #knowledgeGate .gcrest{width:54px;height:54px;margin-bottom:16px}
   #knowledgeGate .gseal{margin-top:20px}
   /* 窄屏下 cover 只截到插画的中段（恰好是最空的一块）→ 取景右移，让书架进画面 */
   #knowledgeGate .gdeco{background-position:74% 30%;opacity:.18}
@@ -2159,7 +2182,7 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
               <span class="glatin">Scientia · Sapientia · Veritas</span>
             </div>
             <div class="env-flap"></div>
-            <!-- 邮戳：解锁后"咚"地盖上去（圆环 + 环形文字 + 书卷纹章） -->
+            <!-- 邮戳：解锁后"咚"地盖上去（圆环 + 环形文字 + **猫头鹰**印记）—— 居中信封正中 -->
             <div class="postmark" id="knPostmark">
               <svg viewBox="0 0 120 120" aria-hidden="true">
                 <defs><path id="knPmArc" d="M60,60 m-45,0 a45,45 0 1,1 90,0 a45,45 0 1,1 -90,0"/></defs>
@@ -2168,12 +2191,42 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
                 <text font-size="12.5" letter-spacing="2.4" fill="currentColor" font-family="Georgia,serif">
                   <textPath href="#knPmArc" startOffset="0">KNOWLEDGE &#183; ARCHIVE &#183; &#21494;&#12398;&#25991;&#24235; &#183; </textPath>
                 </text>
-                <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M40 52c7-2.6 13-1 19 3.4 6-4.4 12-6 19-3.4v25c-7-2.6-13-1-19 3.4-6-4.4-12-6-19-3.4z"/>
-                  <path d="M59 55.4v25"/>
+                <g transform="translate(36,34) scale(2)" fill="none" stroke="currentColor"
+                   stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M6.6 5.2 8.2 1.6l2 2.6"/>
+                  <path d="M17.4 5.2 15.8 1.6l-2 2.6"/>
+                  <circle cx="12" cy="8.8" r="5.6"/>
+                  <circle cx="9.8" cy="8.4" r="1.9"/>
+                  <circle cx="14.2" cy="8.4" r="1.9"/>
+                  <circle cx="9.8" cy="8.4" r=".7" fill="currentColor" stroke="none"/>
+                  <circle cx="14.2" cy="8.4" r=".7" fill="currentColor" stroke="none"/>
+                  <path d="M12 10.6l1.2 1.5h-2.4z" fill="currentColor" stroke="none"/>
+                  <path d="M12 14.6c2.9 0 4.9 2 4.9 4.7 0 2.8-2.1 4.7-4.9 4.7s-4.9-1.9-4.9-4.7c0-2.7 2-4.7 4.9-4.7z"/>
                 </g>
               </svg>
             </div>
+          </div>
+          <!-- 栖在信封上沿的猫头鹰（线描，静态）——用户："猫头鹰能不能加入"。
+               ⚠️ 必须放在 `.mail-env` **外面**、与 `.mail-card` 同级：`.mail-env` 自己有 z-index，
+                  是个 stacking context，放里面的话猫头鹰再高的 z-index 也逃不出来，
+                  会被信纸（z-index 5）整只盖住（第一版就是这样，只露出半只）。 -->
+          <div class="perchowl">
+            <svg viewBox="0 0 64 72" fill="none" stroke="currentColor" stroke-width="1.7"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20.5 15.5 22.8 5.6l6.6 6.6"/>
+              <path d="M43.5 15.5 41.2 5.6l-6.6 6.6"/>
+              <circle cx="32" cy="25.5" r="14"/>
+              <circle cx="32" cy="27" r="9.6"/>
+              <circle cx="26.6" cy="24.6" r="4.1"/>
+              <circle cx="37.4" cy="24.6" r="4.1"/>
+              <circle cx="26.6" cy="24.6" r="1.4" fill="currentColor" stroke="none"/>
+              <circle cx="37.4" cy="24.6" r="1.4" fill="currentColor" stroke="none"/>
+              <path d="M32 29.2l2.5 3.4h-5z" fill="currentColor" stroke="none"/>
+              <path d="M32 39.6c7.2 0 12.2 5.3 12.2 12.4 0 7.3-5.3 12.2-12.2 12.2S19.8 59.3 19.8 52c0-7.1 5-12.4 12.2-12.4z"/>
+              <path d="M26.6 50.6c3.4 2.8 7.4 2.8 10.8 0"/>
+              <path d="M27.6 55.8c2.6 2.1 6.2 2.1 8.8 0"/>
+              <path d="M27.2 64.6v4.2M36.8 64.6v4.2"/>
+            </svg>
           </div>
         </div>
         <!-- 解锁后出现的按钮（在信封下方，像一枚拆信刀） -->
@@ -2275,6 +2328,6 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 
 <script src="docs.js?v=20260920c"></script>
 <script src="app.js?v=20260920f"></script>
-<script src="knowledge.js?v=20260920h"></script>
+<script src="knowledge.js?v=20260920i"></script>
 </body>
 </html>
