@@ -307,8 +307,8 @@ var knowledgeWave = (function () {
     return { pts: pts, cum: cum, len: total };
   })();
 
-  var signatures = [], candles = [], stars = [];
-  var signGap = 0, candleGap = 0;   // ⚠️ candleGap 原来和 quillGap 写在同一行，替换时被一起删掉过
+  var signatures = [], stars = [];
+  var signGap = 0;
 
   function spawnSign() {
     // 位置：让开中间那块「信封 ＋ 信纸」——只走上方那条带，左右随机。
@@ -441,35 +441,7 @@ var knowledgeWave = (function () {
     if (penA > .01) drawQuillAt(wx[0], wx[1], .58 + Math.sin(sg.t * .02) * .06, s, .62 * penA);
   }
 
-  // 飘浮蜡烛：烛身 + 会抖的火苗 + 一圈暖光（用缓存贴图做光晕，省一次 createRadialGradient）
-  function spawnCandle(init) {
-    candles.push({
-      x: (.08 + Math.random() * .84) * W,
-      y: init ? H * (.18 + Math.random() * .74) : H + 40,
-      s: Math.min(W, H) * (.018 + Math.random() * .012),
-      v: .14 + Math.random() * .16,
-      ph: Math.random() * 6.2832
-    });
-  }
-  function drawCandle(c) {
-    var s = c.s, x = c.x + Math.sin(c.ph) * s * 2.2, y = c.y;
-    var fl = s * (.95 + Math.sin(c.ph * 9.1) * .16);          // 火苗长度抖动
-    var gr = s * 3.6;
-    ctx.globalAlpha = .5 + Math.sin(c.ph * 5.3) * .12;
-    ctx.drawImage(sprite("candleGlow", [216, 168, 74], CANON), x - gr, y - s * .5 - gr, gr * 2, gr * 2);
-    ctx.globalAlpha = 1;
-    ctx.fillStyle = "rgba(222,208,176,.9)";                    // 烛身
-    ctx.fillRect(x - s * .3, y - s * .15, s * .6, s * 1.7);
-    ctx.strokeStyle = "rgba(96,86,70,.45)";
-    ctx.lineWidth = Math.max(.7, s * .06);
-    ctx.strokeRect(x - s * .3, y - s * .15, s * .6, s * 1.7);
-    ctx.beginPath();                                           // 火苗
-    ctx.moveTo(x, y - s * .15 - fl);
-    ctx.quadraticCurveTo(x + s * .32, y - s * .15 - fl * .3, x, y - s * .15 + s * .12);
-    ctx.quadraticCurveTo(x - s * .32, y - s * .15 - fl * .3, x, y - s * .15 - fl);
-    ctx.fillStyle = "rgba(238,190,86,.92)";
-    ctx.fill();
-  }
+  // 飘浮蜡烛已删（2026-09-20 用户："漂浮的蜡烛删掉，要素太嘈杂了"）
 
   // 星尘：定点闪烁的四芒星（相位驱动，不移动）
   function makeStars() {
@@ -658,16 +630,7 @@ var knowledgeWave = (function () {
     flourishGap++;
     if (flourishGap > 330) { flourishGap = 0; spawnFlourish(); }
 
-    // 魔法学院小物：飘浮蜡烛（常驻 2 支，缓缓上浮）→ 猫头鹰（偶尔飞过，带一串金尘）→ 星尘
-    candleGap++;
-    if (candles.length < 2 && candleGap > 150) { candleGap = 0; spawnCandle(false); }
-    for (var ci = candles.length - 1; ci >= 0; ci--) {
-      var cd = candles[ci];
-      cd.ph += .014;
-      cd.y -= cd.v;
-      if (cd.y < -60) { candles.splice(ci, 1); continue; }
-      drawCandle(cd);
-    }
+    // 魔法学院小物：星尘（蜡烛已删，2026-09-20 用户："要素太嘈杂"）
     // 签名羽毛笔：停在一处慢慢写完一个签名（约 6.3s），写完停留 → 笔抬起 → 墨迹淡去
     signGap++;
     if (signGap > 150) { signGap = 0; if (!signatures.length) spawnSign(); }
@@ -712,10 +675,9 @@ var knowledgeWave = (function () {
     measureFrame();                        // 量一次金框的实际位置（给描金流光用）
     gilt = 0;
     blooms = []; flourishes = []; specks = [];
-    signatures = []; candles = []; signGap = 130;   // 蜡烛开场就来，第一个签名约 2s 后开始写
+    signatures = []; signGap = 130;   // 第一个签名约 2s 后开始写
     bloomGap = 60; flourishGap = 210;      // 开门后很快就有第一滴墨、第一枝藤
     mx = my = ax = ay = -9999; aura = 0; lastMx = lastMy = -9999; trailGap = 0;
-    spawnCandle(true); spawnCandle(true);  // 常驻两支飘浮蜡烛
     // 开门第一拍：先落一滴墨（不等计时器），门一露面就有动的东西
     spawnBloom(W * (.5 + (Math.random() < .5 ? -.24 : .24) * 1.6), H * .62,
                Math.min(W, H) * .07, INK_C);
