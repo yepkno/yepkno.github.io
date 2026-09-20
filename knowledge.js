@@ -7,17 +7,25 @@
 // isDocVisible / switchCategory。
 
 // ---------- 1. 门的背景动效：学院风「水墨」（**不复用** app.js 的蓝族波纹）----------
-// 2026-09-20 二次升级（用户："特效有点太简单了"）：从"几团墨 + 几颗灰"升级为一套水墨系统 ——
-//   ① 底色墨晕：5 团墨（墨绿/鎏金/淡墨）缓慢漂移、呼吸涨落
-//   ② **墨滴绽放**：墨点落在纸上，边缘按 simplex 噪声不规则地晕开，并从墨心抽出墨丝
-//   ③ **描金藤蔓自绘**：金线一圈圈卷出藤枝，沿途生叶，画完停留再淡去（四角轮转）
-//   ④ **跟手墨迹**：鼠标处一团柔和墨晕跟随，快速移动时拖出细小墨花
-//   ⑤ 纸颗粒（预渲染贴图，不再每帧画近千个方块）＋ 浮尘（缓缓上浮的金/墨小点）
+// 2026-09-20 二次升级 → **第八轮做减法**（用户：「删除不必要的漂浮墨迹、金色弧线和零散装饰；
+//   降低背景装饰存在感，让中央猫头鹰和信封成为唯一视觉中心；减少"网页特效感"」）。
+//   **现在还留着的就三件**：
+//     ① **底色墨晕**：5 团墨（墨绿/鎏金/淡墨）缓慢漂移、呼吸涨落 —— 低频、大片、不成形；
+//        它给纸一张「旧纸的深浅」，而不是「纸上飘着的东西」
+//     ② **跟手墨晕**：鼠标处一团柔和墨晕缓动跟随，离开即淡出
+//     ③ **签名羽毛笔**：停在一处慢慢写一个签名（约 5s），写完停留 → 笔抬起 → 墨迹淡去
+//   **第八轮删掉的五件**（都是「一眼看出是网页特效」的那类）：
+//     ✗ 墨滴的**定时飘落**（约 2s 一滴、落点随机）—— 用户截图里把它读成「中央的破洞/阴影」
+//     ✗ **描金藤蔓**（四角轮转卷出的金色弧线 ＋ 沿途小叶）
+//     ✗ **描金流光**（沿证书内框绕行的那道金色光带）
+//     ✗ **星尘**（定点闪烁的四芒星）
+//     ✗ **浮尘**（缓缓上浮的金/墨小点）
+//     ⚠️ 只有「墨滴」是**改来源**而不是全删：定时飘落删了，**点击仍落一小滴淡墨**；
+//        另外四件是整块删除，**别再顺手加回来**。
 // ⚠️ canvas 已改为**透明**：纸底由 CSS `.gatewall` 给、书卷插画由 `.gdeco` 给。
-//    所以 DOM 里 `.gdeco` **必须排在 canvas 之前**，墨才会画在插画之上（否则被 15.5% 的插画蒙住）。
-// ⚠️ 性能：所有软边元素都走"预渲染贴图 + drawImage"；每帧只留 1～2 个 createRadialGradient。
-// ⚠️ 合成模式一律 source-over（不用 multiply）：透明画布上 multiply 的行为不直观，
-//    半透明墨直接叠在 CSS 纸底上更可控。
+//    所以 DOM 里 `.gdeco` **必须排在 canvas 之前**，墨才会画在插画之上。
+// ⚠️ 性能：所有软边元素都走「预渲染贴图 + drawImage」；每帧只留 1～2 个 createRadialGradient。
+// ⚠️ 合成模式一律 source-over（不用 multiply）：透明画布上 multiply 的行为不直观。
 var knowledgeWave = (function () {
   var cv = null, ctx = null, noise = null, raf = 0, running = false;
   var W = 0, H = 0, nt = 0, ready = false, k = 1;          // k = 画布像素 / CSS 像素
@@ -25,13 +33,15 @@ var knowledgeWave = (function () {
   var MAXW = 1440;
   var paper = null;                      // 预渲染的纸颗粒层
   var sprites = {};                      // 软边贴图缓存
-  var washes = [], blooms = [], flourishes = [], specks = [];
-  var bloomGap = 0, flourishGap = 0, flourishIdx = 0;
-  var mx = -9999, my = -9999, ax = -9999, ay = -9999, aura = 0, trailGap = 0, lastMx = -9999, lastMy = -9999;
+  var blooms = [];                       // 墨滴（第八轮起**只由点击产生**）
+  var mx = -9999, my = -9999, ax = -9999, ay = -9999, aura = 0;
 
   var INK_C = [36, 80, 68];              // 墨绿（2026-09-20 加深：#2f5d50 在暖纸上偏灰）
   var GOLD_C = [162, 122, 46];           // 鎏金（加深）
   var GREY_C = [74, 66, 54];             // 淡墨（暖褐灰；原来是偏蓝的灰，压在暖纸上发脏）
+  // 点击落墨用的**更淡一档**（第八轮）：原来点击/拖尾都用 INK_C，落在纸上是一块黑斑，
+  // 用户把那一类东西读成「破洞/阴影」。改淡之后点一下只是「纸上洇开一小团淡痕」。
+  var INK_SOFT_C = [98, 130, 118];
 
   // 底色墨团：c=基色 / a=峰值不透明度 / x,y=基准位置(比例) / r=半径系数 / s=漂移速度 / p=呼吸幅度
   var INK = [
@@ -76,20 +86,6 @@ var knowledgeWave = (function () {
       g.fillRect(Math.random() * W, Math.random() * H, s, s);
     }
     g.globalAlpha = 1;
-  }
-
-  // 浮尘：极小墨点/金点在纸上缓缓上浮、轻摆、明灭
-  function makeSpecks() {
-    var n = Math.min(48, Math.max(16, Math.round(W * H / 24000))), arr = [];
-    for (var i = 0; i < n; i++) {
-      arr.push({
-        x: Math.random() * W, y: Math.random() * H,
-        r: Math.random() * 1.5 + .6, v: Math.random() * .22 + .08,
-        a: Math.random() * .15 + .06, ph: Math.random() * 6.2832,
-        sw: Math.random() * .7 + .3, gold: Math.random() < .42
-      });
-    }
-    return arr;
   }
 
   // ---- 墨滴绽放 ----
@@ -191,64 +187,6 @@ var knowledgeWave = (function () {
     }
   }
 
-  // ---- 描金藤蔓（自绘）----
-  // 四角轮转出枝：一条半径渐收的螺旋 + 沿途交替生出的小叶。
-  var FSPOT = [[.17, .78], [.83, .22], [.19, .22], [.81, .78]];
-  function spawnFlourish() {
-    var sp = FSPOT[flourishIdx % FSPOT.length];
-    flourishIdx++;
-    var dir = flourishIdx % 2 ? 1 : -1;
-    var cx = sp[0] * W, cy = sp[1] * H, R = Math.min(W, H) * .135;
-    var pts = [], i, t, ang, rr;
-    for (i = 0; i <= 72; i++) {
-      t = i / 72;
-      // 0.72 圈（≈260°）的舒展弧 + 半径缓收 —— 读作"一枝卷曲的藤"，不是闭合的圆圈
-      //（初版是 1.25 圈的螺旋，截图上像一枚"咖啡渍圆环"，已改）
-      ang = dir * (t * 6.2832 * .72);
-      rr = R * (1 - t * .42);
-      pts.push([cx + Math.cos(ang) * rr, cy + Math.sin(ang) * rr * .78 - dir * t * 12]);
-    }
-    var leaves = [];
-    for (i = 8; i < 70; i += 7) leaves.push({ i: i, s: (i % 14 === 8 ? 1 : -1) });
-    flourishes.push({ pts: pts, leaves: leaves, t: 0 });
-    if (flourishes.length > 2) flourishes.shift();
-  }
-
-  function drawFlourish(f) {
-    var prog = f.t < .55 ? f.t / .55 : 1;
-    var fade = f.t < .78 ? 1 : 1 - (f.t - .78) / .22;
-    if (fade <= 0) return;
-    var n = Math.max(2, Math.round(f.pts.length * prog));
-    var s = "176,138,62";
-    ctx.strokeStyle = "rgba(" + s + "," + (.62 * fade) + ")";
-    ctx.lineWidth = 1.4;
-    ctx.lineJoin = "round";
-    ctx.beginPath();
-    ctx.moveTo(f.pts[0][0], f.pts[0][1]);
-    for (var i = 1; i < n; i++) ctx.lineTo(f.pts[i][0], f.pts[i][1]);
-    ctx.stroke();
-    // 叶：沿线交替生出的细长叶片（两段二次曲线合拢成一片）
-    ctx.fillStyle = "rgba(" + s + "," + (.34 * fade) + ")";
-    for (var j = 0; j < f.leaves.length; j++) {
-      var lf = f.leaves[j];
-      if (lf.i > n - 1) continue;
-      var p = f.pts[lf.i], pn = f.pts[Math.min(f.pts.length - 1, lf.i + 1)];
-      var ag = Math.atan2(pn[1] - p[1], pn[0] - p[0]);
-      var nx = Math.cos(ag + lf.s * 1.5708), ny = Math.sin(ag + lf.s * 1.5708);
-      var L = 10;
-      ctx.beginPath();
-      ctx.moveTo(p[0], p[1]);
-      ctx.quadraticCurveTo(p[0] + nx * L * .8 + Math.cos(ag) * L * .5,
-                           p[1] + ny * L * .8 + Math.sin(ag) * L * .5,
-                           p[0] + nx * L * 1.5 + Math.cos(ag) * L,
-                           p[1] + ny * L * 1.5 + Math.sin(ag) * L);
-      ctx.quadraticCurveTo(p[0] + nx * L * .8 - Math.cos(ag) * L * .5,
-                           p[1] + ny * L * .8 - Math.sin(ag) * L * .5,
-                           p[0], p[1]);
-      ctx.fill();
-    }
-  }
-
   // ---- 魔法学院小物：签名羽毛笔 / 飘浮蜡烛 / 星尘 ----
   // 2026-09-20 演变：漂浮的线描猫头鹰 → 用户"换个别的" → 横穿画面的羽毛笔（笔尖拖一条淡墨线）
   //   → 用户"动的太快了，而且最好是签名，不是画简单直线" → 改成现在的**在空中写签名**：
@@ -312,7 +250,7 @@ var knowledgeWave = (function () {
     return { pts: pts, cum: cum, len: total };
   })();
 
-  var signatures = [], stars = [];
+  var signatures = [];
   var signGap = 0;
 
   function spawnSign() {
@@ -448,98 +386,20 @@ var knowledgeWave = (function () {
 
   // 飘浮蜡烛已删（2026-09-20 用户："漂浮的蜡烛删掉，要素太嘈杂了"）
 
-  // 星尘：定点闪烁的四芒星（相位驱动，不移动）
-  function makeStars() {
-    var n = Math.min(18, Math.max(8, Math.round(W * H / 90000))), arr = [];
-    for (var i = 0; i < n; i++) {
-      arr.push({
-        x: Math.random() * W, y: Math.random() * H,
-        s: Math.random() * 5 + 3.5, ph: Math.random() * 6.2832,
-        sp: .008 + Math.random() * .014
-      });
-    }
-    return arr;
-  }
-  function drawStars() {
-    for (var i = 0; i < stars.length; i++) {
-      var st = stars[i];
-      st.ph += st.sp;
-      var p = Math.sin(st.ph);
-      if (p <= .3) continue;
-      var a = (p - .3) / .7, s = st.s * (.45 + a * .55);
-      ctx.strokeStyle = "rgba(176,138,62," + (.55 * a) + ")";
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(st.x - s, st.y); ctx.lineTo(st.x + s, st.y);
-      ctx.moveTo(st.x, st.y - s); ctx.lineTo(st.x, st.y + s);
-      ctx.stroke();
-      ctx.fillStyle = "rgba(212,178,104," + (.7 * a) + ")";
-      ctx.beginPath(); ctx.arc(st.x, st.y, Math.max(.8, s * .15), 0, 6.2832); ctx.fill();
-    }
-  }
-
   // （原来的 drawDust 金尘已随猫头鹰一起去掉，墨线在 step 里直接描）
 
-  // ---- 沿金框游走的一道描金流光 ----
-  // 一段约 40% 框长的金色光带沿证书内框缓缓绕行（约 15s 一圈），两端渐隐（彗尾）。
-  // 这是"一眼能看出有特效"的那一件：静帧看得见，动起来像镀金边框上跑着的光。
-  var gilt = 0, frameRect = null;
-  function measureFrame() {
-    var f = document.querySelector("#knowledgeGate .gframe");
-    if (!f) { frameRect = null; return; }
-    var r = f.getBoundingClientRect();
-    if (!r.width) { frameRect = null; return; }     // 门关着时拿到的是 0
-    frameRect = { x: r.left * k, y: r.top * k, w: r.width * k, h: r.height * k };
-  }
-  function perimPoint(d) {
-    var f = frameRect, w = f.w, h = f.h;
-    if (d < w) return [f.x + d, f.y];               // 上边 →
-    d -= w;
-    if (d < h) return [f.x + w, f.y + d];           // 右边 ↓
-    d -= h;
-    if (d < w) return [f.x + w - d, f.y + h];       // 下边 ←
-    d -= w;
-    return [f.x, f.y + h - d];                      // 左边 ↑
-  }
-  function drawGilt() {
-    if (!frameRect || !frameRect.w) return;
-    var P = 2 * (frameRect.w + frameRect.h);
-    var L = Math.min(P * .26, 420), N = 44;
-    var s = (gilt % 1) * P, pts = [], i;
-    for (i = 0; i <= N; i++) pts.push(perimPoint((s + L * i / N) % P));
-    ctx.lineCap = "round";
-    for (i = 0; i < N; i++) {
-      var f2 = Math.sin(Math.PI * (i + .5) / N);    // 两端渐隐 → 彗尾
-      ctx.strokeStyle = "rgba(176,138,62," + (.6 * f2 * f2) + ")";
-      ctx.lineWidth = 1.1 + 1.6 * f2;
-      ctx.beginPath();
-      ctx.moveTo(pts[i][0], pts[i][1]);
-      ctx.lineTo(pts[i + 1][0], pts[i + 1][1]);
-      ctx.stroke();
-    }
-    var hd = perimPoint((s + L * .82) % P);          // 头部一点柔光
-    var gr = Math.min(frameRect.w, frameRect.h) * .1;
-    ctx.globalAlpha = .34;
-    ctx.drawImage(sprite("gilt", GOLD_C, CANON), hd[0] - gr, hd[1] - gr, gr * 2, gr * 2);
-    ctx.globalAlpha = 1;
-  }
-
-  // ---- 鼠标：跟手墨晕 + 拖尾墨花 ----
+  // ---- 鼠标：只保留一团跟手墨晕 ----
+  // 第八轮删掉「快速移动时拖出细小墨花」（用户：「删除不必要的漂浮墨迹」「减少网页特效感」）。
   function onMove(e) {
     if (!cv) return;
     mx = e.clientX * k; my = e.clientY * k;
-    if (REDUCE) return;
-    trailGap++;
-    var dx = mx - lastMx, dy = my - lastMy;
-    if (trailGap > 4 && (dx * dx + dy * dy) > 900) {
-      trailGap = 0; lastMx = mx; lastMy = my;
-      spawnBloom(mx, my, Math.min(W, H) * .022 + Math.random() * 10,
-                 Math.random() < .35 ? GOLD_C : INK_C);
-    }
   }
+  // 点击落墨：这是**唯一的墨滴来源**（定时飘落已删）。由用户触发 → 不会自己乱跑。
+  // ⚠️ 半径 .07 → **.045**、颜色换成 INK_SOFT_C：点一下是「纸上洇开一小团淡痕」，
+  //    而不是原来那种「纸上一块黑斑」（用户把后者读成「破洞/阴影」）。
   function onDown(e) {
     if (!cv || REDUCE) return;
-    spawnBloom(e.clientX * k, e.clientY * k, Math.min(W, H) * .07, INK_C);
+    spawnBloom(e.clientX * k, e.clientY * k, Math.min(W, H) * .045, INK_SOFT_C);
   }
 
   function setup() {
@@ -559,7 +419,6 @@ var knowledgeWave = (function () {
     window.addEventListener("resize", function () {
       if (!cv) return;
       size();
-      measureFrame();                  // 金框位置跟着变
       if (REDUCE) step();
     });
     return true;
@@ -574,9 +433,6 @@ var knowledgeWave = (function () {
     cv.style.height = vh + "px";
     k = W / Math.max(1, vw);
     buildPaper();                        // 尺寸变了 → 颗粒贴图重做
-    specks = [];                         // 浮尘按旧尺寸算的，一并重来
-    stars = makeStars();                 // 星尘的落点也是按旧尺寸算的
-    flourishes = [];                     // 藤蔓位置也是按旧尺寸算的
   }
 
   function step() {
@@ -606,40 +462,15 @@ var knowledgeWave = (function () {
       ctx.globalAlpha = 1;
     }
 
-    // ② 墨滴绽放
+    // ② 墨滴（**只画点击产生的那几滴**；定时飘落第八轮已删，见文件头「删掉的五件」）
     for (var m = blooms.length - 1; m >= 0; m--) {
       var bl = blooms[m];
-      // 2026-09-20 用户："墨滴落的速度太快了" → 单滴生命周期 2.3s → 3.6s
-      // （绽放、扩散环、墨丝都由 t 驱动，一起慢下来）。
+      // 单滴生命周期 3.6s（bl.t 驱动绽放、扩散环、墨丝一起走）
       bl.t += .0046;
       if (bl.t >= 1) { blooms.splice(m, 1); continue; }
       drawBloom(bl);
     }
-    bloomGap++;
-    if (bloomGap > 120) {                 // 约 2s 落一滴（60fps 标定）。
-                                          // 2026-09-20 用户三次调档：1.5s → 2.3s → 4s → **2s**（"太慢了"）。
-      bloomGap = 0;
-      // 落点避开正中央那一块（大字与输入行在那里），也避开上下两条纸色带，走中环
-      var ang = Math.random() * 6.2832, rr = .15 + Math.random() * .17;
-      var bx = W * (.5 + Math.cos(ang) * rr * 1.6);
-      var by = H * (.5 + Math.sin(ang) * rr);
-      var roll = Math.random();
-      spawnBloom(bx, by, Math.min(W, H) * (.045 + Math.random() * .055),
-                 roll < .16 ? GOLD_C : (roll < .58 ? INK_C : GREY_C));
-    }
-
-    // ③ 描金藤蔓自绘（约 5.5s 一枝）
-    for (var f = flourishes.length - 1; f >= 0; f--) {
-      var fl = flourishes[f];
-      fl.t += .0055;
-      if (fl.t >= 1) { flourishes.splice(f, 1); continue; }
-      drawFlourish(fl);
-    }
-    flourishGap++;
-    if (flourishGap > 330) { flourishGap = 0; spawnFlourish(); }
-
-    // 魔法学院小物：星尘（蜡烛已删，2026-09-20 用户："要素太嘈杂"）
-    // 签名羽毛笔：停在一处慢慢写完一个签名（约 6.3s），写完停留 → 笔抬起 → 墨迹淡去
+    // 签名羽毛笔：停在一处慢慢写完一个签名（约 5s），写完停留 → 笔抬起 → 墨迹淡去
     signGap++;
     if (signGap > 150) { signGap = 0; if (!signatures.length) spawnSign(); }
     var quillS = Math.min(W, H) * .04;
@@ -649,34 +480,10 @@ var knowledgeWave = (function () {
       if (sg2.t > SIGN_WRITE + SIGN_HOLD + SIGN_FADE) { signatures.splice(gi, 1); continue; }
       drawSign(sg2, quillS);
     }
-    drawStars();
-
-    // 描金流光（沿证书内框绕行；"减少动效"时不动，静帧靠墨与藤撑着）
-    if (!REDUCE) {
-      if (!frameRect) measureFrame();   // 门刚显示时可能量到 0，这里补量；量到就不再来
-      gilt += .0011;
-      drawGilt();
-    }
-
-    // ⑤ 浮尘：缓缓上浮的小点（越顶回到底部），横向轻摆 + 明灭
-    if (!specks.length) specks = makeSpecks();
-    for (var s = 0; s < specks.length; s++) {
-      var sp = specks[s];
-      sp.y -= sp.v;
-      if (sp.y < -6) { sp.y = H + 6; sp.x = Math.random() * W; }
-      sp.ph += .012;
-      var sx = sp.x + Math.sin(sp.ph) * sp.sw * 14;
-      var pulse = .55 + .45 * Math.sin(sp.ph * 1.7);
-      ctx.fillStyle = sp.gold ? "rgba(176,138,62," + (sp.a * pulse) + ")"
-                              : "rgba(47,93,80," + (sp.a * pulse) + ")";
-      ctx.beginPath();
-      ctx.arc(sx, sp.y, sp.r, 0, 6.2832);
-      ctx.fill();
-    }
   }
 
   // ⚠️⚠️ 帧率归一（2026-09-20）：本文件**所有节奏参数都是"按 60fps 标定的帧数"**
-  // 注释里的「秒」全部是 **60fps 标定值**（墨滴 120 帧 ≈ 2s、签名 300 帧 ≈ 5s、藤蔓 330 帧、星尘/浮尘的步进……）。
+  // 注释里的「秒」全部是 **60fps 标定值**（签名 300 帧 ≈ 5s、墨滴 bl.t 的步进……）。
   //    而 `requestAnimationFrame` 的回调频率 = **屏幕刷新率**：60Hz 屏每秒 60 次、
   //    120Hz 屏每秒 120 次、144Hz 每秒 144 次 —— 帧数完全不变，**时间却被成倍压缩**。
   //    这就是用户两次说"太快了"的**真凶**（60fps 下 6.3s 的签名，在 120Hz 上是 3.2s）。
@@ -701,23 +508,14 @@ var knowledgeWave = (function () {
   function start() {
     if (!setup()) return;
     size();
-    measureFrame();                        // 量一次金框的实际位置（给描金流光用）
-    gilt = 0;
-    blooms = []; flourishes = []; specks = [];
+    blooms = [];
     signatures = []; signGap = 130;   // 第一个签名约 2s 后开始写
-    bloomGap = 60; flourishGap = 210;      // 开门后很快就有第一滴墨、第一枝藤
-    mx = my = ax = ay = -9999; aura = 0; lastMx = lastMy = -9999; trailGap = 0;
+    mx = my = ax = ay = -9999; aura = 0;
     accMs = 0; lastTs = 0;                 // 帧率归一的累加器也要归零（否则重开门会带上一轮的余量）
-    // 开门第一拍：先落一滴墨（不等计时器），门一露面就有动的东西
-    spawnBloom(W * (.5 + (Math.random() < .5 ? -.24 : .24) * 1.6), H * .62,
-               Math.min(W, H) * .07, INK_C);
-    if (REDUCE) {                          // 尊重"减少动效"：只画一帧静态水墨
+    // ⚠️ 第八轮删掉了「开门第一拍先落一滴墨」—— 定时的那一滴与开场那一滴都是「漂浮墨迹」，
+    //    门一露面纸上就有个黑点，正是用户嫌的那种。现在开场只有纸、墨晕与签名。
+    if (REDUCE) {                          // 尊重「减少动效」：只画一帧静态底纹
       nt = 40;
-      spawnBloom(W * .26, H * .32, Math.min(W, H) * .075, INK_C);
-      spawnBloom(W * .75, H * .68, Math.min(W, H) * .06, GREY_C);
-      blooms.forEach(function (b) { b.t = .34; });
-      spawnFlourish();
-      flourishes.forEach(function (f) { f.t = .6; });
       step();
       return;
     }

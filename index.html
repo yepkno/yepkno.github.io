@@ -304,7 +304,14 @@ img{display:block}
 #knowledgeGate .genter:hover .genter-in{background:#3a6c5d;color:#fffdf6}
 #knowledgeGate .ge-orn{flex:none;width:5px;height:5px;background:rgba(214,182,116,.85);
   transform:rotate(45deg)}
-#knowledgeGate .ge-arrow{flex:none;width:20px;height:11px;color:rgba(226,198,140,.9)}
+#knowledgeGate .ge-arrow{flex:none;width:20px;height:11px;color:rgba(226,198,140,.9);
+  transition:transform .22s ease}
+/* hover：箭头右移 3px ＋ 金边提亮一档（用户第八轮："hover 时箭头向右移动约 3px，
+   边框轻微变亮"）—— 都只走 transition，**不加发光、不加循环**。
+   ⚠️ `:hover` 单写，**绝不和 `:focus-visible` 合写**：解锁后 JS 会程序化 focus 这个按钮，
+      Chromium 会判 `:focus-visible` 成立，合写的话按钮一露面就是"已亮"态（项目老坑）。 */
+#knowledgeGate .genter:hover .ge-arrow{transform:translateX(3px)}
+#knowledgeGate .genter:hover::before{background:rgba(204,170,104,.9)}
 
 /* ---- 排面（2026-09-20 用户："太单调了"）：让纸面有学院该有的细节 ----
    原来只有几团墨 + 一张空纸，于是这里补四件：① 背景书卷插画（复用门户那张简绘，
@@ -312,11 +319,12 @@ img{display:block}
    ④ 拉丁题词 + 下缘落款线。⚠️ 全部 z-index 在 gstage 之下或之外，不挡输入行点击。 */
 
 /* ① 背景书卷插画：垫在 canvas 之上（canvas 铺的是不透明纸底）、gstage 之下。
-   ⚠️ 2026-09-20 用户："背景画变得明显一点，太淡了" → .155 → .32（翻倍），
-      内阴影收口同步从 190px/84px 收到 150px/60px（否则边上一圈奶白把加浓的部分又吃回去）。 */
+   ⚠️ 2026-09-20 用户先要"明显一点"（.155 → .32），第八轮又要求"**降低背景装饰存在感**，
+      让中央猫头鹰和信封成为唯一视觉中心" → **.32 → .26** 收回一档。
+      内阴影收口保持 150px/60px。⚠️ 别一口气压回 .15（那是用户否决过的"太淡"）。 */
 #knowledgeGate .gdeco{position:absolute;inset:0;z-index:0;pointer-events:none;
   background:url("assets/knowledge-bg.jpg?v=20260920a") center 24%/cover no-repeat;
-  opacity:.32;
+  opacity:.26;
   box-shadow:inset 0 0 150px 60px rgba(248,243,232,.95)}
 /* ② 证书式双细金框 + 四角十字章（十字用墨绿，与鎏金框拉开一层） */
 #knowledgeGate .gframe{position:absolute;z-index:3;pointer-events:none;
@@ -382,6 +390,18 @@ img{display:block}
    随信封宽高比拉伸，vector-effect 保证描边不被拉粗） */
 #knowledgeGate .env-border{position:absolute;inset:9px;width:calc(100% - 18px);height:calc(100% - 18px);
   display:block;pointer-events:none}
+/* 中央水印纹章（打开的书 ＋ 羽毛笔 ＋ 星徽）—— 2026-09-20 第八轮，用户点名要的那一件。
+   尺寸：**信封宽的 22%**（用户在 18%~25% 之间）；横宽比 110:92（竖构图会高到 190px、
+   撞上左上的盾徽与左下的收件信息区，详见标记里的注释）。
+   ⚠️ 它是**纯纸面底纹**：不给 z-index、DOM 排在所有信息元素之前 —— 绝不能压字。
+   ⚠️ 这是信封上**唯一**一件装饰，而且是用户点名要的；月桂/中央圆环/装饰横线**仍然不许回来**。
+   ⭐ 淡墨绿 `.18`（10%~20% 区间内）；"压印感"来自双层错位（纸白在下、淡墨在上），
+      见标记里的说明；**不要**改成单层或同色双错位（试过，一个像数字绘图、一个发糊）。 */
+#knowledgeGate .gwater{position:absolute;left:50%;top:50%;width:22%;
+  transform:translate(-50%,-50%);aspect-ratio:110/92;pointer-events:none}
+#knowledgeGate .gwater svg{width:100%;height:100%;display:block;overflow:visible}
+#knowledgeGate .gwater .gw-hi{stroke:rgba(255,252,242,.34)}
+#knowledgeGate .gwater .gw-ink{stroke:rgba(47,93,80,.18)}
 /* 信封前片：整块纸（信纸闭合时被它完全遮住）＋ 右下角的三道"地址线" ＋ 顶缘一道"信口"。
    ⚠️ 不要只用一个方向的一层线性渐变 —— 那样是一张**平板**（用户："合上后信封上部分也感觉太假了"）。
       这里叠了三层：顶部一道窗光、斜向主色、底部一道内阴影（信封体因此有"鼓起来"的体积）。 */
@@ -532,15 +552,18 @@ img{display:block}
 
 /* 蜡封位置：压在**信封正中**（略偏上），落在封口 V 之上 —— 现实里火漆就压在封口尖上。
    它是信封上**唯一的纹章**（第六轮删掉了外面那圈"环＋铭文"的圆形印记）。
-   ⭐ 第七轮起手从 **1.55 倍 → .88**（用户："执行一次轻微的 scale(0.88 → 1.04 → 1)，
-   制造真实'压印完成'的感觉"＋"不要夸张弹跳或大幅缩放"）——
-   上一版"从 1.55 压到原大 + 强回弹 cubic-bezier(.2,1.5,.4,1)"正是要被换掉的那种夸张缩放。
-   ⚠️ -7° 的歪角全程保持（火漆不会盖得端端正正）；时机与 knThud 的"咚"对齐 **1.18s**
-      （＝ 信纸收回 .6s ＋ 封口翻回 .58s 延迟 + .6s 时长）。 */
+   ⭐ 起手从"1.55 倍砸下来"改到 **.92**（第七轮定 .88，**第八轮按用户给的曲线改成
+   `scale(0.92 → 1.03 → 1)`** ＋ 阴影变化）。上一版"1.55 → 原大 + 强回弹
+   cubic-bezier(.2,1.5,.4,1)"正是要被换掉的那种夸张缩放。
+   ⚠️ `transform` 与 `filter` 必须与 `knStamp` 的 **100% 帧逐字一致**
+      （动画带 `both`，结束态就停在这两个值上；不一致会导致结束瞬间跳一下）。
+   ⚠️ -7° 的歪角全程保持（火漆不会盖得端端正正）；启动时机 **1.18s**
+      ＝ 信纸收回 .6s ＋ 封口翻回延迟 .58s ＋ 时长 .6s（封口完全闭合之后）。 */
 #knowledgeGate .postmark{position:absolute;left:50%;top:44%;
   width:var(--waxSz);height:var(--waxSz);z-index:8;
   margin:calc(var(--waxSz) / -2) 0 0 calc(var(--waxSz) / -2);opacity:0;pointer-events:none;
-  transform-origin:center;transform:rotate(-7deg) scale(.88)}
+  transform-origin:center;transform:rotate(-7deg) scale(.92);
+  filter:drop-shadow(0 2px 5px rgba(74,32,20,.26))}
 #knowledgeGate .postmark svg{width:100%;height:100%;display:block}
 /* 猫头鹰：**AI 学院绘本插画（2026-09-20 第六轮）**。
    资产 assets/knowledge-owl.webp（透明底 760×888 / 106KB，灰棕＋米白面盘＋墨绿斗篷＋淡金滚边，
@@ -611,14 +634,20 @@ img{display:block}
   100% {transform:translateY(var(--openY)) rotate(-1.1deg)}
 }
 
-/* ⭐⭐ 合上态的**完整时序**（第七轮按用户给的 5 步重排，单位 s）：
+/* ⭐⭐ 合上态的**完整时序**（第八轮去掉"信封一颤"后的定稿，单位 s）：
      ① 信纸平滑收回            knReturn  0     ~ 0.60
      ② 封口翻回并**轻微回弹**      过渡     0.58  ~ 1.18（缓动带一点过冲 → 回弹）
-     ③ 封口闭合后**火漆淡入 + 压印**  knStamp 1.18  ~ 1.64（.88 → 1.04 → 1）
+     ③ 封口完全闭合后**火漆淡入 + 压印**  knStamp 1.18  ~ 1.64（.92 → 1.03 → 1 ＋ 阴影收拢）
      ④ 火漆完成后延迟 .32s → 按钮**淡入并上移 8px**  knEnter 1.96 ~ 2.46
      ⑤ 同时金边**轻微亮起一次**后恢复              knFrame 1.96 ~ 3.01
-   目标是"信件密封 → 拆阅按钮出现"是一个**连续叙事**，而不是两段互不相干的动画。
-   ⚠️ 改任一步的时长，后面每一步的 delay 都要跟着改（它们是硬编码的绝对时间）。 */
+   目标是"信件密封 → 查阅档案按钮出现"是一个**连续叙事**，而不是两段互不相干的动画。
+   ⚠️ 改任一步的时长，后面每一步的 delay 都要跟着改（它们是硬编码的绝对时间）。
+   ⚠️⚠️ **第八轮删掉了 `knThud`**（`.mail-env` 被合上时"咚"地往下颤 3px）：用户原话 ——
+      "删除当前'信封**闪动/爆闪一次**'的效果……整套动画要像真实的信件被封存，而不是网页特效"。
+      删掉它**没有任何副作用**：它原本靠 `fill:both` 给 `.mail-env` 永久加一个 transform，
+      顺带把 mail-env 变成 stacking context；而猫头鹰在第七轮就已经**挪进 `.mail-env` 内部**了，
+      所以现在有没有那个 stacking context 都一样（前片 3 > 猫头鹰 2 的层序成立）。
+      **别再加回来** —— 用户明确把它归到"网页特效"一类。 */
 #knowledgeGate.unlocked .mail-card{animation:knReturn .6s cubic-bezier(.62,0,.72,.16) both;
   box-shadow:0 7px 16px rgba(47,93,80,.15)}
 @keyframes knReturn{
@@ -632,15 +661,21 @@ img{display:block}
       是"合上时手一松"的量；再往上就成"夸张弹跳"了（用户明确排除）。 */
 #knowledgeGate.unlocked .env-flap{transform:perspective(1000px) rotateX(0deg);z-index:4;
   transition:transform .6s cubic-bezier(.3,1.3,.42,1) .58s,z-index 0s .58s}
-/* 信封被"合上"那一颤（3px），与封口闭合、火漆落下同一拍 1.18s */
-#knowledgeGate.unlocked .mail-env{animation:knThud .5s cubic-bezier(.3,1.35,.5,1) 1.18s both}
-@keyframes knThud{0%{transform:translateY(0)}32%{transform:translateY(3px)}100%{transform:translateY(0)}}
-/* ③ 火漆**压印**：淡入在前 1/3 完成，之后只是"压下去 → 回弹到原大"（0.88 → 1.04 → 1） */
+/* ③ 火漆**压印**（第八轮按用户给的曲线重写）：
+   `scale(.92 → 1.03 → 1)` —— 用户原话"使用 scale(0.92 → 1.03 → 1)，**配合轻微阴影变化**"。
+   上一版是 .88 → 1.04（离"压印完成"的量还差一点，且没有阴影参与）。
+   阴影表达式：落下时最散（`0 4px 9px`）→ 触纸那一刻最紧最实（`0 1px 3px`，α .42）→ 回弹后
+   略散（`0 2px 5px`，α .26）。**"轻微"是硬要求** —— 不要把 α 推过 .45，也不要加第二层大晕。
+   ⚠️ `.postmark` 基础样式里的 `filter` 必须和 100% 帧**逐字一致**，否则动画结束时会有一次跳变。
+   ⚠️ 动画用 `both`：结束后保留 100% 帧（＝基础值），所以不会有"回弹到无阴影"的闪烁。 */
 #knowledgeGate.unlocked .postmark{animation:knStamp .46s cubic-bezier(.32,.86,.4,1) 1.18s both}
 @keyframes knStamp{
-  0%  {opacity:0;transform:rotate(-7deg) scale(.88)}
-  33% {opacity:1;transform:rotate(-7deg) scale(1.04)}
-  100%{opacity:1;transform:rotate(-7deg) scale(1)}
+  0%  {opacity:0;transform:rotate(-7deg) scale(.92);
+       filter:drop-shadow(0 4px 9px rgba(74,32,20,.30))}
+  38% {opacity:1;transform:rotate(-7deg) scale(1.03);
+       filter:drop-shadow(0 1px 3px rgba(74,32,20,.42))}
+  100%{opacity:1;transform:rotate(-7deg) scale(1);
+       filter:drop-shadow(0 2px 5px rgba(74,32,20,.26))}
 }
 /* 解锁后不再"把输入行收拢成一条线"（那是旅游攻略门的手法）——这里由信纸收回承担 */
 #knowledgeGate.unlocked .gfield{opacity:1;transform:none;filter:none;pointer-events:none}
@@ -654,8 +689,13 @@ img{display:block}
   100%{opacity:1;transform:translateY(0)}
 }
 /* 金边 = `.genter` 的 padding(1.5px) 露出的 `::before` 底色。
-   只把金色**提亮一档再落回**：不发光（不加 box-shadow / blur）、不循环、只跑一次。 */
-#knowledgeGate.unlocked .genter::before{animation:knFrame 1.05s ease-out 1.96s both}
+   只把金色**提亮一档再落回**：不发光（不加 box-shadow / blur）、不循环、只跑一次。
+   ⚠️⚠️ 填充模式必须是 **`backwards`、不能是 `both`**：`both` 会把 100% 帧（.62）永久钉住，
+      而**动画值优先于普通声明** → 第八轮新加的 `:hover::before{…,.9}` 会被它整条吃掉
+      （用户要的"hover 边框轻微变亮"就永远不生效）。`backwards` 只在 1.96s 的延迟期垫上
+      0% 帧（＝基础值 .62，与静态一致），跑完自动交还给普通级联 → hover 正常。
+      0% / 100% 两帧本就等于基础值，所以改成 backwards **看不出任何差别**。 */
+#knowledgeGate.unlocked .genter::before{animation:knFrame 1.05s ease-out 1.96s backwards}
 @keyframes knFrame{
   0%  {background:rgba(176,138,62,.62)}
   28% {background:rgba(214,182,116,.94)}
@@ -712,7 +752,7 @@ img{display:block}
   #knowledgeGate .garch{right:var(--ornIn);bottom:7px;font-size:6.6px;letter-spacing:0}
   #knowledgeGate .gseal{margin-top:20px}
   /* 窄屏下 cover 只截到插画的中段（恰好是最空的一块）→ 取景右移，让书架进画面 */
-  #knowledgeGate .gdeco{background-position:74% 30%;opacity:.36}
+  #knowledgeGate .gdeco{background-position:74% 30%;opacity:.30}
 }
 /* ⚠️ 矮屏但不算窄屏（例如 1440×720）：信封矮了，可**蜡封是定尺的**（不随 vh 缩）——
    矮屏把蜡封收一档，免得它相对信封显得过大（第七轮桌面 104 → 矮屏 88）。 */
@@ -2425,11 +2465,13 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
               <div class="err" id="knowledgeGateErr" role="status" aria-live="polite"></div>
             </div>
             <!-- 猫头鹰（AI 漫画书插画）：⚠️⚠️ **必须在 mail-env 内部** ——
-                 knThud 给 mail-env 加了 transform（fill:both 解锁后永久保持）→
+                 当初的病根是 knThud 给 mail-env 加了 transform（fill:both 解锁后永久保持）→
                  解锁后 mail-env 自成 stacking context（z:auto=0）；猫头鹰若留在外面
                  （z:2 兄弟）会盖住**整个信封**（用户第二张截图实锤：胸口压住封口 V）。
                  放进来夹在 信纸(2) 与 前片(3) 之间：z-index:2 + DOM 在信纸之后 →
-                 被前片/封口正常遮住，"从信封背后探出"在任何状态下都成立。 -->
+                 被前片/封口正常遮住，"从信封背后探出"在任何状态下都成立。
+                 ⚠️ **第八轮已把 knThud 整个删掉**（用户嫌"信封闪动"），
+                    但这条结论**不变、且更安全**：它不再依赖动画状态。 -->
             <div class="perchowl">
               <!-- 2026-09-20 第六轮：换成**学院绘本插画**（用户："当前猫头鹰细节已经足够，
                    但风格偏写实，与页面整体学院简绘风不统一…像一本古典学院绘本里的猫头鹰
@@ -2457,6 +2499,52 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
                       stroke="rgba(138,109,43,.2)" stroke-width=".45"
                       vector-effect="non-scaling-stroke"/>
               </svg>
+              <!-- 中央**水印纹章**（2026-09-20 第八轮 · 用户："在信封正中央增加一个淡淡的
+                   学院纹章水印，解决当前中央区域过于空白的问题"）。
+                   图案＝**打开的书 ＋ 羽毛笔 ＋ 小型星徽**，用户四条禁令逐条守住：
+                     ① 不出现第二只猫头鹰（页面已有一只，不重复）✓ 全图无 owl 意象；
+                     ② 不做成网站 Logo → **没有任何圆环/外框**，只有三件物象本身；
+                     ③ 不用厚重圆形徽章 → 无 circle、无底板、无描边容器；
+                     ④ 底色只取**淡墨绿**一种（rgba(47,93,80,.18)，落在用户要的 10%~20% 里）。
+                   ⭐ 尺寸 = 信封宽的 **22%**（用户在 18%~25% 之间）。**横宽比 110:92** ——
+                      刻意做成"横宽"：竖构图按 22% 宽算下来会高到 190px，正好撞上
+                      左上的学院盾徽与左下的收件信息区（信封中间那条净空带只有 ~120px 高）。
+                   ⭐⭐ "印刷/压印在纸上"的做法 = **同一份路径画两层、错开 ~1px**：
+                      先铺一层纸白（下移 .9px）当"凹槽下缘的返光"，再压一层淡墨（下移 .4px）——
+                      亮在凹槽一侧、墨在另一侧，线才像"压进纸里"而不是"印在纸上"。
+                      （另两种做法试过并否掉：单层淡墨＝偏"数字绘图"、同色双错位＝发糊。）
+                   ⚠️ 它排在 `.env-border` 之后、**所有信息元素之前** —— 它只是纸面底纹，
+                      绝不许压在任何文字/盾徽/记录栏之上。z-index 不给（同层按 DOM 先后即可）。 -->
+              <span class="gwater" aria-hidden="true">
+                <svg viewBox="18 3 110 92" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                  <g class="gw-hi" transform="translate(0 -0.9)" fill="none" stroke-width="1.7">
+                    <path d="M34.0 8.0 L36.5 15.6 L44.5 15.6 L38.0 20.3 L40.5 27.9 L34.0 23.2 L27.5 27.9 L30.0 20.3 L23.5 15.6 L31.5 15.6 Z"/>
+                    <path d="M67 46 Q49 39 21 42 L21 88 Q49 85 67 92 Z"/>
+                    <path d="M67 46 Q85 39 113 42 L113 88 Q85 85 67 92 Z"/>
+                    <path d="M67 46 L67 92"/>
+                    <path d="M29 51 Q41 49 53 54"/>
+                    <path d="M29 60 Q41 58 53 63"/>
+                    <path d="M81 54 Q93 49 105 51"/>
+                    <path d="M81 63 Q93 58 105 60"/>
+                    <path d="M94 40 L124 6"/>
+                    <path d="M94 40 L89.6 44.9 L95.2 43.4 Z"/>
+                    <g transform="translate(103 29.8) rotate(-48.6)"><path d="M0 0 C 8 -5.5 20.5 -5.5 32 0 C 20.5 5.5 8 5.5 0 0 Z"/><path d="M3.5 0H28.5"/></g>
+                  </g>
+                  <g class="gw-ink" transform="translate(0 0.4)" fill="none" stroke-width="1.7">
+                    <path d="M34.0 8.0 L36.5 15.6 L44.5 15.6 L38.0 20.3 L40.5 27.9 L34.0 23.2 L27.5 27.9 L30.0 20.3 L23.5 15.6 L31.5 15.6 Z"/>
+                    <path d="M67 46 Q49 39 21 42 L21 88 Q49 85 67 92 Z"/>
+                    <path d="M67 46 Q85 39 113 42 L113 88 Q85 85 67 92 Z"/>
+                    <path d="M67 46 L67 92"/>
+                    <path d="M29 51 Q41 49 53 54"/>
+                    <path d="M29 60 Q41 58 53 63"/>
+                    <path d="M81 54 Q93 49 105 51"/>
+                    <path d="M81 63 Q93 58 105 60"/>
+                    <path d="M94 40 L124 6"/>
+                    <path d="M94 40 L89.6 44.9 L95.2 43.4 Z"/>
+                    <g transform="translate(103 29.8) rotate(-48.6)"><path d="M0 0 C 8 -5.5 20.5 -5.5 32 0 C 20.5 5.5 8 5.5 0 0 Z"/><path d="M3.5 0H28.5"/></g>
+                  </g>
+                </svg>
+              </span>
               <!-- ⚠️ 月桂线稿（`.env-leaf`）第七轮**整块删除** —— 用户："保留简洁学院风，
                    减少叶子、圆环等装饰"、"装饰只做辅助，不要为了填空增加更多植物和边框"。
                    现在信封上**一件纯装饰都没有**；留白就是留白，不许拿植物填。 -->
@@ -2649,9 +2737,13 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
             </div>
           </div>
         </div>
-        <!-- 解锁后出现的按钮（在信封下方，像一枚拆信刀） -->
+        <!-- 解锁后出现的按钮（在信封下方，像一枚拆信刀）
+             ⚠️ 文案第八轮改过：`拆阅 · 进入知识文库` → **`查阅档案`**。用户原话 ——
+                "因为当前剧情是信件已经写好、装入信封并密封完成，此时按钮应该表示**查阅档案**，
+                 而不是再次拆阅信件"。箭头沿用原来的**自绘 SVG**（不是文字 `→`）：
+                它带 hover 右移 3px 的位移，比文本箭头更稳、也和按钮的金边同一套笔触。 -->
         <button type="button" class="genter" id="knowledgeGateEnter" hidden>
-          <span class="genter-in"><span class="ge-orn" aria-hidden="true"></span>拆阅 · 进入知识文库<svg class="ge-arrow" viewBox="0 0 22 12" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round"><path d="M1 6h17.6M13.4 1.5 18 6l-4.6 4.5"/></svg></span>
+          <span class="genter-in"><span class="ge-orn" aria-hidden="true"></span>查阅档案<svg class="ge-arrow" viewBox="0 0 22 12" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round"><path d="M1 6h17.6M13.4 1.5 18 6l-4.6 4.5"/></svg></span>
         </button>
         <div class="gseal" aria-hidden="true"><span>Ex Libris</span></div>
       </div>
@@ -2748,6 +2840,6 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 
 <script src="docs.js?v=20260920c"></script>
 <script src="app.js?v=20260920f"></script>
-<script src="knowledge.js?v=20260920n"></script>
+<script src="knowledge.js?v=20260920o"></script>
 </body>
 </html>
