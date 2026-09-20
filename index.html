@@ -337,11 +337,17 @@ img{display:block}
    ⚠️ 抽信是 `transform` 做的，**transform 不占布局**：所以 `.mail` 的 padding-top 必须把
    「信封高 + 抽出距离」都算进去，否则整组内容会按"没有信"的高度居中，
    信一抽出来就顶到视口上沿（第一版就是这样，信纸贴到画面顶部）。
-   所以先把抽出量抽成 `--openY`，让 padding-top、.open、抖动关键帧共用同一个值。 */
+   所以先把抽出量抽成 `--openY`，让 padding-top、.open、抖动关键帧共用同一个值。
+   ⚠️ 抽出量由 `--reveal` 说了算（**信纸露出多少**）：用户 2026-09-20 明确"我要的是一半还留在
+   信封里、一半抽出来"（原来 .96 几乎整张抽离，看着像"信纸压在信封上"）。
+   推导：信纸底边最终高度 = (envH-cardH)/2 + 抽出量，要求它 = envH - cardH*(1-reveal)，
+   所以 抽出量 = (envH-cardH)/2 + cardH*reveal，padding-top = envH + cardH*reveal。
+   ⚠️ 改 `--reveal` 时**这两个式子必须一起改**（它们是同一个几何的两半）。 */
 #knowledgeGate .mail{--envH:clamp(212px,33vh,320px);--cardH:clamp(200px,26vh,232px);
-  --openY:calc((var(--cardH) - var(--envH)) / 2 - var(--cardH) * .96);
+  --reveal:.52;
+  --openY:calc((var(--cardH) - var(--envH)) / 2 - var(--cardH) * var(--reveal));
   position:relative;width:min(520px,calc(92vw - 40px));margin:0 auto;
-  padding-top:calc(var(--envH) + var(--cardH) * .96)}
+  padding-top:calc(var(--envH) + var(--cardH) * var(--reveal))}
 #knowledgeGate .mail-env{position:absolute;left:0;right:0;bottom:0;height:var(--envH);
   z-index:3;perspective:1000px}
 #knowledgeGate .env-back{position:absolute;inset:0;border-radius:3px;
@@ -373,14 +379,16 @@ img{display:block}
   -webkit-mask-image:linear-gradient(90deg,transparent,#000 26%,#000 100%);
   mask-image:linear-gradient(90deg,transparent,#000 26%,#000 100%)}
 /* 封口（上三角）：闭合时压在信封体上，开门时绕上边翻起。
-   ⚠️ 形状改用**内嵌 SVG** 画，不再用 clip-path —— clip-path 会把两条斜边上的描边**整条切掉**，
+   ⚠️ 形状用**内嵌 SVG** 画，不用 clip-path —— clip-path 会把两条斜边上的描边**整条切掉**，
       所以之前那两条边是"硬切"的、看着很假（用户："合上后信封上部分也感觉太假了"）。
    ⚠️ 闭合态也挂 `filter:drop-shadow` —— 真实信封的折口会在信封体上投一道影；
       没有这道影，封口就像"贴上去的一块纸"。
+   ⚠️ 高度 62% → 54%（2026-09-20 第二轮）：用户仍觉得"上部分太违和"。62% 时那个三角占了大半个
+      信封、头重脚轻，而且 V 太深就像一个"口袋"而不是"折下来的那片纸"。
    ⚠️ 翻开只到 -158°（不是 -177° 贴平）：留一点角度才看得见"翻开的那一片"。 */
-#knowledgeGate .env-flap{position:absolute;left:0;right:0;top:0;height:62%;z-index:4;
+#knowledgeGate .env-flap{position:absolute;left:0;right:0;top:0;height:54%;z-index:4;
   transform-origin:top center;transform:rotateX(0deg);
-  filter:drop-shadow(0 2px 3px rgba(96,78,48,.26));
+  filter:drop-shadow(0 3px 4px rgba(96,78,48,.3));
   transition:transform .68s cubic-bezier(.22,.9,.24,1) .26s,z-index 0s .6s,filter .3s}
 #knowledgeGate .env-flap svg{display:block;width:100%;height:100%}
 /* 信纸：密码表单在这一层。
@@ -421,25 +429,27 @@ img{display:block}
   margin:-56px 0 0 -56px;color:#2f5d50;opacity:0;pointer-events:none;transform-origin:center;
   transform:rotate(-13deg) scale(1.8);
   transition:opacity .26s ease-out 1.16s,transform .34s cubic-bezier(.2,1.5,.4,1) 1.16s}
-#knowledgeGate .postmark svg{width:100%;height:100%;display:block;opacity:.82}
-/* 栖在信封上沿的猫头鹰（线描）——用户："猫头鹰能不能加入"。
-   2026-09-20 用户："虽然是简绘的，但是也太简单了，高级一点" → 重画：
-   分层羽翼、胸羽鳞纹、金色虹膜 + 瞳孔高光、眉脊、钩喙、双足三趾扣住信口，
-   再用低透明度的渐变填充给一点体积感（原来只有一圈光秃秃的轮廓线）。
+#knowledgeGate .postmark svg{width:100%;height:100%;display:block;opacity:.88}
+/* 衔着信封的大猫头鹰头（线描）——用户："猫头鹰能不能加入" → 之后两次收紧：
+   "虽然是简绘的，但是也太简单了，高级一点" → 重画细节；
+   "这个猫头鹰也不协调，你不如用一个大的猫头鹰头衔在嘴里" → **只画头（不画身体）**、
+   **尺寸放大一档**、**喙尖压过信封上沿**（所以读作"猫头鹰衔着这封信"）。
+   ⚠️ 只画头是关键：整只站着的小猫头鹰在信封边上像一张贴纸；头 + 喙衔住信口，比例才协调。
    ⚠️ 它是 `.mail` 的直接子级（不是 `.mail-env` 的子级）：`.mail-env` 自己是 stacking context，
       放进去的话再高的 z-index 也压不过信纸（z-index 5），会被整只盖住。
-   位置用 `bottom` 算：信封上沿 = 距 mail 底 `--envH`，所以 bottom = envH - 6px，
-   让爪趾正好扣在信口沿上（viewBox 底部那 6px 就是扣过去的部分）。
-   z-index 7：压过信纸(5)与前片(6)，所以信抽出来时它仍站在最前面（像栖在信封口上）。 */
-#knowledgeGate .perchowl{position:absolute;right:2px;bottom:calc(var(--envH) - 6px);
-  width:74px;height:92px;z-index:7;color:#2f5d50;pointer-events:none;
-  filter:drop-shadow(0 7px 14px rgba(47,93,80,.24));
+   位置用 `bottom` 算：信封上沿 = 距 mail 底 `--envH`，bottom = envH - 6px（让喙尖低于信口 6px = "衔住"）。
+   z-index 7：压过信纸(5)与前片(6)，所以信抽出来时它仍咬在最前面。 */
+#knowledgeGate .perchowl{position:absolute;right:0;bottom:calc(var(--envH) - 8px);
+  width:96px;height:86px;z-index:7;color:#2f5d50;pointer-events:none;
+  filter:drop-shadow(0 8px 16px rgba(47,93,80,.24));
   animation:knOwlSway 5.4s ease-in-out infinite}
 @keyframes knOwlSway{
   0%,100%{transform:translateY(0) rotate(0deg)}
-  50%{transform:translateY(-1.8px) rotate(-.6deg)}
+  50%{transform:translateY(-2px) rotate(-.35deg)}
 }
-#knowledgeGate .perchowl svg{width:100%;height:100%;display:block}
+/* ⚠️ overflow:visible 必须留：喙尖画在 viewBox 之外（往下多画 6px），
+   被裁掉的话"衔住信封"这件事就没了。 */
+#knowledgeGate .perchowl svg{width:100%;height:100%;display:block;overflow:visible}
 
 /* 抽出态：封口翻起 + 信纸升起（并把前片提到信纸之上，留在信封里的那段才藏得住）
    ⚠️ 封口翻起时加投影：不然它和背景纸色几乎同色，"信封开了"这件事看不见
@@ -514,7 +524,7 @@ img{display:block}
 @media (max-width:600px){
   /* ⚠️ 邮戳现在是"居中 + 负 margin"定位，窄屏只改尺寸，别再把 right/top 写回去（会跑偏） */
   #knowledgeGate .postmark{width:88px;height:88px;margin:-44px 0 0 -44px}
-  #knowledgeGate .perchowl{width:54px;height:67px;right:0}
+  #knowledgeGate .perchowl{width:64px;height:58px;right:-2px}
   #knowledgeGate .env-front .gcrest{width:46px;height:46px;left:16px;bottom:20px}
   #knowledgeGate .glatin{left:16px;font-size:9px;letter-spacing:.24em}
   #knowledgeGate .env-front::before{right:16px;bottom:26px;width:40%}
@@ -2223,136 +2233,118 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
               <span class="glatin">Scientia · Sapientia · Veritas</span>
             </div>
             <!-- 封口：内嵌 SVG 画这个三角（**不用 clip-path** —— 它会把两条斜边上的描边整条切掉，
-                 所以之前那两条边是"硬切"的、很假）。折痕高光、折下的一道内阴影都画在里面。
+                 所以之前那两条边是"硬切"的、很假）。
+                 ⚠️ 第二版把三条边从**直线改成微微内凹的曲线**（2026-09-20 用户："上部分还是太违和了"）：
+                    真实信封的封口是被两侧折痕拉紧的一片纸，边不会是几何直线；直线+尖角看着像"口袋"。
                  ⚠️ preserveAspectRatio="none" + vector-effect="non-scaling-stroke"：
                     信封宽高比随视口变，这样描边才不会被拉成粗细不匀。 -->
             <div class="env-flap">
               <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
                 <defs>
                   <linearGradient id="knFlapG" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0" stop-color="#f2e9d6"/>
-                    <stop offset=".30" stop-color="#fbf5e8"/>
-                    <stop offset="1" stop-color="#e6d7b5"/>
-                  </linearGradient>
-                  <linearGradient id="knFlapCrease" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0" stop-color="#8c7444" stop-opacity=".2"/>
-                    <stop offset="1" stop-color="#8c7444" stop-opacity="0"/>
+                    <stop offset="0" stop-color="#f2e9d5"/>
+                    <stop offset=".28" stop-color="#fcf7ea"/>
+                    <stop offset="1" stop-color="#e9dbbc"/>
                   </linearGradient>
                   <!-- ⚠️ 折痕那条暗带必须**裁进三角里**：不裁的话它是一条横贯整宽的矩形，
                        会在信封顶部两个角上各留一块暗块（看着像脏点）。 -->
                   <clipPath id="knFlapClip">
-                    <polygon points=".5,.5 99.5,.5 50,99"/>
+                    <path d="M0 0C14 30 32 68 50 98C68 68 86 30 100 0Z"/>
                   </clipPath>
                 </defs>
                 <g clip-path="url(#knFlapClip)">
-                  <polygon points=".5,.5 99.5,.5 50,99" fill="url(#knFlapG)"/>
-                  <rect x=".5" y=".5" width="99" height="9" fill="url(#knFlapCrease)"/>
+                  <path d="M0 0C14 30 32 68 50 98C68 68 86 30 100 0Z" fill="url(#knFlapG)"/>
                 </g>
-                <polygon points=".5,.5 99.5,.5 50,99" fill="none"
-                         stroke="rgba(152,128,80,.62)" stroke-width="1"
-                         stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
-                <path d="M.5,.7H99.5" fill="none" stroke="rgba(255,255,255,.72)"
+                <path d="M0 0C14 30 32 68 50 98C68 68 86 30 100 0Z" fill="none"
+                      stroke="rgba(146,122,74,.72)" stroke-width="1.1"
+                      stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+                <!-- 折痕：**一条细线**（不是一片暗带）。
+                     ⚠️ 第一版是一条 7 单位高的渐变压暗矩形，结果信封顶边糊出一条深色横条，
+                        像"信封上盖了个暗盖子"（用户："上部分还是太违和了"）。
+                        真实折痕就是一条线：上缘一道高光 + 紧邻下方一道细暗线。 -->
+                <path d="M0,.75H100" fill="none" stroke="rgba(255,255,255,.85)"
+                      stroke-width="1.3" vector-effect="non-scaling-stroke"/>
+                <path d="M0,2.1H100" fill="none" stroke="rgba(140,118,72,.28)"
                       stroke-width="1" vector-effect="non-scaling-stroke"/>
+                <!-- 纸张厚度：沿两条斜边的内侧再描一道极淡的亮线 -->
+                <path d="M1.6 2.4C15 31 33 68 50 95C67 68 85 31 98.4 2.4" fill="none"
+                      stroke="rgba(255,255,255,.45)" stroke-width="1"
+                      stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
               </svg>
             </div>
-            <!-- 邮戳：解锁后"咚"地盖上去（圆环 + 环形文字 + **猫头鹰**印记）—— 居中信封正中 -->
+            <!-- 邮戳：解锁后"咚"地盖上去 —— 居中信封正中。
+                 用户 2026-09-20："这个邮戳太儿戏了，缺少正式感"（初版是双环 + 环形文字 + 中心一只卡通猫头鹰）。
+                 正式邮戳的语言 = **细双环 + 上下双弧文字 + 中心日期戳**，所以中心改成日期、去掉卡通图案。
+                 ⚠️ 上弧文字沿"顺时针"弧（字形向**外侧**长），下弧文字沿"逆时针"弧（字形向**内侧**长），
+                    所以两条弧的半径不一样（45 / 51.5）才能落在同一条视觉环带 41~56 里。改半径前先量这个带。 -->
             <div class="postmark" id="knPostmark">
               <svg viewBox="0 0 120 120" aria-hidden="true">
-                <defs><path id="knPmArc" d="M60,60 m-45,0 a45,45 0 1,1 90,0 a45,45 0 1,1 -90,0"/></defs>
-                <circle cx="60" cy="60" r="55" fill="none" stroke="currentColor" stroke-width="2.4"/>
-                <circle cx="60" cy="60" r="42" fill="none" stroke="currentColor" stroke-width="1.1"/>
-                <text font-size="12.5" letter-spacing="2.4" fill="currentColor" font-family="Georgia,serif">
-                  <textPath href="#knPmArc" startOffset="0">KNOWLEDGE &#183; ARCHIVE &#183; &#21494;&#12398;&#25991;&#24235; &#183; </textPath>
+                <defs>
+                  <path id="knPmTop" d="M60,60 m-45,0 a45,45 0 1,1 90,0"/>
+                  <path id="knPmBot" d="M60,60 m-51.5,0 a51.5,51.5 0 1,0 103,0"/>
+                </defs>
+                <circle cx="60" cy="60" r="56" fill="none" stroke="currentColor" stroke-width="2"/>
+                <circle cx="60" cy="60" r="41" fill="none" stroke="currentColor" stroke-width=".8"/>
+                <text font-size="8.2" letter-spacing=".8" fill="currentColor" font-family="Georgia,serif">
+                  <textPath href="#knPmTop" startOffset="50%" text-anchor="middle">KNOWLEDGE &#183; ARCHIVE</textPath>
                 </text>
-                <g transform="translate(36,34) scale(2)" fill="none" stroke="currentColor"
-                   stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M6.6 5.2 8.2 1.6l2 2.6"/>
-                  <path d="M17.4 5.2 15.8 1.6l-2 2.6"/>
-                  <circle cx="12" cy="8.8" r="5.6"/>
-                  <circle cx="9.8" cy="8.4" r="1.9"/>
-                  <circle cx="14.2" cy="8.4" r="1.9"/>
-                  <circle cx="9.8" cy="8.4" r=".7" fill="currentColor" stroke="none"/>
-                  <circle cx="14.2" cy="8.4" r=".7" fill="currentColor" stroke="none"/>
-                  <path d="M12 10.6l1.2 1.5h-2.4z" fill="currentColor" stroke="none"/>
-                  <path d="M12 14.6c2.9 0 4.9 2 4.9 4.7 0 2.8-2.1 4.7-4.9 4.7s-4.9-1.9-4.9-4.7c0-2.7 2-4.7 4.9-4.7z"/>
+                <text font-size="7.8" letter-spacing="1.2" fill="currentColor" font-family="Georgia,serif">
+                  <textPath href="#knPmBot" startOffset="50%" text-anchor="middle">YEPKNO &#183; LIBRARY</textPath>
+                </text>
+                <g stroke="currentColor" stroke-width=".9">
+                  <line x1="47" y1="49" x2="73" y2="49"/>
+                  <line x1="47" y1="78" x2="73" y2="78"/>
                 </g>
+                <text x="60" y="68" text-anchor="middle" font-size="11" letter-spacing=".5"
+                      fill="currentColor" font-family="Georgia,serif">2026.09.20</text>
               </svg>
             </div>
           </div>
-          <!-- 栖在信封上沿的猫头鹰（线描，静态）——用户："猫头鹰能不能加入"。
+          <!-- 衔着信封的大猫头鹰头（线描）——用户："你不如用一个大的猫头鹰头衔在嘴里"。
+               ⚠️ 只画**头**（不画身体/翅膀/爪）：整只站在信封边上的小猫头鹰比例不协调、像贴纸；
+                  换成大头 + 喙尖压过信口，读作"猫头鹰衔着这封信"。
+               ⚠️ 喙尖画在 viewBox **之外**（画到 y=126，而元素底 = viewBox 的 124），
+                  所以 CSS 里 `.perchowl svg` 必须 `overflow:visible` —— 被裁掉"衔住"就没了。
                ⚠️ 必须放在 `.mail-env` **外面**、与 `.mail-card` 同级：`.mail-env` 自己有 z-index，
                   是个 stacking context，放里面的话猫头鹰再高的 z-index 也逃不出来，
                   会被信纸（z-index 5）整只盖住（第一版就是这样，只露出半只）。 -->
           <div class="perchowl">
-            <svg viewBox="0 0 84 104" fill="none" stroke="currentColor" stroke-width="1.45"
+            <svg viewBox="0 0 120 108" fill="none" stroke="currentColor" stroke-width="1.6"
                  stroke-linecap="round" stroke-linejoin="round">
               <defs>
-                <radialGradient id="knOwlFace" cx="50%" cy="40%" r="64%">
-                  <stop offset="0" stop-color="#fffaf0" stop-opacity=".95"/>
-                  <stop offset="1" stop-color="#efe4cb" stop-opacity=".2"/>
+                <radialGradient id="knOwlFace" cx="50%" cy="34%" r="72%">
+                  <stop offset="0" stop-color="#fffaf0" stop-opacity=".96"/>
+                  <stop offset="1" stop-color="#efe4cb" stop-opacity=".22"/>
                 </radialGradient>
                 <linearGradient id="knOwlBody" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0" stop-color="#5d9180" stop-opacity=".16"/>
+                  <stop offset="0" stop-color="#5d9180" stop-opacity=".15"/>
                   <stop offset="1" stop-color="#265043" stop-opacity=".34"/>
                 </linearGradient>
-                <linearGradient id="knOwlWing" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0" stop-color="#4a7f6e" stop-opacity=".24"/>
-                  <stop offset="1" stop-color="#224b3e" stop-opacity=".46"/>
-                </linearGradient>
               </defs>
-              <!-- 耳簇：**有粗细的尖羽**（不画成两根细线 —— 3x 放大看就像两根天线） -->
-              <path d="M29.5 22.5C26.6 16.4 24.6 11.4 22.6 6.2c3.8 3.2 7.8 7.8 11 13.4z"
-                    fill="currentColor" fill-opacity=".13"/>
-              <path d="M54.5 22.5c2.9-6.1 4.9-11.1 6.9-16.3-3.8 3.2-7.8 7.8-11 13.4z"
-                    fill="currentColor" fill-opacity=".13"/>
-              <!-- 身体（盾形坐姿） -->
-              <path d="M28 24c-6.4 10-10.2 24.4-10.2 39 0 15.6 9.8 27.6 24.2 27.6S66.2 78.6 66.2 63c0-14.6-3.8-29-10.2-39z"
+              <!-- 头：**耳簇与头合成同一条轮廓**（角鸮的剪影：头顶两个尖角、下面一个宽圆）。
+                   ⚠️ 这是第三版。前两版都把耳簇画成两个独立的小三角贴在圆头上 ——
+                      结果一个像"两根犄角"、一个像"头顶别了个蝴蝶结"，都不像猫头鹰。
+                      合进轮廓里才干净（也不用担心接缝）。 -->
+              <path d="M60 18C54 12 46 7 36 2C26 10 16 32 13 56C11 78 28 100 60 106C92 100 109 78 107 56C104 32 94 10 84 2C74 7 66 12 60 18Z"
                     fill="url(#knOwlBody)"/>
-              <!-- 头 -->
-              <path d="M42 10c-11 0-19.5 8.5-19.5 19.5S31 47.5 42 47.5s19.5-7 19.5-18S53 10 42 10z"/>
-              <!-- 面盘（心形）+ 面盘中缝 -->
-              <path d="M42 46.5c-7 0-13.5-6-13.5-14.5C28.5 22.8 35 16.5 42 16.5s13.5 6.3 13.5 15.5c0 8.5-6.5 14.5-13.5 14.5z"
+              <!-- 面盘：心形，**要够宽**（占头宽的 ~7 成；窄了就成"宽头上贴个蛋"）。
+                   顶部中间只**浅凹一丝**（凹深了会跟头顶那两个角叠成两层 M，很乱）。 -->
+              <path d="M60 102C44 102 26 92 26 68C26 48 42 34 55 32.5c2 3.5 8 3.5 10 0C75 34 94 48 94 68C94 92 76 102 60 102Z"
                     fill="url(#knOwlFace)"/>
-              <path d="M42 43.4V32.6" stroke-opacity=".5"/>
-              <!-- 眉脊 -->
-              <path d="M28.8 21.6c3.6-3.4 8.6-4.4 12.4-3" stroke-opacity=".8"/>
-              <path d="M55.2 21.6c-3.6-3.4-8.6-4.4-12.4-3" stroke-opacity=".8"/>
-              <!-- 眼：外圈 → 金色虹膜 → 瞳孔 → 高光 -->
-              <circle cx="35.2" cy="30.6" r="5.9"/>
-              <circle cx="48.8" cy="30.6" r="5.9"/>
-              <circle cx="35.2" cy="30.6" r="4.1" fill="#b08a3e" fill-opacity=".44" stroke="none"/>
-              <circle cx="48.8" cy="30.6" r="4.1" fill="#b08a3e" fill-opacity=".44" stroke="none"/>
-              <circle cx="35.2" cy="30.6" r="2.2" fill="currentColor" stroke="none"/>
-              <circle cx="48.8" cy="30.6" r="2.2" fill="currentColor" stroke="none"/>
-              <circle cx="33.7" cy="28.9" r=".95" fill="#fffdf7" stroke="none"/>
-              <circle cx="47.3" cy="28.9" r=".95" fill="#fffdf7" stroke="none"/>
-              <!-- 钩喙 -->
-              <path d="M42 34.6c2.6 0 4.1 2.6 2.7 5.2-.7 1.4-2 2.4-2.7 3.4-.7-1-2-2-2.7-3.4-1.4-2.6.1-5.2 2.7-5.2z"
-                    fill="currentColor" fill-opacity=".78"/>
-              <!-- 双翼（合拢，三层羽） -->
-              <path d="M58.5 45.5c6.5 7.5 9 20 7.5 32-.9 7-6.4 11-11.4 8.7-5-2.2-7-8.2-6-15.3 1-8 4-18 9.9-25.4z"
-                    fill="url(#knOwlWing)"/>
-              <path d="M25.5 45.5c-6.5 7.5-9 20-7.5 32 .9 7 6.4 11 11.4 8.7 5-2.2 7-8.2 6-15.3-1-8-4-18-9.9-25.4z"
-                    fill="url(#knOwlWing)"/>
-              <path d="M56.6 52.4c3.8 8 5 18 3.8 27.2" stroke-opacity=".5"/>
-              <path d="M53.4 59.6c3 6.8 4 14.8 3 22.4" stroke-opacity=".5"/>
-              <path d="M27.4 52.4c-3.8 8-5 18-3.8 27.2" stroke-opacity=".5"/>
-              <path d="M30.6 59.6c-3 6.8-4 14.8-3 22.4" stroke-opacity=".5"/>
-              <!-- 胸羽：三排鳞纹 -->
-              <path d="M36.8 56.4 42 60.2l5.2-3.8" stroke-opacity=".48"/>
-              <path d="M36 63.4 42 67.6l6-4.2" stroke-opacity=".48"/>
-              <path d="M36.5 70.6 42 74.6l5.5-4" stroke-opacity=".48"/>
-              <!-- 双足：三趾向前扣住信封的上沿（趾要**有粗细**，细线在放大后像蜘蛛腿） -->
-              <g stroke-width="2.1" stroke-opacity=".9">
-                <path d="M34.5 86v6.5"/>
-                <path d="M49.5 86v6.5"/>
-                <path d="M34.5 92.5c-2.3 1.3-3.6 3.1-4 5.2"/>
-                <path d="M34.5 92.5c-.6 2.2-.5 4.3.2 5.7"/>
-                <path d="M34.5 92.5c2.1 1.8 3.2 3.7 3.5 5.7"/>
-                <path d="M49.5 92.5c-2.3 1.3-3.6 3.1-4 5.2"/>
-                <path d="M49.5 92.5c-.6 2.2-.5 4.3.2 5.7"/>
-                <path d="M49.5 92.5c2.1 1.8 3.2 3.7 3.5 5.7"/>
-              </g>
+              <!-- 眼：外圈 → 金色虹膜 → 瞳孔 → 高光（瞳孔要大，这是猫头鹰的神情所在） -->
+              <circle cx="45" cy="64" r="14"/>
+              <circle cx="75" cy="64" r="14"/>
+              <circle cx="45" cy="64" r="10" fill="#b08a3e" fill-opacity=".42" stroke="none"/>
+              <circle cx="75" cy="64" r="10" fill="#b08a3e" fill-opacity=".42" stroke="none"/>
+              <circle cx="45" cy="64" r="7" fill="currentColor" stroke="none"/>
+              <circle cx="75" cy="64" r="7" fill="currentColor" stroke="none"/>
+              <circle cx="40.6" cy="59.4" r="2.3" fill="#fffdf7" stroke="none"/>
+              <circle cx="70.6" cy="59.4" r="2.3" fill="#fffdf7" stroke="none"/>
+              <!-- 短钩喙：尖端与头下缘齐平（都落在元素底边附近）。
+                   ⚠️ 不要为了让喙"伸出头下缘"而把它拉长 —— 那会变成企鹅嘴。
+                      靠 CSS 的 `bottom = envH-8` 让整只（含喙尖）压过信口 ≈6px 才是"衔住"。 -->
+              <path d="M60 84c5.4 0 8.6 3.6 7.6 8.6-.8 4.6-3.3 8.4-7.6 13.4-4.3-5-6.8-8.8-7.6-13.4-1-5 2.2-8.6 7.6-8.6z"
+                    fill="currentColor" fill-opacity=".72"/>
             </svg>
           </div>
         </div>
