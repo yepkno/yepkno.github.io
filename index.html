@@ -360,6 +360,12 @@ img{display:block}
    ⚠️ 窄屏 / 矮屏另有覆盖（矮屏会把 --reveal 抬起来 + 藏掉说明行，保证输入行落在露出段）。 */
 #knowledgeGate .mail{--envH:clamp(236px,36vh,352px);--cardH:clamp(228px,34vh,332px);
   --reveal:.58;
+  /* 信封正面装饰（四角月桂 / 徽记 / 信函编号 / 藏书印）的尺寸与缩进：随视口收放。
+     ⚠️ 别写死 px —— 信封宽 = min(520px,92vw-40)，写死的话窄屏装饰相对变大、把留白挤没。 */
+  --leafSz:clamp(34px,3.5vw,46px);--ornIn:clamp(26px,2.9vw,38px);--crestSz:clamp(36px,3.5vw,46px);
+  /* 蜡封尺寸：**中央纹章的大小由它派生**（1.81 倍 = 那一圈金环正好落在蜡体外缘 14px 处）——
+     以后改蜡封只动这一处，纹章自动跟着走，两边不会再各写一个数而对不上。 */
+  --waxSz:96px;
   --openY:calc((var(--cardH) - var(--envH)) / 2 - var(--cardH) * var(--reveal));
   position:relative;width:min(520px,calc(92vw - 40px));margin:0 auto;
   padding-top:calc(var(--envH) + var(--cardH) * var(--reveal))}
@@ -393,8 +399,11 @@ img{display:block}
   box-shadow:inset 0 2px 5px rgba(88,74,50,.3);
   background:linear-gradient(180deg,rgba(96,82,58,.22),rgba(96,82,58,.04) 55%,transparent)}
 #knowledgeGate.open .env-front::after{opacity:1}
-#knowledgeGate .env-front::before{content:"";position:absolute;right:24px;bottom:28px;
-  width:44%;max-width:190px;height:26px;
+/* 右下"档案线"（三道）：2026-09-20 第四轮**左移让位**给角上的月桂线稿（原来是 right:24px）。
+   ⚠️ 必须与右下角月桂保持净空：线宽 38%/max 168px、右端离边 92px，月桂占 38~84px —— 不挪就会盖在月桂上。 */
+#knowledgeGate .env-front::before{content:"";position:absolute;
+  right:clamp(78px,8vw,92px);bottom:clamp(38px,4.4vh,48px);
+  width:38%;max-width:168px;height:24px;
   background:repeating-linear-gradient(180deg,rgba(110,104,90,.42) 0 1px,transparent 1px 12px);
   -webkit-mask-image:linear-gradient(90deg,transparent,#000 26%,#000 100%);
   mask-image:linear-gradient(90deg,transparent,#000 26%,#000 100%)}
@@ -447,16 +456,58 @@ img{display:block}
 /* ⚠️ .gsync 继承共享样式的 margin-top:30px —— 在信纸里会把输入行推进遮住段 */
 #knowledgeGate .mail-card .gsync{margin-top:clamp(9px,1.6vh,16px)}
 #knowledgeGate .mail-card .err{margin-top:8px;font-family:var(--serif)}
-/* 徽记 / 题词 / 落款：都镶在信封前片的下缘（避开封口的三角区） */
-#knowledgeGate .env-front .gcrest{position:absolute;left:22px;bottom:22px;
-  width:56px;height:56px;display:flex;align-items:center;justify-content:center;color:#2f5d50}
+/* ── 信封正面的"排面"（2026-09-20 第四轮 · 用户："当前信封太空，需要增加少量精致的学院元素，
+   但不要堆满"）。四条边各司其职，四角是月桂线稿：
+     左上 小型徽记 ｜ 右上 信函编号 ｜ 中央 纹章（火漆落在正中）｜ 右下 档案线 ＋ 藏书印
+   配色只用站内那两味：淡墨绿 rgba(47,93,80) / 淡金 rgba(176,138,62)，透明度 .18~.42。
+   ⚠️ 留白仍是大头 —— 再加元素之前先问"这块能不能空着"，宁可少一件。
+   ⚠️ 尺寸全走 --leafSz / --ornIn / --crestSz（窄屏在媒体查询里再收一档），别写死 px。 */
+/* 四角月桂线稿：**同一份 SVG 放四次**，靠 CSS 镜像（scaleX/scaleY）凑出四角 ——
+   只维护一份路径、不会写错相位，也不必给每个角手搓一条独立曲线。
+   基样：茎从角点 (6,6) 沿对角线伸到 (54,50)，左右交替 3 对叶 + 尖端一叶（共 9 片）。 */
+#knowledgeGate .env-leaf{position:absolute;width:var(--leafSz);height:var(--leafSz);
+  color:#2f5d50;opacity:.34;pointer-events:none}
+#knowledgeGate .env-leaf svg{display:block;width:100%;height:100%;overflow:visible;
+  fill:none;stroke:currentColor;stroke-width:1.05;stroke-linecap:round}
+#knowledgeGate .env-leaf.tl{left:var(--ornIn);top:var(--ornIn)}
+#knowledgeGate .env-leaf.tr{right:var(--ornIn);top:var(--ornIn);transform:scaleX(-1)}
+#knowledgeGate .env-leaf.bl{left:var(--ornIn);bottom:var(--ornIn);transform:scaleY(-1)}
+#knowledgeGate .env-leaf.br{right:var(--ornIn);bottom:var(--ornIn);transform:scale(-1,-1)}
+/* 左上：小型学院徽记（**2026-09-20 从下缘上移** —— 上方才是"信笺抬头"的位置；
+   左下让给拉丁题词，与右下的藏书印在底边左右成对）。 */
+#knowledgeGate .env-front .gcrest{position:absolute;
+  left:calc(var(--ornIn) + var(--leafSz) + 12px);top:var(--ornIn);
+  width:var(--crestSz);height:var(--crestSz);display:flex;align-items:center;
+  justify-content:center;color:#2f5d50}
 #knowledgeGate .gcrest::before{content:"";position:absolute;inset:0;border-radius:50%;
-  border:1.5px solid rgba(47,93,80,.5)}
+  border:1.5px solid rgba(47,93,80,.42)}
 #knowledgeGate .gcrest::after{content:"";position:absolute;inset:6px;border-radius:50%;
-  background:radial-gradient(circle at 50% 36%,rgba(176,138,62,.32),rgba(176,138,62,.05) 72%,transparent)}
+  background:radial-gradient(circle at 50% 36%,rgba(176,138,62,.2),rgba(176,138,62,.04) 72%,transparent)}
 #knowledgeGate .gcrest svg{position:relative;z-index:1;width:24px;height:24px}
+/* 右上：信函编号 + 档案馆名（档案室给每封信的抬头） */
+#knowledgeGate .gletter{position:absolute;
+  right:calc(var(--ornIn) + var(--leafSz) + 12px);top:var(--ornIn);margin:0;
+  text-align:right;font-family:var(--serif);font-size:clamp(8px,.72vw,9.5px);
+  line-height:1.6;letter-spacing:.24em;text-transform:uppercase;color:rgba(176,138,62,.68)}
+#knowledgeGate .gletter b{display:block;font-weight:400;font-size:clamp(7.5px,.68vw,9px);
+  letter-spacing:.3em;color:rgba(47,93,80,.5)}
+/* 底边一对落款：左 = 拉丁题词，右 = 藏书印（同基线、同字号，读作"信笺的下缘"） */
 #knowledgeGate .glatin{position:absolute;left:22px;bottom:6px;margin:0;font-family:var(--serif);
   font-size:10px;letter-spacing:.3em;color:rgba(138,109,43,.72);text-transform:uppercase}
+#knowledgeGate .garch{position:absolute;right:22px;bottom:6px;margin:0;font-family:var(--serif);
+  font-size:10px;letter-spacing:.3em;color:rgba(138,109,43,.72);text-transform:uppercase}
+/* 中央纹章：火漆落在它正中 —— 一圈虚线金环 + 一圈细墨绿环 + 四向小菱形。
+   ⚠️⚠️ z-index **7**（低于蜡封 8、**高于封口 4**）：解锁后封口重新合上，
+      纹章若放在 `.env-front`(3) 会被封口整个盖住 —— 用户要的"蜡封周围有纹章"就永远看不到。
+      压在封口之上、蜡封之下，才是"纸面纹章 → 蜡压在上面"的层次。 */
+#knowledgeGate .env-medal{position:absolute;left:50%;top:44%;
+  width:calc(var(--waxSz) * 1.81);height:auto;aspect-ratio:1/1;
+  transform:translate(-50%,-50%);z-index:7;opacity:0;pointer-events:none;
+  transition:opacity .55s ease .4s}
+/* ⚠️ 分两档淡入：开门时先**半隐**（自己待着时是一枚很淡的"印位"，不抢信纸），
+   解锁、蜡封落下的同一拍才升到全亮度 —— 那时它才是"蜡封周围那一圈纹章"。 */
+#knowledgeGate.open .env-medal{opacity:.6}
+#knowledgeGate.unlocked .env-medal{opacity:1}
 #knowledgeGate .gseal{margin-top:22px;width:min(300px,62vw);
   display:flex;align-items:center;justify-content:center}
 #knowledgeGate .gseal::before,#knowledgeGate .gseal::after{content:"";flex:1;height:1px;
@@ -471,8 +522,9 @@ img{display:block}
    落下感：从 1.55 倍压到原大（火漆是重的、迟缓的），只带一点点歪（-7°，不会盖得端端正正），
    时机与 knThud（信封一颤）同步 1.14s。
    ⚠️ 尺寸 112 → **96**（用户 2026-09-20："蜡封整体不要太大，不要成为整个信封最抢眼的元素"）。 */
-#knowledgeGate .postmark{position:absolute;left:50%;top:44%;width:96px;height:96px;z-index:8;
-  margin:-48px 0 0 -48px;opacity:0;pointer-events:none;transform-origin:center;
+#knowledgeGate .postmark{position:absolute;left:50%;top:44%;
+  width:var(--waxSz);height:var(--waxSz);z-index:8;
+  margin:calc(var(--waxSz) / -2) 0 0 calc(var(--waxSz) / -2);opacity:0;pointer-events:none;transform-origin:center;
   transform:rotate(-7deg) scale(1.55);
   transition:opacity .2s ease-out 1.16s,transform .3s cubic-bezier(.2,1.5,.4,1) 1.16s}
 #knowledgeGate .postmark svg{width:100%;height:100%;display:block}
@@ -594,16 +646,32 @@ img{display:block}
   /* 窄屏信纸：只调「信封/信纸尺寸 + 露出比例 + 藏说明行」——
      ⚠️ 不要再在这里写 padding / 字号覆盖：纵向节奏已经是 vh 参与 clamp 的，会自适应；
         写死 px 反而会在矮屏上把输入行推进遮住段。 */
-  #knowledgeGate .mail{--envH:clamp(190px,29vh,246px);--cardH:clamp(186px,27vh,236px);--reveal:.60}
+  #knowledgeGate .mail{--envH:clamp(190px,29vh,246px);--cardH:clamp(186px,27vh,236px);--reveal:.60;
+    /* 信封装饰在窄屏一起收：信封只有 ~318px 宽，不收就会把留白挤没 */
+    --leafSz:30px;--ornIn:22px;--crestSz:40px}
   #knowledgeGate .mail-card .gsub{display:none}
-  /* ⚠️ 邮戳现在是"居中 + 负 margin"定位，窄屏只改尺寸，别再把 right/top 写回去（会跑偏） */
-  #knowledgeGate .postmark{width:80px;height:80px;margin:-40px 0 0 -40px}
-  #knowledgeGate .env-front .gcrest{width:46px;height:46px;left:16px;bottom:20px}
-  #knowledgeGate .glatin{left:16px;font-size:9px;letter-spacing:.24em}
-  #knowledgeGate .env-front::before{right:16px;bottom:26px;width:40%}
+  /* ⚠️ 蜡封窄屏收一档（-40px 的居中负 margin 由 calc(--waxSz/-2) 自动跟着走）；
+        ⚠️ 别再把 right/top 写回去 —— 它是"居中定位"，写回 right/top 会跑偏。
+        ⚠️ 中央纹章不用在这里写 —— 它是 calc(var(--waxSz)*1.81) 派生的，自动跟着缩。 */
+  #knowledgeGate .mail{--waxSz:80px}
+  #knowledgeGate .glatin{left:16px;font-size:8.5px;letter-spacing:.18em}
+  /* ⚠️ 底边"两条落款 + 三道档案线 + 右下月桂"必须互不打架（信封只有 318×246）：
+     月桂占右 22~52px、藏书印贴底 8px、档案线右端离边 60px（与月桂留 8px 净空）。 */
+  #knowledgeGate .garch{right:16px;font-size:8.5px;letter-spacing:.18em}
+  #knowledgeGate .garch span{display:none}      /* 窄屏只留 "EX LIBRIS" —— 全称会与左题词撞上 */
+  #knowledgeGate .gletter{font-size:8px;letter-spacing:.16em}
+  #knowledgeGate .gletter b{font-size:7.5px;letter-spacing:.2em}
+  #knowledgeGate .env-front::before{right:60px;bottom:26px;width:32%;max-width:none;height:22px}
   #knowledgeGate .gseal{margin-top:20px}
   /* 窄屏下 cover 只截到插画的中段（恰好是最空的一块）→ 取景右移，让书架进画面 */
   #knowledgeGate .gdeco{background-position:74% 30%;opacity:.36}
+}
+/* ⚠️ 矮屏但不算窄屏（例如 1440×720）：信封矮了，可**蜡封与纹章是定尺的**（不随 vh 缩）——
+   不处理的话纹章的金环上缘会顶到右上角的信函编号（实测 720 高时压上 ~6px）。
+   对策：把蜡封与纹章一起收一档（1.81 倍关系自动跟随），并把编号行上提 8px。 */
+@media (max-height:830px) and (min-width:601px){
+  #knowledgeGate .mail{--waxSz:80px}
+  #knowledgeGate .gletter{top:calc(var(--ornIn) - 8px)}
 }
 
 /* ---- Banner：一张"藏书票"式的抬头 ---- */
@@ -2329,7 +2397,11 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
             </div>
             <div class="env-front">
               <!-- 印刷内框（用户 2026-09-20："信封合起来的时候太单调了"）：
-                   正式信封的双细线框 + 四角小方章。放最底、避开封口三角盖住的上半区。 -->
+                   正式信封的**双细线框**。放最底、避开封口三角盖住的上半区。
+                   ⚠️ 第四轮（2026-09-20）**去掉了原四角的小方章**（4 个实心绿方块），两条原因：
+                      ① 与新增的角部月桂**重复占位** —— 一个角上两件东西就是"变花"（用户明说"不要堆满"）；
+                      ② 它正压在底边落款（题词 / 藏书印）的头上，把藏书印的"M"切掉一角。
+                      线框本身保留 —— 它是"正式信封"的底子，去掉方章后角上才留给月桂。 -->
               <svg class="env-border" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
                 <rect x="4" y="4" width="92" height="92" fill="none"
                       stroke="rgba(138,109,43,.4)" stroke-width=".45"
@@ -2337,17 +2409,78 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
                 <rect x="6.4" y="6.4" width="87.2" height="87.2" fill="none"
                       stroke="rgba(138,109,43,.26)" stroke-width=".45"
                       vector-effect="non-scaling-stroke"/>
-                <g fill="rgba(47,93,80,.34)">
-                  <rect x="1.6" y="1.6" width="3.2" height="3.2"/>
-                  <rect x="95.2" y="1.6" width="3.2" height="3.2"/>
-                  <rect x="1.6" y="95.2" width="3.2" height="3.2"/>
-                  <rect x="95.2" y="95.2" width="3.2" height="3.2"/>
-                </g>
               </svg>
+              <!-- 四角月桂线稿（2026-09-20 第四轮 · 用户："四角加入很淡的植物/月桂叶线稿"）。
+                   ⚠️ 四份是**同一份路径**，靠 CSS 的 scaleX/scaleY 镜像成四角 —— 只维护一份几何。
+                   ⚠️ 角上的净空是与「徽记 / 编号 / 档案线 / 藏书印」一起算过的：动其中一件，
+                      必须重新核这一角（窄屏尤其挤，见 @media 600 里的那组覆盖）。 -->
+              <span class="env-leaf tl" aria-hidden="true">
+                <svg viewBox="0 0 64 64">
+                <path d="M6 6C20 14 34 26 54 50"/>
+                <g transform="translate(14.3 11.0) rotate(92.4) scale(0.8)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
+                <g transform="translate(14.3 11.0) rotate(-23.6) scale(0.8)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
+                <g transform="translate(24.2 18.6) rotate(98.7) scale(0.94)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
+                <g transform="translate(24.2 18.6) rotate(-17.3) scale(0.94)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
+                <g transform="translate(34.9 28.6) rotate(103.3) scale(1.0)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
+                <g transform="translate(34.9 28.6) rotate(-12.7) scale(1.0)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
+                <g transform="translate(45.2 39.7) rotate(106.5) scale(0.88)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
+                <g transform="translate(45.2 39.7) rotate(-9.5) scale(0.88)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
+                <g transform="translate(52.9 48.6) rotate(50.3) scale(0.82)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
+                </svg>
+              </span>
+              <span class="env-leaf tr" aria-hidden="true">
+                <svg viewBox="0 0 64 64">
+                <path d="M6 6C20 14 34 26 54 50"/>
+                <g transform="translate(14.3 11.0) rotate(92.4) scale(0.8)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
+                <g transform="translate(14.3 11.0) rotate(-23.6) scale(0.8)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
+                <g transform="translate(24.2 18.6) rotate(98.7) scale(0.94)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
+                <g transform="translate(24.2 18.6) rotate(-17.3) scale(0.94)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
+                <g transform="translate(34.9 28.6) rotate(103.3) scale(1.0)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
+                <g transform="translate(34.9 28.6) rotate(-12.7) scale(1.0)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
+                <g transform="translate(45.2 39.7) rotate(106.5) scale(0.88)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
+                <g transform="translate(45.2 39.7) rotate(-9.5) scale(0.88)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
+                <g transform="translate(52.9 48.6) rotate(50.3) scale(0.82)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
+                </svg>
+              </span>
+              <span class="env-leaf bl" aria-hidden="true">
+                <svg viewBox="0 0 64 64">
+                <path d="M6 6C20 14 34 26 54 50"/>
+                <g transform="translate(14.3 11.0) rotate(92.4) scale(0.8)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
+                <g transform="translate(14.3 11.0) rotate(-23.6) scale(0.8)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
+                <g transform="translate(24.2 18.6) rotate(98.7) scale(0.94)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
+                <g transform="translate(24.2 18.6) rotate(-17.3) scale(0.94)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
+                <g transform="translate(34.9 28.6) rotate(103.3) scale(1.0)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
+                <g transform="translate(34.9 28.6) rotate(-12.7) scale(1.0)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
+                <g transform="translate(45.2 39.7) rotate(106.5) scale(0.88)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
+                <g transform="translate(45.2 39.7) rotate(-9.5) scale(0.88)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
+                <g transform="translate(52.9 48.6) rotate(50.3) scale(0.82)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
+                </svg>
+              </span>
+              <span class="env-leaf br" aria-hidden="true">
+                <svg viewBox="0 0 64 64">
+                <path d="M6 6C20 14 34 26 54 50"/>
+                <g transform="translate(14.3 11.0) rotate(92.4) scale(0.8)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
+                <g transform="translate(14.3 11.0) rotate(-23.6) scale(0.8)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
+                <g transform="translate(24.2 18.6) rotate(98.7) scale(0.94)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
+                <g transform="translate(24.2 18.6) rotate(-17.3) scale(0.94)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
+                <g transform="translate(34.9 28.6) rotate(103.3) scale(1.0)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
+                <g transform="translate(34.9 28.6) rotate(-12.7) scale(1.0)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
+                <g transform="translate(45.2 39.7) rotate(106.5) scale(0.88)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
+                <g transform="translate(45.2 39.7) rotate(-9.5) scale(0.88)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
+                <g transform="translate(52.9 48.6) rotate(50.3) scale(0.82)"><path d="M0 0C5-3.5 10.9-3.5 16 0 10.9 3.5 5 3.5 0 0Z"/><path d="M1.8 0H13.2"/></g>
+                </svg>
+              </span>
+              <!-- 左上：小型学院徽记（第四轮**从下缘上移** —— 上方才是"信笺抬头"的位置；
+                   左下让给拉丁题词，与右下的藏书印在底边左右成对） -->
               <span class="gcrest">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35"
                      stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.2c3-1 5.5-.4 8 1.4 2.5-1.8 5-2.4 8-1.4v10.4c-3-1-5.5-.4-8 1.4-2.5-1.8-5-2.4-8-1.4z"/><path d="M12 7.6v10.4"/></svg>
               </span>
+              <!-- 右上：信函编号 + 档案馆名（档案室给每封信的抬头） -->
+              <p class="gletter">Letter No.001<b>Knowledge Archive</b></p>
+              <!-- 右下：藏书印（与左下拉丁题词同基线，读作"信笺的下缘"）。
+                   ⚠️ 窄屏会隐藏 "· Archivum"：全称会与左题词在 318px 宽的信封上撞车）。 -->
+              <p class="garch">Ex Libris<span> · Archivum</span></p>
               <span class="glatin">Scientia · Sapientia · Veritas</span>
             </div>
             <!-- 封口：内嵌 SVG 画这个三角（**不用 clip-path** —— 它会把两条斜边上的描边整条切掉，
@@ -2403,6 +2536,23 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
                  ④ **投影克制**：硬椭圆 → 一片几乎看不见的软晕（径向渐变淡出）；
                  ⑤ **尺寸收一档**（96 / 窄屏 80）：不能比信封本身更抢眼。
                  ⚠️ 回归绑死：必须保留 `id="knWax"` 与 `<circle r="37">`，否则蜡封断言会挂。 -->
+            <!-- 中央纹章（2026-09-20 第四轮 · 用户："中央保留火漆，周围增加很淡的学院纹章元素"）：
+                 一圈虚线金环 + 一圈细墨绿环 + 四向小菱形，蜡封（96px / 窄屏 80px）落在环心。
+                 ⚠️⚠️ 它在 `.mail-env` 里、z-index **7**（低于蜡封 8、**高于封口 4**）：
+                    解锁后封口会重新合上，纹章若放进 `.env-front`(3) 会被封口整个盖住，
+                    用户要的"蜡封周围有纹章"就永远看不到。压在封口之上、蜡封之下才对。
+                 ⚠️ 初始 opacity:0，`.open` 才淡入（合着信封时不该先露一枚纹章）。 -->
+            <svg class="env-medal" viewBox="0 0 180 180" aria-hidden="true" fill="none">
+              <circle cx="90" cy="90" r="64" stroke="rgba(176,138,62,.30)" stroke-width="1"
+                      stroke-dasharray="1.6 6.4"/>
+              <circle cx="90" cy="90" r="56.5" stroke="rgba(47,93,80,.22)" stroke-width=".9"/>
+              <g fill="rgba(176,138,62,.42)">
+                <rect x="87.5" y="17.5" width="5" height="5" transform="rotate(45 90 20)"/>
+                <rect x="157.5" y="87.5" width="5" height="5" transform="rotate(45 160 90)"/>
+                <rect x="87.5" y="157.5" width="5" height="5" transform="rotate(45 90 160)"/>
+                <rect x="17.5" y="87.5" width="5" height="5" transform="rotate(45 20 90)"/>
+              </g>
+            </svg>
             <div class="postmark" id="knPostmark">
               <svg viewBox="0 0 120 120" aria-hidden="true">
                 <defs>
