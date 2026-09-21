@@ -504,7 +504,23 @@ img{display:block}
       —— 三层都可独立提升合成层，扑翅与飞入也再无互相覆盖的问题。 */
 @keyframes knPulse{
   0%,100%{transform:scale(1,1)}
-  50%{transform:scale(1.05,1.09)}}
+  50%{transform:scale(1.035,1.05)}}
+/* ⭐⭐ 批十六 · "一跳一跳"的真因（逐帧实测，不是掉帧）：
+   用 85 帧采样读 `.koh1 img` 的位移矩阵与 `.kflap` 的缩放，读数是——
+     · **位移是平滑的**：190px/s 稳定（每帧 3.15px），落定前 190→91→36→0，没有突跳；
+     · **形态在剧烈脉动**：鸟高 **44.8 → 61.3px（峰谷差 16.5px ＝ 37%）**，周期 **≈0.2s**，
+       全程 6 次，**落定后还在胀缩**。
+   所以"卡"不是掉帧，是**扑翅的形态**：`scale(1.05,1.09)` 作用在**整只鸟**上 →
+   飞行途中一边平移、一边整体"胀大又缩回"，落定后只剩这个胀缩 → 观感＝"一跳一跳"。
+   治法：① 幅度 9% → **5%**（`scale(1.035,1.05)`）；
+        ② **扑翅挪到落枝前后**：delay ＝ 飞入 delay **+0.85s**（＝航程 80% 处）、只扑 **3 下**
+           （周期 .16s）—— 真鸟也是滑翔进场、落地前才扑翅；飞行途中**完全不再有周期性抖动**；
+        ③ 飞入末段帧位 **92% → 96%**：原来最后一段 4px 却占 8% 时间 ⇒ 速度 190→**48px/s** 急刹，
+           改后 82→96% 是 26px/0.147s＝177、96→100% 是 4px/0.042s＝95 ⇒ 单调递减、落差平滑。
+   ⚠️ 三条要一起动：只降幅度会显得"没在扑"，只挪 delay 不改末段仍然"刹"一下。
+   ⚠️ 改完用 `b16/probe_flap.py` 那种逐帧采样复测：飞行途中鸟高应**单调增长**（只有 img 的
+      scale .74→1 在作用），落定后归零静止。 */
+
 /* 飞入：从画面外侧斜掠 → 滑翔 → 落枝 → 轻微一沉 → 站住。左右交替四条航线 ＋ 各自 delay。
    ⭐⭐ 2026-09-21 批五：用户第二次说"飞来**还是一卡一卡**" → 换了条完全不同的路子查
      （`anim_probe.py` 逐帧读 transform 算速度曲线），真因**不在主线程，在曲线本身**：
@@ -530,27 +546,27 @@ img{display:block}
   38%{transform:translate(-208%,-104%) rotate(-17deg) scale(.82)}
   62%{transform:translate(-92%,-42%) rotate(-9deg) scale(.9)}
   82%{transform:translate(-22%,-9%) rotate(-2.5deg) scale(.97)}
-  92%{transform:translate(0,4%) rotate(1.2deg) scale(1.015)}
+  96%{transform:translate(0,4%) rotate(1.2deg) scale(1.015)}
   100%{transform:translate(0,0) rotate(0) scale(1)}}
 @keyframes knFlyInR{
   0%{transform:translate(430%,-215%) rotate(24deg) scale(.74)}
   38%{transform:translate(214%,-110%) rotate(16deg) scale(.82)}
   62%{transform:translate(94%,-45%) rotate(8deg) scale(.9)}
   82%{transform:translate(24%,-10%) rotate(2.5deg) scale(.97)}
-  92%{transform:translate(0,4%) rotate(-1.2deg) scale(1.015)}
+  96%{transform:translate(0,4%) rotate(-1.2deg) scale(1.015)}
   100%{transform:translate(0,0) rotate(0) scale(1)}}
 #knowledgeGate .koh1 img{animation:knFlyInL 1.05s linear 1.50s both,
                                   knFade .12s linear 1.50s both}
-#knowledgeGate .koh1 .kflap{animation:knPulse .2s ease-in-out 1.50s 6}
+#knowledgeGate .koh1 .kflap{animation:knPulse .16s ease-in-out 2.35s 3}
 #knowledgeGate .koh2 img{animation:knFlyInR 1.05s linear 1.78s both,
                                   knFade .12s linear 1.78s both}
-#knowledgeGate .koh2 .kflap{animation:knPulse .2s ease-in-out 1.78s 6}
+#knowledgeGate .koh2 .kflap{animation:knPulse .16s ease-in-out 2.63s 3}
 #knowledgeGate .koh3 img{animation:knFlyInL 1.05s linear 2.04s both,
                                   knFade .12s linear 2.04s both}
-#knowledgeGate .koh3 .kflap{animation:knPulse .2s ease-in-out 2.04s 6}
+#knowledgeGate .koh3 .kflap{animation:knPulse .16s ease-in-out 2.89s 3}
 #knowledgeGate .koh4 img{animation:knFlyInR 1.05s linear 2.30s both,
                                   knFade .12s linear 2.30s both}
-#knowledgeGate .koh4 .kflap{animation:knPulse .2s ease-in-out 2.30s 6}
+#knowledgeGate .koh4 .kflap{animation:knPulse .16s ease-in-out 3.15s 3}
 /* ⭐ 解锁：**鸟先各自飞走** → 树与枝随后淡出（"渐变成骑士"的那一半） */
 @keyframes knFlyOutL{
   0%{transform:translate(0,0) rotate(0) scale(1);opacity:1}
@@ -561,13 +577,13 @@ img{display:block}
   16%{transform:translate(9%,-22%) rotate(5deg) scale(1.03);opacity:1}
   100%{transform:translate(470%,-225%) rotate(21deg) scale(.74);opacity:0}}
 #knowledgeGate.unlocked .koh1 img{animation:knFlyOutL .95s cubic-bezier(.4,.02,.72,.42) .02s both}
-#knowledgeGate.unlocked .koh1 .kflap{animation:knPulse .19s ease-in-out .02s 5}
+#knowledgeGate.unlocked .koh1 .kflap{animation:knPulse .17s ease-in-out .02s 4}
 #knowledgeGate.unlocked .koh3 img{animation:knFlyOutL .95s cubic-bezier(.4,.02,.72,.42) .16s both}
-#knowledgeGate.unlocked .koh3 .kflap{animation:knPulse .19s ease-in-out .16s 5}
+#knowledgeGate.unlocked .koh3 .kflap{animation:knPulse .17s ease-in-out .16s 4}
 #knowledgeGate.unlocked .koh2 img{animation:knFlyOutR .95s cubic-bezier(.4,.02,.72,.42) .08s both}
-#knowledgeGate.unlocked .koh2 .kflap{animation:knPulse .19s ease-in-out .08s 5}
+#knowledgeGate.unlocked .koh2 .kflap{animation:knPulse .17s ease-in-out .08s 4}
 #knowledgeGate.unlocked .koh4 img{animation:knFlyOutR .95s cubic-bezier(.4,.02,.72,.42) .22s both}
-#knowledgeGate.unlocked .koh4 .kflap{animation:knPulse .19s ease-in-out .22s 5}
+#knowledgeGate.unlocked .koh4 .kflap{animation:knPulse .17s ease-in-out .22s 4}
 /* 解锁后树/枝只淡出、不位移 —— 位移交给两尊骑士的淡入（`.gknight`）。 */
 /* ⭐⭐ 骑士雕像（第十轮改版）：用户给了实物图（`03 pictrues` 的「骑士雕像装饰图案左/右」），
    并要求"**放在信封上**" —— 不再站在信封外的地上，而是压在信封纸面的左右两侧。
