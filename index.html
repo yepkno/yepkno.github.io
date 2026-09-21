@@ -484,6 +484,9 @@ img{display:block}
 #knowledgeGate .gperch-far .koh{height:100%}
 #knowledgeGate .koh img{position:static;height:100%;width:auto;will-change:transform;
   backface-visibility:hidden}
+/* 扑翅层（批十五）：高度 100% 串下去（.koh → .kflap → img），img 尺寸不变；
+   扑翅的 animation 写在各只 .kohN .kflap 上（delay 必须与该鸟的飞入同拍）。 */
+#knowledgeGate .koh .kflap{display:block;width:100%;height:100%;will-change:transform}
 #knowledgeGate .koh1{left:13.7%}
 #knowledgeGate .koh3{left:62.7%}
 #knowledgeGate .koh2{left:16.2%}
@@ -492,11 +495,16 @@ img{display:block}
    放进关键帧会多切一段属性插值，段间就多一次速度台阶（批五实测到过）。
    0.12s ≈ 原来那个"10% 处 opacity:1"的时刻。 */
 @keyframes knFade{from{opacity:0}to{opacity:1}}
-/* 扑翅：**独立 scale 属性**（不是 transform）→ 才能和飞入/飞离的 transform 叠加而不互相覆盖。
-   ⚠️ scale 属性要 Chrome 104+ / Safari 14.1+（本站在用的都是现代浏览器）。 */
+/* 扑翅：**transform:scale**，且挂在**独立的 .kflap 层**上（2026-09-21 批十五）。
+   ⚠️⚠️ 之前写在 img 上、用的是**独立 `scale` 属性**（Chrome 104+ / Safari 14.1+ 才支持）——
+      这就是"飞来一卡一卡"的头号嫌疑：**独立 transform 属性（translate/rotate/scale）的
+      动画在 Firefox 长期不上合成器**（逐帧主线程 style recalc），而且它和 knFlyIn/knFade
+      三条动画叠在同一个 img → 一条不上合成器、三条全被拖下水（审计脚本扫出全站就这一处）。
+   ⚠️ 分层后各管各的：.koh(定位) > .kflap(扑翅 transform) > img(飞入 transform ＋ knFade opacity)
+      —— 三层都可独立提升合成层，扑翅与飞入也再无互相覆盖的问题。 */
 @keyframes knPulse{
-  0%,100%{scale:1}
-  50%{scale:1.05 1.09}}
+  0%,100%{transform:scale(1,1)}
+  50%{transform:scale(1.05,1.09)}}
 /* 飞入：从画面外侧斜掠 → 滑翔 → 落枝 → 轻微一沉 → 站住。左右交替四条航线 ＋ 各自 delay。
    ⭐⭐ 2026-09-21 批五：用户第二次说"飞来**还是一卡一卡**" → 换了条完全不同的路子查
      （`anim_probe.py` 逐帧读 transform 算速度曲线），真因**不在主线程，在曲线本身**：
@@ -532,17 +540,17 @@ img{display:block}
   92%{transform:translate(0,4%) rotate(-1.2deg) scale(1.015)}
   100%{transform:translate(0,0) rotate(0) scale(1)}}
 #knowledgeGate .koh1 img{animation:knFlyInL 1.05s linear 1.50s both,
-                                  knFade .12s linear 1.50s both,
-                                  knPulse .2s ease-in-out 1.50s 6}
+                                  knFade .12s linear 1.50s both}
+#knowledgeGate .koh1 .kflap{animation:knPulse .2s ease-in-out 1.50s 6}
 #knowledgeGate .koh2 img{animation:knFlyInR 1.05s linear 1.78s both,
-                                  knFade .12s linear 1.78s both,
-                                  knPulse .2s ease-in-out 1.78s 6}
+                                  knFade .12s linear 1.78s both}
+#knowledgeGate .koh2 .kflap{animation:knPulse .2s ease-in-out 1.78s 6}
 #knowledgeGate .koh3 img{animation:knFlyInL 1.05s linear 2.04s both,
-                                  knFade .12s linear 2.04s both,
-                                  knPulse .2s ease-in-out 2.04s 6}
+                                  knFade .12s linear 2.04s both}
+#knowledgeGate .koh3 .kflap{animation:knPulse .2s ease-in-out 2.04s 6}
 #knowledgeGate .koh4 img{animation:knFlyInR 1.05s linear 2.30s both,
-                                  knFade .12s linear 2.30s both,
-                                  knPulse .2s ease-in-out 2.30s 6}
+                                  knFade .12s linear 2.30s both}
+#knowledgeGate .koh4 .kflap{animation:knPulse .2s ease-in-out 2.30s 6}
 /* ⭐ 解锁：**鸟先各自飞走** → 树与枝随后淡出（"渐变成骑士"的那一半） */
 @keyframes knFlyOutL{
   0%{transform:translate(0,0) rotate(0) scale(1);opacity:1}
@@ -552,14 +560,14 @@ img{display:block}
   0%{transform:translate(0,0) rotate(0) scale(1);opacity:1}
   16%{transform:translate(9%,-22%) rotate(5deg) scale(1.03);opacity:1}
   100%{transform:translate(470%,-225%) rotate(21deg) scale(.74);opacity:0}}
-#knowledgeGate.unlocked .koh1 img{animation:knFlyOutL .95s cubic-bezier(.4,.02,.72,.42) .02s both,
-                                            knPulse .19s ease-in-out .02s 5}
-#knowledgeGate.unlocked .koh3 img{animation:knFlyOutL .95s cubic-bezier(.4,.02,.72,.42) .16s both,
-                                            knPulse .19s ease-in-out .16s 5}
-#knowledgeGate.unlocked .koh2 img{animation:knFlyOutR .95s cubic-bezier(.4,.02,.72,.42) .08s both,
-                                            knPulse .19s ease-in-out .08s 5}
-#knowledgeGate.unlocked .koh4 img{animation:knFlyOutR .95s cubic-bezier(.4,.02,.72,.42) .22s both,
-                                            knPulse .19s ease-in-out .22s 5}
+#knowledgeGate.unlocked .koh1 img{animation:knFlyOutL .95s cubic-bezier(.4,.02,.72,.42) .02s both}
+#knowledgeGate.unlocked .koh1 .kflap{animation:knPulse .19s ease-in-out .02s 5}
+#knowledgeGate.unlocked .koh3 img{animation:knFlyOutL .95s cubic-bezier(.4,.02,.72,.42) .16s both}
+#knowledgeGate.unlocked .koh3 .kflap{animation:knPulse .19s ease-in-out .16s 5}
+#knowledgeGate.unlocked .koh2 img{animation:knFlyOutR .95s cubic-bezier(.4,.02,.72,.42) .08s both}
+#knowledgeGate.unlocked .koh2 .kflap{animation:knPulse .19s ease-in-out .08s 5}
+#knowledgeGate.unlocked .koh4 img{animation:knFlyOutR .95s cubic-bezier(.4,.02,.72,.42) .22s both}
+#knowledgeGate.unlocked .koh4 .kflap{animation:knPulse .19s ease-in-out .22s 5}
 /* 解锁后树/枝只淡出、不位移 —— 位移交给两尊骑士的淡入（`.gknight`）。 */
 /* ⭐⭐ 骑士雕像（第十轮改版）：用户给了实物图（`03 pictrues` 的「骑士雕像装饰图案左/右」），
    并要求"**放在信封上**" —— 不再站在信封外的地上，而是压在信封纸面的左右两侧。
@@ -2867,19 +2875,19 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
                 <span class="gperch gperch-far">
                   <img class="gb" src="assets/branch-fade.webp?v=20260920g" alt=""
                        width="974" height="134" loading="lazy" decoding="async">
-                  <span class="koh koh2"><img src="assets/owl-line.webp?v=20260921b" alt=""
-                        width="160" height="339" loading="lazy" decoding="async"></span>
-                  <span class="koh koh4"><img src="assets/owl-line.webp?v=20260921b" alt=""
-                        width="160" height="339" loading="lazy" decoding="async"></span>
+                  <span class="koh koh2"><span class="kflap"><img src="assets/owl-line.webp?v=20260921b" alt=""
+                        width="160" height="339" loading="lazy" decoding="async"></span></span>
+                  <span class="koh koh4"><span class="kflap"><img src="assets/owl-line.webp?v=20260921b" alt=""
+                        width="160" height="339" loading="lazy" decoding="async"></span></span>
                 </span>
                 <!-- 近枝（低、整幅） -->
                 <span class="gperch gperch-near">
                   <img class="gb" src="assets/branch-fade.webp?v=20260920g" alt=""
                        width="974" height="134" loading="lazy" decoding="async">
-                  <span class="koh koh1"><img src="assets/owl-line.webp?v=20260921b" alt=""
-                        width="160" height="339" loading="lazy" decoding="async"></span>
-                  <span class="koh koh3"><img src="assets/owl-line.webp?v=20260921b" alt=""
-                        width="160" height="339" loading="lazy" decoding="async"></span>
+                  <span class="koh koh1"><span class="kflap"><img src="assets/owl-line.webp?v=20260921b" alt=""
+                        width="160" height="339" loading="lazy" decoding="async"></span></span>
+                  <span class="koh koh3"><span class="kflap"><img src="assets/owl-line.webp?v=20260921b" alt=""
+                        width="160" height="339" loading="lazy" decoding="async"></span></span>
                 </span>
               </span>
 
