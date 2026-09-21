@@ -1581,15 +1581,21 @@ img{display:block}
       第二次类名撞车了，上一次是 `kn-inner`）。**加新类名之前先 Grep 全站。** */
 .ksspacegrid{position:absolute;inset:-60%;pointer-events:none;
   background-image:
-    repeating-linear-gradient(0deg,rgba(146,172,212,.04) 0 1px,transparent 1px 96px),
-    repeating-linear-gradient(90deg,rgba(146,172,212,.04) 0 1px,transparent 1px 96px),
-    repeating-linear-gradient(0deg,rgba(146,172,212,.072) 0 1px,transparent 1px 480px),
-    repeating-linear-gradient(90deg,rgba(146,172,212,.072) 0 1px,transparent 1px 480px)}
+    /* ⚠️ 用户第五条："弱化背景网格，或者直接去掉" —— 细密网格整层去掉，
+       只留每 480px 一道的粗网格且降到 .042（够当"底纸"，不再噪）。 */
+    repeating-linear-gradient(0deg,rgba(146,172,212,.042) 0 1px,transparent 1px 480px),
+    repeating-linear-gradient(90deg,rgba(146,172,212,.042) 0 1px,transparent 1px 480px)}
 
 /* ⚠️ 这些是全屏容器 —— 必须 `pointer-events:none`，否则空容器会拦住下层
    （2026-09-22 实测：`.ksdocs` 空着也拦住了 `#ksParts` 的星系点击）。
    ⚠️ 星系容器**不做 `clip-path`** —— 那会把引线与标注裁掉；改为"容器不吃事件、
       只有中间那个圆 `.kspart-hit` 吃"。 */
+/* 隐性浏览路径：一条极淡的折线串起五个星系（像星图上的连线）——
+   用户第四条："按阅读顺序做弧形排布……给用户一条隐性浏览路径"。 */
+.ksarc{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.ksarc path{fill:none;stroke:#9db9dd;stroke-width:1;opacity:.085;
+  vector-effect:non-scaling-stroke}
+
 .ksparts,.ksclumps,.ksdocs{position:absolute;inset:0;pointer-events:none}
 .ksparts .kspart{pointer-events:none}
 .ksparts .kspart-hit,.ksdocs .ksdoc{pointer-events:auto}
@@ -1597,19 +1603,22 @@ img{display:block}
 
 /* ── 星系：星图刻线式 ＝ 小核 ＋ 同心细环 ＋ 环形刻度 ＋ 随机星尘 ＋ 星芒 ＋ 引线标注 ── */
 .kspart{position:absolute;left:var(--x);top:var(--y);transform:translate(-50%,-50%);
-  width:400px;height:270px;padding:0;border:0;background:transparent;cursor:pointer;
+  width:440px;height:300px;padding:0;border:0;background:transparent;cursor:pointer;
   font:inherit;text-align:left;transition:opacity .55s ease}
 /* ⚠️ **别在 `.kspart` 上挂 `filter`**：会新建层叠上下文、改掉子元素混合基准。
    要"变暗/变亮"一律改 opacity 或子元素属性。 */
 .kspart-in{position:absolute;left:50%;top:50%;width:0;height:0;
-  transform:scale(var(--k,1))}          /* 窄屏整组缩放 */
-.kspart-hit{position:absolute;left:-122px;top:-122px;width:244px;height:244px;border-radius:50%}
+  /* ⚠️ 两层缩放：`--k` 是窄屏整组缩放；`--sc` 是**按篇数算的体量**（内容多的星系更大，
+     用户 2026-09-22 第四条："用大小表达信息量"）。 */
+  transform:scale(calc(var(--k,1) * var(--sc,1)))}
+.kspart-hit{position:absolute;left:-122px;top:-122px;width:244px;height:244px;border-radius:50%;
+  border:1px solid rgba(152,186,226,0);transition:border-color .35s ease}
 .kspart-ring,.kspart-dial,.kspart-core,.kspart-flare,.kspart-dust{
   position:absolute;left:0;top:0}
 .kspart-ring{border-radius:50%;border:1px solid var(--c);transform:translate(-50%,-50%)}
 /* ⚠️ 环**只留一层**（＋刻度环 ＋行星轨道线）—— 三版初稿给了三层同心环，
    截图里看过去就是"一堆歪掉的圈"。**线越多越廉价**，宁可少。 */
-.kspart-ring.r2{width:244px;height:88px;opacity:.13;transform:translate(-50%,-50%) rotate(-14deg)}
+.kspart-ring.r2{width:244px;height:88px;opacity:.10;transform:translate(-50%,-50%) rotate(-14deg)}
 /* 环形刻度：一圈极细刻线（每 7.5° 一道）—— "仪器感"的主要来源 */
 .kspart-dial{width:236px;height:236px;transform:translate(-50%,-50%);border-radius:50%;
   background:repeating-conic-gradient(from 0deg,var(--c) 0 .7deg,rgba(255,255,255,0) .7deg 7.5deg);
@@ -1633,8 +1642,10 @@ img{display:block}
   width:calc(var(--r) * 2px);height:calc(var(--r) * 2px);
   margin:calc(var(--r) * -1px) 0 0 calc(var(--r) * -1px);
   animation:ksSpin var(--t) linear infinite;animation-delay:var(--d,0s)}
+/* ⚠️ 行星轨道线**不画**（用户第四条：轨道线条简化、减少同心圆层数）——
+   圈数从 4 层降到 2 层（只留刻度环 ＋ 椭圆环）。要恢复只把 opacity 调回来。 */
 .ksorb::before{content:"";position:absolute;inset:0;border-radius:50%;
-  border:1px solid var(--c);opacity:.07}
+  border:1px solid var(--c);opacity:0}
 /* ⚠️ 行星是**暗球**（不是白点）：亮面偏一侧、暗面压深 —— 体积感来自明暗，不来自光晕 */
 .kspl{position:absolute;left:50%;top:0;width:var(--s);height:var(--s);border-radius:50%;
   transform:translate(-50%,-50%);
@@ -1658,13 +1669,23 @@ img{display:block}
   transform:translateY(-50%);pointer-events:none;display:flex;flex-direction:column;gap:3px;
   white-space:nowrap;transition:opacity .4s ease}
 .kspart.lead-l .kspart-tag{left:auto;right:calc(50% + 102px);align-items:flex-end;text-align:right}
-.kspart-tag b{font-size:12.5px;font-weight:400;letter-spacing:.08em;color:#cfdaea}
+.kspart-tag b{font-size:13px;font-weight:500;letter-spacing:.08em;color:#e9f1fd}
 .kspart-tag b em{font-style:normal;color:var(--c);letter-spacing:.12em;margin-right:7px}
-.kspart-tag i{font-style:normal;font-size:10.5px;letter-spacing:.18em;color:#7c8ba3}
+/* 篇数＝**醒目标签**（"篇数用更醒目的标签"，用户第四条） */
+.kspart-tag i{font-style:normal;font-size:12px;font-weight:500;letter-spacing:.1em;
+  color:#d3e2f6;padding:1px 8px 2px;border-radius:999px;
+  border:1px solid rgba(150,185,225,.34);background:rgba(120,155,205,.14)}
 .kspart:hover .kspart-tag b{color:#fff}
-.kspart:hover .kspart-flare{opacity:.8}
+.kspart:hover .kspart-tag i{color:#fff;border-color:rgba(190,215,245,.6);
+  background:rgba(140,180,230,.22)}
+.kspart:hover .kspart-flare{opacity:.85}
 .kspart:hover .kspart-ring.r2{opacity:.22}
-.kspart:hover .kspart-core{box-shadow:0 0 10px rgba(226,238,255,.55),0 0 26px -8px var(--c)}
+/* hover：核**脉冲**（"这是能点的"）＋ 可点范围显出一圈极淡虚线圈（"明确可点击区域"） */
+.kspart:hover .kspart-core{animation:ksPulse 1.7s ease-in-out infinite}
+.kspart:hover .kspart-hit{border-color:rgba(152,186,226,.32)}
+@keyframes ksPulse{
+  0%,100%{box-shadow:0 0 6px rgba(206,224,252,.45),0 0 20px -8px var(--c)}
+  50%{box-shadow:0 0 16px rgba(232,242,255,.72),0 0 46px -6px var(--c)}}
 /* 聚焦时：选中的星系被点亮，其余退到后面变暗。
    ⚠️⚠️ 必须写成 `.ksspace.focusing .kspart.on`（**三个 class**）——
    `.ksspace.focusing .kspart` 的优先级(0,3,0) 高于 `.kspart.on`(0,2,0)，
@@ -1692,7 +1713,7 @@ img{display:block}
   background:radial-gradient(circle at 36% 32%,#fff 0%,#dbe6f7 30%,var(--c) 100%);
   box-shadow:0 0 7px rgba(200,220,255,.4),0 0 16px -6px var(--c);
   transition:transform .2s ease}
-.ksdoc b{font-size:11px;font-weight:400;line-height:1.55;text-align:center;color:#a3b3c9;
+.ksdoc b{font-size:11.5px;font-weight:500;line-height:1.55;text-align:center;color:#c9d9ee;
   letter-spacing:.02em}
 .ksdoc:hover i{transform:scale(1.3)}
 .ksdoc:hover b{color:#e8eefa}
@@ -1710,15 +1731,16 @@ img{display:block}
 /* ── 顶部与底部 ── */
 .ksspace-top{position:absolute;left:0;right:0;top:0;z-index:3;display:flex;align-items:center;
   gap:14px;padding:clamp(14px,2.8vh,26px) clamp(16px,3.6vw,40px);pointer-events:none}
-.ksspace-back{pointer-events:auto;font:inherit;font-size:12px;letter-spacing:.1em;cursor:pointer;
-  padding:7px 15px;border-radius:2px;color:#a9bfd8;background:rgba(10,18,32,.66);
+.ksspace-back{pointer-events:auto;font:inherit;font-size:13px;font-weight:500;
+  letter-spacing:.1em;cursor:pointer;
+  padding:7px 15px;border-radius:2px;color:#c6d8ee;background:rgba(10,18,32,.66);
   border:1px solid rgba(140,170,210,.28);transition:.22s}
 .ksspace-back:hover{color:#fff;border-color:rgba(190,212,240,.6);background:rgba(16,26,44,.9)}
-.ksspace-t{margin-left:auto;font-size:10px;letter-spacing:.36em;text-transform:uppercase;
-  color:#556780}
+.ksspace-t{margin-left:auto;font-size:11px;letter-spacing:.34em;text-transform:uppercase;
+  color:#7f95b5}
 .ksspace-hint{position:absolute;left:0;right:0;bottom:clamp(14px,3vh,30px);z-index:3;margin:0;
-  padding:0 clamp(16px,4vw,40px);text-align:center;font-size:11.5px;line-height:1.75;
-  letter-spacing:.04em;color:#5c6f8a;pointer-events:none}
+  padding:0 clamp(16px,4vw,40px);text-align:center;font-size:13px;line-height:1.8;
+  letter-spacing:.06em;font-weight:500;color:#9ab1cf;pointer-events:none}
 
 @media (max-width:900px){
   .kspart{--k:.6;width:300px;height:210px}
@@ -4229,6 +4251,6 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 <script src="study-plan.js?v=20260922c"></script>
 <script src="docs.js?v=20260921b"></script>
 <script src="app.js?v=20260920f"></script>
-<script src="knowledge.js?v=20260922i"></script>
+<script src="knowledge.js?v=20260922j"></script>
 </body>
 </html>

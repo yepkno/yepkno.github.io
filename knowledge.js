@@ -1570,11 +1570,13 @@ function kstBind() {
    ⚠️ 星团只记"谁和谁一组"，**不存坐标** —— 位置每次由排版算出来（窗口变了也不会乱）。
    ══════════════════════════════════════════════════════════════════════════ */
 var KSPARTS = [
-  { k: "ai",  name: "AI 相关",  x: 25, y: 31, c: "#8ea9d6", rn: "I" },
-  { k: "gis", name: "GIS 相关", x: 69, y: 25, c: "#7fb0a2", rn: "II" },
-  { k: "cad", name: "CAD 相关", x: 79, y: 63, c: "#ab8f9d", rn: "III" },
-  { k: "pl",  name: "编程语言", x: 46, y: 55, c: "#9797bf", rn: "IV" },
-  { k: "etc", name: "其他领域", x: 19, y: 74, c: "#bda276", rn: "V" }
+  /* ⚠️ 坐标是**一条弧**（用户第四条："按阅读顺序做弧形排布……给用户一条隐性浏览路径"）：
+     顺序 I→V 自左向右、中间高两边低。改坐标时记得同步看一眼 `ksArcHTML()` 的连线。 */
+  { k: "ai",  name: "AI 相关",  x: 17, y: 57, c: "#8ea9d6", rn: "I" },
+  { k: "gis", name: "GIS 相关", x: 32, y: 40, c: "#7fb0a2", rn: "II" },
+  { k: "cad", name: "CAD 相关", x: 50, y: 31, c: "#ab8f9d", rn: "III" },
+  { k: "pl",  name: "编程语言", x: 68, y: 40, c: "#9797bf", rn: "IV" },
+  { k: "etc", name: "其他领域", x: 86, y: 57, c: "#bda276", rn: "V" }
 ];
 /* ⚠️ 配色一律**低饱和**（矿物色，不是霓虹色）—— 用户 9-22 三版定："高级感、学院风"。
    二版那套 #85b7eb/#5dcaa5/#ed93b1 的糖果色是"廉价感"的主因之一。 */
@@ -1743,10 +1745,12 @@ function ksPlanetsInit() {
   var m = Math.min(ksCvW, ksCvH);
   /* ⚠️ 位置要**避开五个星系的坐标**（不然远景行星会正好压在某个星系上，
      三版初稿的带环行星就压在「其他领域」上）—— 星系在 (25,31)(69,25)(79,63)(46,55)(19,74)。 */
+  /* ⚠️ 位置要**避开五个星系的坐标** —— 弧形排布后星系在
+     (18,52)(33,33)(51,24)(69,33)(85,52)，所以远景行星只能去四角与底部。 */
   ksPlanets = [
-    { x: 0.11, y: 0.50, r: m * 0.072, c: "140,164,206", a: 0.40, ring: true,  sp: 0.03,  ph: 0.6 },
-    { x: 0.93, y: 0.38, r: m * 0.048, c: "176,142,166", a: 0.34, ring: false, sp: -0.025, ph: 2.3 },
-    { x: 0.62, y: 0.92, r: m * 0.032, c: "126,172,168", a: 0.30, ring: false, sp: 0.04,  ph: 4.7 }
+    { x: 0.07, y: 0.80, r: m * 0.070, c: "140,164,206", a: 0.38, ring: true,  sp: 0.03,  ph: 0.6 },
+    { x: 0.94, y: 0.24, r: m * 0.046, c: "176,142,166", a: 0.32, ring: false, sp: -0.025, ph: 2.3 },
+    { x: 0.56, y: 0.88, r: m * 0.030, c: "126,172,168", a: 0.28, ring: false, sp: 0.04,  ph: 4.7 }
   ];
 }
 
@@ -1949,14 +1953,28 @@ function ksOrbHTML(pi, c) {
       '<span class="kspl" style="--s:' + o.s + "px;--pc:" + c + '"></span></span>';
   }).join("");
 }
+/* 星座连线：把五个星系按顺序串成一条折线（`viewBox` 用 0~100，所以坐标就是百分比） */
+function ksArcHTML() {
+  var d = KSPARTS.map(function (p, i) {
+    return (i ? "L" : "M") + p.x + " " + p.y;
+  }).join(" ");
+  return '<svg class="ksarc" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">' +
+    '<path d="' + d + '"/></svg>';
+}
 function ksPartsRender() {
   var box = document.getElementById("ksParts");
   if (!box) return;
-  var g = ksTechDocs();
-  box.innerHTML = KSPARTS.map(function (p, pi) {
+  var g = ksTechDocs(), maxN = 1;
+  /* ⚠️ 体量按篇数算：`--sc` ＝ 0.62 + 0.48 × (本篇数 / 最多篇数)
+     → 1 篇 ≈ 0.78、3 篇 ≈ 1.10（差 ~1.4 倍，肉眼一眼能看出"哪个内容多"）。
+     用户第四条："内容越多的星系，星球尺寸更大，用大小表达信息量"。 */
+  KSPARTS.forEach(function (p) { maxN = Math.max(maxN, (g[p.k] || []).length); });
+  box.innerHTML = ksArcHTML() + KSPARTS.map(function (p, pi) {
     var n = (g[p.k] || []).length;
+    var sc = 0.62 + 0.48 * (n / maxN);
     return '<button class="kspart' + (p.x < 50 ? " lead-l" : "") + '" type="button" data-p="' +
       p.k + '" style="--x:' + p.x + "%;--y:" + p.y + "%;--c:" + p.c +
+      ";--sc:" + sc.toFixed(3) +
       ";--sd:" + (200 + pi * 26) + "s;--sdir:" + (pi % 2 ? "reverse" : "normal") + '">' +
       '<span class="kspart-in">' +
         '<span class="kspart-dial"></span>' +
