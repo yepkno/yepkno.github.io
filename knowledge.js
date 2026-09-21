@@ -711,10 +711,10 @@ function knSyncPortal() {
 // ⚠️ 页面文案在这里（META），不写进 HTML —— 用户要改措辞只动这一处。
 var KN_SHELF_META = {
   rule: {
-    eyebrow: "Circulation Desk · 前台登记",
-    tag: "RULE",
-    title: "馆藏规则",
-    sub: "推开这扇门就是大厅：正前方是前台，左手右手各有一道环梯盘旋而上，来借书的人两两结伴从两侧走过。所有约定都写在前台的登记簿上。",
+    eyebrow: "Annual Curriculum · 年度修习",
+    tag: "PLAN",
+    title: "年度修习",
+    sub: "推开这扇门就是大厅：正前方是前台，左手右手各有一道环梯盘旋而上，来借书的人两两结伴从两侧走过。今年的修习都登在前台那本簿子上 —— 打算学的、正在读的、和已经搁下的。",
     foot: "从两侧的环梯可以上到二层书架 —— 那几排还在整理，暂时不对外开放。"
   },
   tech: {
