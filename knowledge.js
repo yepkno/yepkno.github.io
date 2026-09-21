@@ -934,30 +934,35 @@ function kstGroupState(g) {
   return d >= t ? "已走完" : ("修习中 " + d + " / " + t);
 }
 
-/* 一 · 大厅中央的修习台（档案纸） */
+/* 一 · 大厅：前台的小对话条 ＋ 由它呼出的档案纸
+   ⚠️ 2026-09-22：**进场不再摆大纸**（用户："不要一进去就保持呼出状态"）——
+      默认只看到前台上那张小对话条，点一下才把纸呼出来。 */
+function ksPaper(on) {
+  var p = document.getElementById("ksta"), d = document.getElementById("ksDesk");
+  if (p) p.hidden = !on;      // 从 display:none 转回来时，CSS 的 kstRise 会自己重跑
+  if (d) d.hidden = !!on;
+}
 function kstRender() {
   var P = window.STUDY_PLAN;
   if (!P) return;
   var lit = kstLit();
+  var yr = String(new Date().getFullYear());
   var y = document.getElementById("kstaY");
-  if (y) y.textContent = String(new Date().getFullYear());
+  if (y) y.textContent = yr;
+  var dh = document.getElementById("ksDeskH");
+  if (dh) dh.textContent = yr + " · Annual Studia";
   var q = document.getElementById("kstaQ");
   if (q) q.textContent = "不是规定这一年要完成什么，而是记录这一年实际走过的路。";
-  var f = document.getElementById("kstaFields");
-  if (f) {
-    f.innerHTML = KST_GROUPS.map(function (g) {
-      return '<li class="' + (kstGroupDone(g) > 0 ? "on" : "") + '"><b>' + g.key +
-        '</b><i>' + kstGroupState(g) + '</i></li>';
-    }).join("");
-  }
   var stat = document.getElementById("kstaStat");
   if (stat) {
     var dirs = KST_GROUPS.filter(function (g) { return kstGroupDone(g) > 0; }).length;
+    // ⚠️ 只报"已走过多少"，**不写 / 14 这种分母**（与页面上"不催促"的口径一致）
     stat.textContent = "已在修习的方向 · " + String(dirs).padStart(2, "0") +
-      "　｜　走过的台阶 · " + String(lit).padStart(2, "0") + " / 14";
+      "　｜　走过的台阶 · " + String(lit).padStart(2, "0");
   }
   kstMenuRender();       // 大厅的六个入口（各自成一页，页内内容在 ksPageOpen 时才渲染）
   kstLawRender();        // ① 法则纸（内容静态，随渲染一起备好）
+  ksPaper(false);        // 每次进这一格都是"先进大厅、再自己点开"
   kstBind();
 }
 
@@ -1298,11 +1303,34 @@ function kstBind() {
       }
     });
   }
-  /* ① 法则纸：开 / 收（点纸外也收；ESC 见全局键处理） */
-  var lawBtn = document.getElementById("kstaLaw");
-  if (lawBtn && !lawBtn.__kstBound) {
-    lawBtn.__kstBound = true;
-    lawBtn.addEventListener("click", kstLawOpen);
+  /* 前台的小对话条 → 呼出档案纸；纸上的「收起」／点大厅空白 → 收回去 */
+  var deskB = document.getElementById("ksDeskB");
+  if (deskB && !deskB.__kstBound) {
+    deskB.__kstBound = true;
+    deskB.addEventListener("click", function () { ksPaper(true); });
+  }
+  var paperX = document.getElementById("ksPaperX");
+  if (paperX && !paperX.__kstBound) {
+    paperX.__kstBound = true;
+    paperX.addEventListener("click", function () { ksPaper(false); });
+  }
+  var hall = document.getElementById("ksHall");
+  if (hall && !hall.__kstBound) {
+    hall.__kstBound = true;
+    hall.addEventListener("click", function (e) {
+      var p = document.getElementById("ksta");
+      if (!p || p.hidden) return;
+      if (e.target.closest(".ksta") || e.target.closest(".ksdesk")) return;   // 纸内 / 对话条内不算
+      ksPaper(false);
+    });
+  }
+
+  /* ① 法则纸：入口有两个（纸底一行、前台对话条下面），用 `[data-law]` 统一绑 */
+  var laws = document.querySelectorAll(".kshall [data-law]");
+  for (var li = 0; li < laws.length; li++) {
+    if (laws[li].__kstBound) continue;
+    laws[li].__kstBound = true;
+    laws[li].addEventListener("click", kstLawOpen);
   }
   var law = document.getElementById("ksLaw");
   if (law && !law.__kstBound) {
@@ -1622,6 +1650,9 @@ function warmGateImages() {
     if (kpage && !kpage.hidden) { ksPageClose(); return; }
     var kfile = document.getElementById("kstFile");
     if (kfile && !kfile.hidden) { kstFileClose(); return; }
+    // 最后才收大厅里那张纸 —— 回到"进场只看见前台对话条"的状态
+    var kpaper = document.getElementById("ksta");
+    if (kpaper && !kpaper.hidden) { ksPaper(false); return; }
     var st = document.getElementById("knowledgeStage");
     if (st && !st.hidden) {
       var kd = document.getElementById("knowledgeDetail");

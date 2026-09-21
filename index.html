@@ -1440,11 +1440,6 @@ img{display:block}
   font-family:Georgia,"Songti SC",serif}
 .ksta-div{height:1px;margin:18px auto;width:64%;
   background:linear-gradient(90deg,transparent,rgba(176,140,84,.5),transparent)}
-.ksta-fields{list-style:none;margin:0;padding:0;text-align:left}
-.ksta-fields li{display:flex;align-items:baseline;gap:10px;padding:7px 2px;font-size:13px}
-.ksta-fields b{flex:1;font-weight:600;color:#40331a;letter-spacing:.04em}
-.ksta-fields i{font-style:normal;font-size:11px;color:#9a8355;letter-spacing:.1em}
-.ksta-fields li.on i{color:#b4462a}
 .ksta-stat{font-size:11.5px;letter-spacing:.14em;color:#8a7a55;margin:0}
 /* 六个入口：前台上的"目录牌"。每个入口点开＝**独立一页**（`.kspage`）。 */
 .ksta-menu{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;
@@ -1544,11 +1539,34 @@ img{display:block}
    ⚠️ 圆刻代替 checkbox 方框（方框＝表单语言）；已勾＝朱红实心 ＋ 该行由灰转墨。
    ══════════════════════════════════════════════════════════════════════════ */
 
-/* ① 修习法则：档案纸下缘一行很淡的小字 → 一张同质感的纸 */
-.ksta-law{margin:12px auto 0;display:block;font:inherit;font-size:11.5px;letter-spacing:.16em;
-  cursor:pointer;padding:5px 8px;color:rgba(138,109,43,.8);background:transparent;border:0;
+/* ① 修习法则的入口：一行很淡的小字（纸底一行、前台对话条下面各一个，用 `[data-law]` 同绑） */
+.ksta-law{font:inherit;font-size:11.5px;letter-spacing:.16em;cursor:pointer;padding:5px 8px;
+  color:rgba(138,109,43,.8);background:transparent;border:0;
   border-bottom:1px solid rgba(176,140,84,.42);transition:.22s}
 .ksta-law:hover{color:#c2330f;border-bottom-color:#c2330f}
+.ksta-foot{display:flex;gap:22px;justify-content:center;margin-top:14px}
+.ksdesk .ksta-law{margin-top:9px;color:#7a5a22}
+
+/* 前台头顶的小对话条：**进场只看到它**，点一下才把档案纸呼出来。
+   ⚠️ 法则入口必须**装在气泡里面**（`.ksdesk-p`）—— 挂在气泡外面会压到前台那位接待员的头上。 */
+/* ⚠️ top 要**避开前台那位的脸**：57% 时气泡底边正切到他的头，54% 刚好留一道缝。 */
+.ksdesk{position:absolute;left:50%;top:54%;transform:translate(-50%,-50%);z-index:5}
+.ksdesk[hidden]{display:none}
+.ksdesk-p{position:relative;display:flex;flex-direction:column;align-items:center;
+  padding:13px 26px 11px;background:rgba(252,248,238,.94);
+  border:1px solid rgba(140,116,70,.34);border-radius:2px;
+  box-shadow:0 5px 20px rgba(40,26,6,.18);transition:.28s}
+/* 尖角朝下，指着前台那位 */
+.ksdesk-p::after{content:"";position:absolute;left:50%;bottom:-7px;width:12px;height:12px;
+  transform:translateX(-50%) rotate(45deg);background:rgba(252,248,238,.94);
+  border-right:1px solid rgba(140,116,70,.34);border-bottom:1px solid rgba(140,116,70,.34)}
+.ksdesk-p:hover{background:rgba(255,253,246,.99);border-color:#c0563a;
+  transform:translateY(-2px);box-shadow:0 8px 26px rgba(40,26,6,.24)}
+.ksdesk-b{display:flex;flex-direction:column;align-items:center;gap:3px;font:inherit;
+  cursor:pointer;background:transparent;border:0;padding:0;color:#40331a}
+.ksdesk-h{font-size:9.5px;letter-spacing:.34em;color:#8a6d2b}
+.ksdesk-b b{font-size:16.5px;font-weight:700;letter-spacing:.22em;color:#33280f}
+.ksdesk-b i{font-style:normal;font-size:11px;letter-spacing:.06em;color:#8a7d62}
 .kslaw{position:absolute;inset:0;z-index:9;display:flex;align-items:center;justify-content:center;
   padding:clamp(18px,5vh,56px) clamp(16px,4vw,54px);
   background:rgba(38,26,10,.32);
@@ -3338,11 +3356,26 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
         <span class="kst-side kst-side-l" aria-hidden="true">PLAN</span>
         <span class="kst-side kst-side-r" aria-hidden="true">REVIEW</span>
 
-        <!-- 大厅：中央那张档案纸 ＝ 一块**目录牌**（六个入口）
-             ⚠️ 2026-09-21 用户："不要用滚动条，最好是有分开入口然后弹出独立页面"
-                → 大厅**不再长滚动**；六个入口各自成为独立一页（`.kspage`）。 -->
-        <div class="kshall">
-          <div class="ksta" id="ksta">
+        <!-- 大厅：**进场不摆大纸** —— 前台上先立一个小对话条（`.ksdesk`），点它才"呼出"档案纸。
+             ⚠️ 2026-09-22 用户两条：
+                ① "蓝色大框不要一进去就保持呼出状态，在前台这个关键头顶加一个聊天框，然后点击选择呼出"；
+                ② 红框里的"四个方向 ＋ 已走完"**取消** —— 与「我的学习计划」入口重复，
+                   而且"已走完"这种进度展示和"不催促"的原则相冲。 -->
+        <div class="kshall" id="ksHall">
+          <!-- 前台头顶的小对话条（底下带一个尖角，指着前台那位） -->
+          <div class="ksdesk" id="ksDesk">
+            <div class="ksdesk-p">
+              <button class="ksdesk-b" id="ksDeskB" type="button">
+                <span class="ksdesk-h" id="ksDeskH"></span>
+                <b>年度修习</b>
+                <i>前台有人候着 —— 点一下，翻今年的簿子</i>
+              </button>
+              <button class="ksta-law" data-law type="button">修习法则 · 三条</button>
+            </div>
+          </div>
+
+          <!-- 档案纸：**默认收起**（`hidden`），由前台对话条呼出 -->
+          <div class="ksta" id="ksta" hidden>
             <span class="ksta-c tl"></span><span class="ksta-c tr"></span>
             <span class="ksta-c bl"></span><span class="ksta-c br"></span>
             <p class="ksta-y" id="kstaY"></p>
@@ -3350,12 +3383,12 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
             <h3 class="ksta-t">年度修习</h3>
             <p class="ksta-q" id="kstaQ"></p>
             <div class="ksta-div"></div>
-            <ul class="ksta-fields" id="kstaFields"></ul>
-            <div class="ksta-div"></div>
             <p class="ksta-stat" id="kstaStat"></p>
             <div class="ksta-menu" id="kstaMenu"></div>
-            <!-- ① 学习理论：入口做成一行很淡的小字（不是一张大卡） -->
-            <button class="ksta-law" id="kstaLaw" type="button">修习法则 · 三条</button>
+            <div class="ksta-foot">
+              <button class="ksta-law" data-law type="button">修习法则 · 三条</button>
+              <button class="ksta-law" id="ksPaperX" type="button">收起</button>
+            </div>
           </div>
         </div>
 
@@ -3872,6 +3905,6 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 <script src="study-plan.js?v=20260921b"></script>
 <script src="docs.js?v=20260921b"></script>
 <script src="app.js?v=20260920f"></script>
-<script src="knowledge.js?v=20260921q"></script>
+<script src="knowledge.js?v=20260922a"></script>
 </body>
 </html>
