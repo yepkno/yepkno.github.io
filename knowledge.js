@@ -1259,9 +1259,11 @@ function kstFileOpen(gi) {
   }
   var cur = kstStage(lit + 1);
   if (cur && cur.n >= g.n[0] && cur.n <= g.n[1]) {
-    h += '<div class="fr"><h4>走上下一级，要能说出</h4><p>' + cur.gate + '</p></div>' +
+    // ⚠️ 包进 `.fbar`（sticky 底部）—— 否则会被埋在抽屉 1300px 处，用户点不到
+    h += '<div class="fbar">' +
+      '<div class="fr"><h4>走上下一级，要能说出</h4><p>' + cur.gate + '</p></div>' +
       '<button class="fbtn" id="kstLitBtn" type="button" data-n="' + cur.n +
-      '" data-g="' + gi + '">你觉得自己做到了吗？· 点亮这一级</button>';
+      '" data-g="' + gi + '">你觉得自己做到了吗？· 点亮这一级</button></div>';
   }
   var b = document.getElementById("kstFileB");
   if (b) b.innerHTML = h;

@@ -1525,6 +1525,16 @@ img{display:block}
   color:#7a5a22;background:transparent;border:1px solid rgba(176,140,84,.6)}
 .kst-file-b .fbtn:hover{color:#c2330f;border-color:#c2330f;background:rgba(255,70,31,.05)}
 .kst-file-b .fbtn.re{color:#a82b0c;border-color:rgba(255,70,31,.4);background:rgba(255,70,31,.06)}
+/* ⚠️⚠️ 抽屉内容很长（每级还有一块"这一级的书与工具"）—— 「点亮这一级」必须**钉在底部**。
+   实测过：不钉的话它在 **y≈1307**（屏高只有 820），用户要先把抽屉滚 500px 才点得到 →
+   直接反馈"我没办法点击这一部分我有没有学完"（2026-09-22）。
+   ⚠️ 条身必须**实底**：渐变半透明会让"走上下一级要能说出"那句与背后的内容叠在一起
+      （截图一眼可见），渐隐改由条子上方那条 `::before` 负责。 */
+.kst-file-b .fbar{position:sticky;bottom:0;z-index:2;margin-top:20px;padding:14px 0 4px;
+  background:rgba(251,247,237,.99)}
+.kst-file-b .fbar::before{content:"";position:absolute;left:0;right:0;top:-24px;height:24px;
+  background:linear-gradient(180deg,rgba(251,247,237,0),rgba(251,247,237,.99))}
+.kst-file-b .fbar .fr{margin-bottom:9px}
 
 /* ══════════════════════════════════════════════════════════════════════════
    2026-09-21 一次追加四件（用户选定）—— 结构 ＝ **大厅 ＋ 分开入口 → 独立页面**：
@@ -3905,6 +3915,6 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 <script src="study-plan.js?v=20260921b"></script>
 <script src="docs.js?v=20260921b"></script>
 <script src="app.js?v=20260920f"></script>
-<script src="knowledge.js?v=20260922a"></script>
+<script src="knowledge.js?v=20260922b"></script>
 </body>
 </html>
