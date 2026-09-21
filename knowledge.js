@@ -750,7 +750,6 @@ function knOpenShelf(shelf) {
   var meta = KN_SHELF_META[shelf] || {};
   knShelfList = list;
   sh.setAttribute("data-shelf", shelf);
-  document.getElementById("ksTag").textContent = meta.tag || String(shelf).toUpperCase();
   document.getElementById("ksEyebrow").textContent = meta.eyebrow || "Knowledge Archive";
   document.getElementById("ksTitle").textContent = meta.title || shelf;
   document.getElementById("ksSub").textContent = meta.sub || "";
@@ -774,7 +773,7 @@ function knOpenShelf(shelf) {
   // → 用学院风浅色顶栏（深色字）；tech / humanities 是深场景 → 深色顶栏（浅色字）。
   var bright = (shelf === "rule" || shelf === "archive");
   var st = document.getElementById("knowledgeStage");
-  if (st) st.classList.toggle("kn-home-on", bright);
+  if (st) { st.classList.toggle("kn-home-on", bright); st.classList.add("kn-subpage"); }
   knPortalClock(false);
 }
 
@@ -786,7 +785,7 @@ function knShelfBack() {
   var kh = document.getElementById("knowledgeHome");
   if (kh) kh.hidden = false;
   var st = document.getElementById("knowledgeStage");
-  if (st) st.classList.add("kn-home-on");
+  if (st) { st.classList.add("kn-home-on"); st.classList.remove("kn-subpage"); }
   knPortalClock(true);
 }
 
@@ -809,6 +808,7 @@ function openKnowledgeStage() {
   if (!st) return;
   st.hidden = false;
   st.classList.add("kn-home-on");      // 顶栏切学院风浅色（门户是纸底，深色顶栏会像黑横条）
+  st.classList.remove("kn-subpage");     // 门户页保留顶栏（它是这页的出口）
   document.body.style.overflow = "hidden";
   var kd = document.getElementById("knowledgeDetail");
   if (kd) kd.style.display = "none";
@@ -830,7 +830,7 @@ function openKnowledgeStage() {
 
 function closeKnowledgeStage() {
   var st = document.getElementById("knowledgeStage");
-  if (st) { st.hidden = true; st.classList.remove("kn-home-on"); }
+  if (st) { st.hidden = true; st.classList.remove("kn-home-on", "kn-subpage"); }
   document.body.style.overflow = "";
   knPortalClock(false);
 }
@@ -849,7 +849,7 @@ function knBackToHome() {
   var kh = document.getElementById("knowledgeHome");
   if (kh) kh.hidden = false;
   var st = document.getElementById("knowledgeStage");
-  if (st) st.classList.add("kn-home-on");   // 顶栏回学院风浅色
+  if (st) { st.classList.add("kn-home-on"); st.classList.remove("kn-subpage"); }   // 顶栏回学院风浅色
   knPortalClock(true);
 }
 
@@ -870,7 +870,7 @@ function openKnowledge(d) {
   var _sh = document.getElementById("knShelf");
   if (_sh) _sh.classList.add("ks-behind");
   var st = document.getElementById("knowledgeStage");
-  if (st) st.classList.remove("kn-home-on");   // 阅读页是深底，顶栏切回深色
+  if (st) { st.classList.remove("kn-home-on"); st.classList.add("kn-subpage"); }   // 阅读页也是内页：连顶栏一起收
   knPortalClock(false);
   var kd = document.getElementById("knowledgeDetail");
   kd.style.display = "";

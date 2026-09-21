@@ -1260,6 +1260,16 @@ img{display:block}
    **不能**用 hidden 属性：返回链靠 `knInShelf()`＝"#knShelf 是否 hidden" 判断"这篇是从
    哪个空间点开的"。故用 visibility 收走视觉、把状态留在原地。 */
 .kn-shelf.ks-behind{visibility:hidden;pointer-events:none}
+/* 进「分类空间 / 阅读页」时收掉**舞台顶栏那一条**（`KB-DB // 知识文档`、`ENTRIES 005 · BASE KB`、
+   `返回站点`）以及角落的 `KNOWLEDGE · BASE` 标记 —— 用户 2026-09-21：「阅读页和分页都把顶部
+   那些信息去掉」。⚠️ 门户页**保留**（那页的「返回站点」是它的出口）。
+   这两页的返回改走页内按钮：分类空间「← 回到目录」、阅读页「← 返回」。 */
+/* ⚠️ 必须带 `#knowledgeStage`（ID）才压得住 `.stagewall .ttop{display:flex}`（第 1626 行）——
+   两者都是"两个 class"，优先级相同，谁写在后面谁赢，而那条在 1626 行、我在 1267 行。 */
+/* ⚠️ 状态类名**绝不能叫 `kn-inner`** —— 第 242 行已有一个内容容器 `.kn-inner{max-width:980px;
+   margin:0 auto;padding:84px 40px 72px}`，同名会把整个舞台压成 980px 居中（2026-09-21 实际踩到）。
+   故改用 `kn-subpage`。 */
+#knowledgeStage.kn-subpage .ttop,#knowledgeStage.kn-subpage .tmark{display:none}
 
 .ks-wrap{position:relative;z-index:1;height:100%;display:flex;flex-direction:column;
   padding:clamp(18px,3.4vh,34px) clamp(18px,4vw,54px) clamp(28px,6vh,64px);
@@ -2968,7 +2978,6 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
       <div class="ks-wrap">
         <div class="ks-bar">
           <button class="ks-back" id="ksBack" type="button">&#8592; 回到目录</button>
-          <span class="ks-tag mono" id="ksTag"></span>
         </div>
         <div class="ks-card">
           <span class="ks-eyebrow" id="ksEyebrow"></span>
@@ -3433,6 +3442,6 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 
 <script src="docs.js?v=20260921b"></script>
 <script src="app.js?v=20260920f"></script>
-<script src="knowledge.js?v=20260921k"></script>
+<script src="knowledge.js?v=20260921l"></script>
 </body>
 </html>
