@@ -1570,12 +1570,15 @@ function kstBind() {
    ⚠️ 星团只记"谁和谁一组"，**不存坐标** —— 位置每次由排版算出来（窗口变了也不会乱）。
    ══════════════════════════════════════════════════════════════════════════ */
 var KSPARTS = [
-  { k: "ai",  name: "AI 相关",  x: 26, y: 32, c: "#85b7eb" },
-  { k: "gis", name: "GIS 相关", x: 68, y: 26, c: "#5dcaa5" },
-  { k: "cad", name: "CAD 相关", x: 79, y: 62, c: "#ed93b1" },
-  { k: "pl",  name: "编程语言", x: 47, y: 55, c: "#afa9ec" },
-  { k: "etc", name: "其他领域", x: 19, y: 74, c: "#ef9f27" }
+  { k: "ai",  name: "AI 相关",  x: 25, y: 31, c: "#8ea9d6", rn: "I" },
+  { k: "gis", name: "GIS 相关", x: 69, y: 25, c: "#7fb0a2", rn: "II" },
+  { k: "cad", name: "CAD 相关", x: 79, y: 63, c: "#ab8f9d", rn: "III" },
+  { k: "pl",  name: "编程语言", x: 46, y: 55, c: "#9797bf", rn: "IV" },
+  { k: "etc", name: "其他领域", x: 19, y: 74, c: "#bda276", rn: "V" }
 ];
+/* ⚠️ 配色一律**低饱和**（矿物色，不是霓虹色）—— 用户 9-22 三版定："高级感、学院风"。
+   二版那套 #85b7eb/#5dcaa5/#ed93b1 的糖果色是"廉价感"的主因之一。 */
+
 var KST_TECH_KEY = "tech_groups_v1";   // { 星团id: [文档标题, ...] }（本机）
 var ksPart = "";                        // 当前聚焦的星系 key（"" ＝ 星海首页）
 var ksScale = 1;
@@ -1639,6 +1642,28 @@ function ksCanvasSize() {
   if (ksCtx) ksCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
 
+/* 胶片颗粒：生成一张 128×128 的噪声图当平铺底（只需生成一次）。
+   ⚠️ 这是"高级感"里最省力也最关键的一步 —— 纯 CSS 渐变永远是"数字的平"，
+      蒙一层噪点立刻有胶片/印刷的质感。 */
+function ksGrainBuild() {
+  var el = document.getElementById("ksGrain");
+  if (!el || el.__built) return;
+  var S = 128, cv = document.createElement("canvas");
+  cv.width = S; cv.height = S;
+  var c = cv.getContext("2d");
+  if (!c) return;
+  var img = c.createImageData(S, S), d = img.data;
+  for (var i = 0; i < d.length; i += 4) {
+    var v = (Math.random() * 255) | 0;
+    d[i] = d[i + 1] = d[i + 2] = v;
+    d[i + 3] = 24;                       // 单像素 alpha 很低，再靠 CSS opacity 微调
+  }
+  c.putImageData(img, 0, 0);
+  el.style.backgroundImage = "url(" + cv.toDataURL("image/png") + ")";
+  el.style.backgroundSize = S + "px " + S + "px";
+  el.__built = true;
+}
+
 /* 星云 ＋ 银道带 ＋ 星尘：一次性画到离屏图（比逐帧画几十个渐变便宜得多）。
    ⚠️ 画布比视口大 24px（四周各留 12）—— 逐帧漂移 ±12px 时不会露边。 */
 function ksNebulaBuild() {
@@ -1654,29 +1679,18 @@ function ksNebulaBuild() {
 
   /* 五团星云 —— 色相照五个星系来，这样背景与前景星系是同一套颜色 */
   var blobs = [
-    { x: 0.20, y: 0.26, r: 0.62, s: "62,142,255",  a: 0.17 },
-    { x: 0.74, y: 0.20, r: 0.50, s: "16,206,188",  a: 0.13 },
-    { x: 0.87, y: 0.66, r: 0.48, s: "255,58,142",  a: 0.12 },
-    { x: 0.28, y: 0.84, r: 0.52, s: "255,146,22",  a: 0.11 },
-    { x: 0.52, y: 0.49, r: 0.70, s: "146,104,255", a: 0.14 }
+    { x: 0.26, y: 0.30, r: 0.78, s: "104,132,178", a: 0.10 },
+    { x: 0.76, y: 0.68, r: 0.66, s: "86,104,142",  a: 0.08 }
   ];
-  blobs.forEach(function (b) {
-    var R = m * b.r, cx = W * b.x, cy = H * b.y;
-    var g = c.createRadialGradient(cx, cy, 0, cx, cy, R);
-    g.addColorStop(0, "rgba(" + b.s + "," + b.a + ")");
-    g.addColorStop(0.42, "rgba(" + b.s + "," + (b.a * 0.42).toFixed(3) + ")");
-    g.addColorStop(1, "rgba(" + b.s + ",0)");
-    c.fillStyle = g;
-    c.beginPath(); c.arc(cx, cy, R, 0, 6.2832); c.fill();
-  });
+  /* ⚠️ **只两团、低饱和、大面积** —— 二版那五团糖果色正是"像旧滤镜"的主因 */
 
   /* 银道带：一条斜的亮雾（外面一层宽的 ＋ 中间一条更亮的细芯） */
   var ANG = -0.38, bh = m * 0.86;
   c.save();
   c.translate(W * 0.5, H * 0.52);
   c.rotate(ANG);
-  [["rgba(96,128,214,0)", "rgba(132,166,232,0.12)", 0.22],
-   ["rgba(196,214,255,0)", "rgba(206,222,255,0.11)", 0.06]].forEach(function (band) {
+  [["rgba(88,108,148,0)", "rgba(120,142,180,0.075)", 0.24],
+   ["rgba(170,190,222,0)", "rgba(184,202,232,0.062)", 0.055]].forEach(function (band) {
     var half = bh * band[2];
     var lg = c.createLinearGradient(0, -half, 0, half);
     lg.addColorStop(0, band[0]);
@@ -1688,7 +1702,7 @@ function ksNebulaBuild() {
   c.restore();
 
   /* 星尘：沿银道带撒的密集小点（三层高斯叠加 → 中间密、两边散） */
-  var n = Math.round(W * H / 4200);
+  var n = Math.round(W * H / 9000);
   var ca = Math.cos(ANG), sa = Math.sin(ANG);
   for (var i = 0; i < n; i++) {
     var along = (Math.random() - 0.5) * W * 2.2;
@@ -1697,7 +1711,7 @@ function ksNebulaBuild() {
     var py = H * 0.52 + sa * along + ca * off;
     c.beginPath();
     c.arc(px, py, 0.4 + Math.random() * 0.9, 0, 6.2832);
-    c.fillStyle = "rgba(202,220,255," + (0.05 + Math.random() * 0.15).toFixed(3) + ")";
+    c.fillStyle = "rgba(196,214,244," + (0.03 + Math.random() * 0.09).toFixed(3) + ")";
     c.fill();
   }
   c.globalCompositeOperation = "source-over";
@@ -1706,9 +1720,9 @@ function ksNebulaBuild() {
 
 /* 星点分三层（远/中/近）：越近越大越亮、漂移越快 → 有纵深 */
 function ksStarsInit() {
-  var n = Math.round(ksCvW * ksCvH / 7000);
-  n = Math.max(90, Math.min(300, n));
-  var SZ = [0.4, 1.2, 2.4], SP = [0.02, 0.05, 0.12], AL = [0.55, 0.9, 0.85];
+  var n = Math.round(ksCvW * ksCvH / 5200);
+  n = Math.max(140, Math.min(420, n));
+  var SZ = [0.35, 0.7, 1.35], SP = [0.02, 0.045, 0.1], AL = [0.42, 0.62, 0.55];
   ksStars = [];
   for (var i = 0; i < n; i++) {
     var f = i / n, L = f < 0.62 ? 0 : (f < 0.9 ? 1 : 2);
@@ -1716,59 +1730,59 @@ function ksStarsInit() {
       x: Math.random() * ksCvW, y: Math.random() * ksCvH,
       r: SZ[L] * (0.6 + Math.random() * 0.9),
       vx: (Math.random() - 0.5) * SP[L], vy: (Math.random() - 0.5) * SP[L],
-      a: 0.16 + Math.random() * AL[L] * 0.55,
+      a: 0.08 + Math.random() * AL[L] * 0.5,
       ph: Math.random() * 6.28, sp: 0.3 + Math.random() * 1.1
     });
   }
 }
+/* ⚠️ 三版把星点改成**更密、更小、更暗** —— 真实星空的观感来自"细密噪点"，
+   不是十几颗大亮点（那种就是"低价动画"的味道）。 */
 
 /* 远景行星：三颗，大小与色温都不同，都在缓慢漂移（远山一样，不抢前景） */
 function ksPlanetsInit() {
   var m = Math.min(ksCvW, ksCvH);
+  /* ⚠️ 位置要**避开五个星系的坐标**（不然远景行星会正好压在某个星系上，
+     三版初稿的带环行星就压在「其他领域」上）—— 星系在 (25,31)(69,25)(79,63)(46,55)(19,74)。 */
   ksPlanets = [
-    { x: 0.135, y: 0.72, r: m * 0.120, c: "152,178,226", a: 0.55, ring: true,  sp: 0.05, ph: 0.6 },
-    { x: 0.885, y: 0.28, r: m * 0.072, c: "206,152,182", a: 0.42, ring: false, sp: -0.04, ph: 2.3 },
-    { x: 0.630, y: 0.88, r: m * 0.046, c: "142,202,190", a: 0.34, ring: false, sp: 0.07, ph: 4.7 }
+    { x: 0.11, y: 0.50, r: m * 0.072, c: "140,164,206", a: 0.40, ring: true,  sp: 0.03,  ph: 0.6 },
+    { x: 0.93, y: 0.38, r: m * 0.048, c: "176,142,166", a: 0.34, ring: false, sp: -0.025, ph: 2.3 },
+    { x: 0.62, y: 0.92, r: m * 0.032, c: "126,172,168", a: 0.30, ring: false, sp: 0.04,  ph: 4.7 }
   ];
 }
 
-/* 画一颗行星：外辉光 → 环 → 球体（光源在左上）→ 高光 */
 function ksPlanetAt(c, x, y, r, tint, alpha, ring, rot) {
-  var gl = c.createRadialGradient(x, y, r * 0.55, x, y, r * 2.3);
-  gl.addColorStop(0, "rgba(" + tint + "," + (alpha * 0.26).toFixed(3) + ")");
-  gl.addColorStop(1, "rgba(" + tint + ",0)");
-  c.fillStyle = gl;
-  c.beginPath(); c.arc(x, y, r * 2.3, 0, 6.2832); c.fill();
+  /* ⚠️ 画**背光的暗球**：只有一侧边缘受光 —— 二版那种"中间亮、四周渐白"的球
+     看起来像气泡/塑料球，是廉价的另一处来源。 */
+  var g = c.createRadialGradient(x - r * 0.42, y - r * 0.46, r * 0.02,
+                                 x + r * 0.22, y + r * 0.24, r * 1.08);
+  g.addColorStop(0, "rgba(" + tint + "," + (alpha * 0.60).toFixed(3) + ")");
+  g.addColorStop(0.24, "rgba(" + tint + "," + (alpha * 0.30).toFixed(3) + ")");
+  g.addColorStop(0.64, "rgba(10,16,28," + (alpha * 0.70).toFixed(3) + ")");
+  g.addColorStop(1, "rgba(4,7,14," + (alpha * 0.90).toFixed(3) + ")");
+  c.fillStyle = g;
+  c.beginPath(); c.arc(x, y, r, 0, 6.2832); c.fill();
 
   if (ring) {
     c.save();
     c.translate(x, y);
-    c.rotate(rot * 0.12 - 0.42);
-    c.beginPath(); c.ellipse(0, 0, r * 1.95, r * 0.5, 0, 0, 6.2832);
-    c.strokeStyle = "rgba(" + tint + "," + (alpha * 0.40).toFixed(3) + ")";
-    c.lineWidth = Math.max(1, r * 0.16); c.stroke();
-    c.beginPath(); c.ellipse(0, 0, r * 1.42, r * 0.34, 0, 0, 6.2832);
-    c.strokeStyle = "rgba(255,255,255," + (alpha * 0.16).toFixed(3) + ")";
-    c.lineWidth = Math.max(0.7, r * 0.05); c.stroke();
+    c.rotate(rot * 0.1 - 0.42);
+    c.beginPath(); c.ellipse(0, 0, r * 1.85, r * 0.42, 0, 0, 6.2832);
+    c.strokeStyle = "rgba(" + tint + "," + (alpha * 0.22).toFixed(3) + ")";
+    c.lineWidth = Math.max(0.8, r * 0.09); c.stroke();
+    c.beginPath(); c.ellipse(0, 0, r * 1.34, r * 0.28, 0, 0, 6.2832);
+    c.strokeStyle = "rgba(230,240,255," + (alpha * 0.10).toFixed(3) + ")";
+    c.lineWidth = Math.max(0.6, r * 0.035); c.stroke();
     c.restore();
   }
 
-  var g = c.createRadialGradient(x - r * 0.38, y - r * 0.42, r * 0.05,
-                                 x + r * 0.14, y + r * 0.16, r * 1.15);
-  g.addColorStop(0, "rgba(255,255,255," + (alpha * 0.92).toFixed(3) + ")");
-  g.addColorStop(0.26, "rgba(" + tint + "," + alpha.toFixed(3) + ")");
-  g.addColorStop(0.68, "rgba(" + tint + "," + (alpha * 0.38).toFixed(3) + ")");
-  g.addColorStop(1, "rgba(6,10,20," + (alpha * 0.9).toFixed(3) + ")");
-  c.fillStyle = g;
-  c.beginPath(); c.arc(x, y, r, 0, 6.2832); c.fill();
-
+  /* 受光侧一道极细的亮边（crescent）—— 体积感靠它，不靠高光点 */
   c.beginPath();
-  c.arc(x - r * 0.30, y - r * 0.34, r * 0.30, 0, 6.2832);
-  c.fillStyle = "rgba(255,255,255," + (alpha * 0.10).toFixed(3) + ")";
-  c.fill();
+  c.arc(x, y, r * 0.97, Math.PI * 0.86, Math.PI * 1.72);
+  c.strokeStyle = "rgba(224,236,255," + (alpha * 0.26).toFixed(3) + ")";
+  c.lineWidth = Math.max(0.6, r * 0.055);
+  c.stroke();
 }
 
-/* 彗星：低频（约 11~22 秒一颗）、很淡 —— 是背景点缀，不是主角 */
 function ksCometSpawn() {
   var m = Math.min(ksCvW, ksCvH), left = Math.random() < 0.6;
   ksComets.push({
@@ -1786,7 +1800,7 @@ function ksCometDraw(c, cm) {
   if (cm.life <= 0 || cm.x < -300 || cm.x > ksCvW + 300 || cm.y > ksCvH + 200) return false;
   var L = Math.sqrt(cm.vx * cm.vx + cm.vy * cm.vy) || 1;
   var tx = cm.x - cm.vx / L * cm.len, ty = cm.y - cm.vy / L * cm.len;
-  var a = Math.max(0, cm.life) * 0.6;
+  var a = Math.max(0, cm.life) * 0.34;
   var g = c.createLinearGradient(cm.x, cm.y, tx, ty);
   g.addColorStop(0, "rgba(226,238,255," + a.toFixed(3) + ")");
   g.addColorStop(0.32, "rgba(160,200,255," + (a * 0.42).toFixed(3) + ")");
@@ -1831,8 +1845,8 @@ function ksTick(t) {
     c.arc(s.x, s.y, s.r, 0, 6.2832);
     c.fillStyle = "rgba(198,224,255," + a.toFixed(3) + ")";
     c.fill();
-    if (s.r > 1.55) {
-      c.strokeStyle = "rgba(210,232,255," + (a * 0.5).toFixed(3) + ")";
+    if (s.r > 1.15) {
+      c.strokeStyle = "rgba(210,232,255," + (a * 0.34).toFixed(3) + ")";
       c.lineWidth = 0.8;
       c.beginPath();
       c.moveTo(s.x - s.r * 3.2, s.y); c.lineTo(s.x + s.r * 3.2, s.y);
@@ -1844,7 +1858,7 @@ function ksTick(t) {
   /* ④ 彗星 */
   if (t > ksNextComet) {
     ksCometSpawn();
-    ksNextComet = t + 11000 + Math.random() * 11000;
+    ksNextComet = t + 18000 + Math.random() * 18000;
   }
   for (i = ksComets.length - 1; i >= 0; i--) {
     if (!ksCometDraw(c, ksComets[i])) ksComets.splice(i, 1);
@@ -1857,6 +1871,7 @@ function ksCanvasStart() {
   if (ksRun) return;
   ksRun = true;
   ksCanvasSize();
+  ksGrainBuild();
   ksNebulaBuild();
   ksStarsInit();
   ksPlanetsInit();
@@ -1881,11 +1896,14 @@ function ksCanvasStop() {
    `r` 半径(px) ｜ `dr` 每个星系递增的半径差 ｜ `t` 公转周期(s) ｜ `dt` 每星系递增的周期
    `s` 行星直径 ｜ `ph` 起始相位(圈) */
 var KS_ORBS = [
-  { r: 60,  dr: 3,  t: 46,  dt: 9,  s: 6, ph: 0.08 },
-  { r: 88,  dr: 4,  t: 74,  dt: 13, s: 9, ph: 0.36 },
-  { r: 116, dr: 5,  t: 102, dt: 17, s: 7, ph: 0.60 },
-  { r: 116, dr: 5,  t: 102, dt: 17, s: 5, ph: 0.10 }
+  { r: 54,  dr: 3, t: 168, dt: 26, s: 4.8, ph: 0.08 },
+  { r: 104, dr: 4, t: 248, dt: 32, s: 6.2, ph: 0.34 },
+  { r: 104, dr: 4, t: 248, dt: 32, s: 3.6, ph: 0.70 },
+  { r: 104, dr: 4, t: 248, dt: 32, s: 4.6, ph: 0.18 }
 ];
+/* ⚠️ 轨道半径必须**绕开**刻度环（r=118）与椭圆环（r≈122/44）—— 现在落在 54 / 104，是错开的。
+   ⚠️ 周期 168~330 秒：用户明确要"再慢一点"，别再调快。 */
+
 function ksOrbHTML(pi, c) {
   return KS_ORBS.map(function (o) {
     var r = o.r + o.dr * (pi % 3);
@@ -1896,23 +1914,40 @@ function ksOrbHTML(pi, c) {
       '<span class="kspl" style="--s:' + o.s + "px;--pc:" + c + '"></span></span>';
   }).join("");
 }
-/* 旋臂：两条**对数螺旋**，每条由 15 颗渐小渐淡的光点排成。
-   ⚠️ 半径按 `f^0.86` 展开、转角按 f 递增 —— 这就是螺旋与"放射状风车"的区别。
-   ⚠️ 五个星系按 `pi` 错开起始角，避免五个看起来一模一样。 */
-function ksArmsHTML(pi) {
-  var out = "", ARMS = 2, N = 18, base = 16 + pi * 7;
-  for (var a = 0; a < ARMS; a++) {
-    for (var i = 0; i < N; i++) {
-      var f = i / (N - 1);
-      var ang = (base + a * 180 + f * 168) * Math.PI / 180;
-      var rad = 19 + Math.pow(f, 0.86) * 110;
-      var sz = 8.6 - f * 5.4;
-      out += '<span class="kssp" style="--px:' + (Math.cos(ang) * rad).toFixed(1) +
-        "px;--py:" + (Math.sin(ang) * rad * 0.96).toFixed(1) +
-        "px;--ps:" + sz.toFixed(1) + "px;--po:" + (0.96 - f * 0.62).toFixed(2) + '"></span>';
-    }
+/* 星尘：**随机散点**，不是等距点串 —— "等距"正是"灯珠串"感的来源。
+   ⚠️ 用带种子的伪随机（按星系下标播种）：每次渲染结果一致，不会一闪一闪。 */
+function ksDustHTML(pi) {
+  var out = "", N = 26, seed = 9301 + pi * 7919;
+  var rnd = function () { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+  for (var i = 0; i < N; i++) {
+    var a = rnd() * Math.PI * 2;
+    var r = 26 + Math.pow(rnd(), 0.62) * 76;      // 越靠外越稀 —— 密度向外衰减
+    out += '<i style="--dx:' + (Math.cos(a) * r).toFixed(1) + "px;--dy:" +
+      (Math.sin(a) * r).toFixed(1) + "px;--ds:" + (1 + rnd() * 0.9).toFixed(1) +
+      "px;--do:" + (0.16 + rnd() * 0.42).toFixed(2) + '"></i>';
   }
   return out;
+}
+/* 星表式引线：一条斜线折出一小段水平线（朝左的由 CSS `scaleX(-1)` 镜像） */
+function ksLeadHTML() {
+  return '<svg class="kspart-lead" viewBox="0 0 96 56" fill="none" aria-hidden="true">' +
+    '<path d="M1 1 L42 30 L94 30" stroke="currentColor" stroke-width="1"/>' +
+    '<circle cx="1" cy="1" r="1.8" fill="currentColor"/></svg>';
+}
+/* 星系 ＝ 环形刻度 ＋ 三层同心细环 ＋ 随机星尘 ＋ 星芒 ＋ 小核 ＋ 引线标注
+   ⚠️ 可点区域是中间的 `.kspart-hit`（圆），容器本身不吃事件 ——
+      这样既不用 `clip-path`（会裁掉引线和标注），又不会互相拦截点击。 */
+/* 公转行星：一条轨道一颗（参数见 `KS_ORBS`）。
+   ⚠️ 行星要**小、暗、有明暗分界** —— "白点"是廉价感的来源之一。 */
+function ksOrbHTML(pi, c) {
+  return KS_ORBS.map(function (o) {
+    var r = o.r + o.dr * (pi % 3);
+    var dur = o.t + o.dt * pi;
+    var f = (o.ph + pi * 0.13) % 1;
+    return '<span class="ksorb" style="--r:' + r + ";--t:" + dur + "s;--d:-" +
+      (dur * f).toFixed(1) + 's">' +
+      '<span class="kspl" style="--s:' + o.s + "px;--pc:" + c + '"></span></span>';
+  }).join("");
 }
 function ksPartsRender() {
   var box = document.getElementById("ksParts");
@@ -1920,15 +1955,26 @@ function ksPartsRender() {
   var g = ksTechDocs();
   box.innerHTML = KSPARTS.map(function (p, pi) {
     var n = (g[p.k] || []).length;
-    return '<button class="kspart" type="button" data-p="' + p.k + '" style="--x:' + p.x + "%;--y:" +
-      p.y + "%;--c:" + p.c + '">' +
+    return '<button class="kspart' + (p.x < 50 ? " lead-l" : "") + '" type="button" data-p="' +
+      p.k + '" style="--x:' + p.x + "%;--y:" + p.y + "%;--c:" + p.c +
+      ";--sd:" + (200 + pi * 26) + "s;--sdir:" + (pi % 2 ? "reverse" : "normal") + '">' +
       '<span class="kspart-in">' +
-        ksArmsHTML(pi) + '<span class="kspart-glow"></span>' + ksOrbHTML(pi, p.c) +
-        '<span class="kspart-core"></span>' +
+        '<span class="kspart-dial"></span>' +
+        '<span class="kspart-ring r2"></span>' +
+        ksOrbHTML(pi, p.c) +
+        '<span class="kspart-dust">' + ksDustHTML(pi) + "</span>" +
+        '<span class="kspart-flare"></span><span class="kspart-core"></span>' +
+        /* ⚠️ 可点圆必须放在 `.kspart-in` 里 —— 那个元素是 0×0、原点就在星系中心，
+           所以 `left:-122px;top:-122px` 才是"以中心对齐"。放外层（400×270 的容器）
+           会跑到**容器左上角**：表现是"点在星系上看不到反应"（hitPart 判据抓到）。 */
+        '<span class="kspart-hit"></span>' +
       "</span>" +
-      "<b>" + ksEsc(p.name) + "</b><em>" + (n ? n + " 篇" : "还空着") + "</em></button>";
+      ksLeadHTML() +
+      '<span class="kspart-tag"><b><em>' + p.rn + "</em>" + ksEsc(p.name) + "</b><i>" +
+        (n ? n + " 篇" : "还空着") + "</i></span></button>";
   }).join("");
 }
+
 
 /* ── 排版：文档星怎么摆（未分组＝绕星系一圈；星团＝成员紧聚在一团）────── */
 function ksLayout(part) {
