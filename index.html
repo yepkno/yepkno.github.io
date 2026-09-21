@@ -1550,17 +1550,27 @@ img{display:block}
 /* ══════════════════════════════════════════════════════════════════════════
    技术文库 · 星海（2026-09-22）
    五个部分 ＝ 五个星系；聚焦后**一篇文档 ＝ 一颗亮星**，可拖拽合并成「星团」。
-   ⚠️ 动效刻意**很轻**（用户选定）：只有星点缓慢漂移＋明暗闪烁、星系微微呼吸，
-      不追鼠标、无流星。Canvas 只在星海可见时跑 rAF，切走就停（省电）。
+   ⚠️ 二版（用户："太丑了，星系太小、没有围绕的行星、背景要素太少"）：
+      星系放大到 300px 并补上 **球体核心 ＋ 双旋臂 ＋ 极淡轨道 ＋ 公转行星**；
+      背景改由 Canvas 画 **五团星云 ＋ 银道带 ＋ 星尘 ＋ 三层星点 ＋ 远景行星 ＋ 彗星**。
+   ⚠️ 公转 / 旋臂一律走 **CSS 动画（GPU）**；Canvas 只画背景层，星云预渲染成离屏图，
+      逐帧只做一次 drawImage ＋ 少量图元。只在星海可见时跑 rAF（`ksCanvasStart/Stop`）。
+   ⚠️ 动效仍克制：不追鼠标；行星一圈 45~110s、旋臂 2~3 分钟 —— 都是"几乎静止"的慢。
    ══════════════════════════════════════════════════════════════════════════ */
 .ksspace{position:absolute;inset:0;z-index:3;overflow:hidden;
   background:radial-gradient(ellipse at 30% 18%,#0e1c36 0%,#080e1d 52%,#04060e 100%)}
 .ksspace[hidden]{display:none}
+/* 四角压暗：把中央的星云与星系"抬"出来（⚠️ 放在 stage **之下**，别压到星系与文字） */
+.ksspace::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:radial-gradient(ellipse at 50% 46%,rgba(0,0,0,0) 40%,rgba(2,4,10,.74) 100%)}
 /* 技术文库这一格：星海取代原来的"说明卡 ＋ 文档列表" */
 .kn-shelf[data-shelf="tech"] .ks-wrap{display:none}
-.kncv,.kscv{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.kncv,.kscv{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;
+  transition:transform 1.1s cubic-bezier(.2,.72,.2,1)}
+/* 聚焦时背景轻微推近 ＝ 视差（画面不是整块放大） */
+.ksspace.focusing .kscv{transform:scale(1.07)}
 
-.ksstage{position:absolute;inset:0;transform-origin:0 0;
+.ksstage{position:absolute;inset:0;z-index:2;transform-origin:0 0;
   transition:transform .85s cubic-bezier(.2,.72,.2,1)}
 /* ⚠️ 这两个是全屏容器 —— 必须 `pointer-events:none`，只有里面的按钮收点击；
    否则空容器会挡住下层（2026-09-22 实测：`.ksdocs` 空着也拦住了 `#ksParts` 的星系点击）。 */
@@ -1568,41 +1578,89 @@ img{display:block}
 .ksparts .kspart,.ksdocs .ksdoc{pointer-events:auto}
 .ksclumps{pointer-events:none}
 
-/* ── 星系：外壳光环 ＋ 内核光团 ＋ 名称篇数 ── */
+/* ── 星系：球体核心 ＋ 双旋臂 ＋ 核球辉光 ＋ 极淡轨道 ＋ 公转行星 ＋ 名称篇数 ── */
 .kspart{position:absolute;left:var(--x);top:var(--y);transform:translate(-50%,-50%);
-  width:146px;height:130px;padding:0;border:0;background:transparent;cursor:pointer;
-  font:inherit;color:#cfe4fb;transition:opacity .5s ease,filter .5s ease}
-.kspart-o,.kspart-i{border-radius:50%;position:absolute;left:50%;top:64px;display:block}
-.kspart-o{width:86px;height:86px;margin:-43px 0 0 -43px;border:1px solid var(--c);opacity:.26}
-.kspart-o::after{content:"";position:absolute;inset:11px;border-radius:50%;
-  border:1px solid var(--c);opacity:.5}
-.kspart-i{width:34px;height:34px;margin:-17px 0 0 -17px;
-  background:radial-gradient(circle,var(--c) 10%,rgba(0,0,0,0) 74%);
-  box-shadow:0 0 26px var(--c);animation:ksBreath 5.2s ease-in-out infinite}
-.kspart b{position:absolute;left:-14px;right:-14px;top:88px;font-size:12.5px;font-weight:500;
-  letter-spacing:.04em;text-align:center;white-space:nowrap}
-.kspart em{position:absolute;left:-14px;right:-14px;top:108px;font-style:normal;font-size:10.5px;
-  color:#7f9dc0;text-align:center}
-.kspart:hover{filter:brightness(1.35)}
-/* 聚焦时：选中的星系被点亮放大，其余退到后面变暗 */
-.ksspace.focusing .kspart{opacity:.24;filter:grayscale(.4)}
-.kspart.on{opacity:1;filter:none}
-.kspart.on .kspart-o{opacity:.5}
-.kspart.on .kspart-o::after{opacity:.8}
+  width:300px;height:300px;padding:0;border:0;background:transparent;cursor:pointer;
+  font:inherit;color:#cfe4fb;transition:opacity .5s ease;
+  /* ⚠️ 可点区域收成圆：300px 的方形容器会互相压住（点 A 星系的角落却触发 B 星系） */
+  clip-path:circle(48%)}
+/* ⚠️ **不要在 `.kspart` 上挂 `filter`**：它会新建层叠上下文，把子元素
+   `mix-blend-mode` 的**混合基准**改掉（颜色会跟平时不一样）。要变暗/变亮一律改
+   **opacity 或子元素**的属性 —— 顺带也省一次重绘。 */
+/* 内层只为窄屏整组缩小（`--k`）—— 轨道半径是 px，缩放后自动跟着小 */
+.kspart-in{position:absolute;inset:0;transform:scale(var(--k,1))}
+
+/* 旋臂：**由一串光点排成的对数螺旋**（比 conic 锥形渐变像得多 —— 后者会糊成一个圆盘）。
+   ⚠️ 刻意**不做旋转动画**：一是真星系看上去也几乎不动，二是静态就没有逐帧成本。
+   ⚠️ 点自带柔边（radial-gradient），所以**不需要 filter:blur** —— blur 在动画层上很贵。 */
+.kssp{position:absolute;left:50%;top:50%;width:var(--ps);height:var(--ps);border-radius:50%;
+  margin:calc(var(--ps) / -2) 0 0 calc(var(--ps) / -2);
+  transform:translate(var(--px),var(--py));
+  background:radial-gradient(circle,#fff 0%,var(--c) 40%,rgba(255,255,255,0) 78%);
+  opacity:var(--po);pointer-events:none;transition:opacity .4s ease}
+/* 核球辉光（小而柔的一团，垫在核心下面 —— ⚠️ 别做大，做大了就是"灰盘子"） */
+.kspart-glow{position:absolute;left:50%;top:50%;width:150px;height:150px;margin:-75px 0 0 -75px;
+  border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle,var(--c) 0%,rgba(255,255,255,0) 58%);
+  opacity:.16}
+/* 核心：球体（光源在左上，不是"发光圆点"） */
+.kspart-core{position:absolute;left:50%;top:50%;width:58px;height:58px;margin:-29px 0 0 -29px;
+  border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle at 34% 30%,#fff 0%,#fff 12%,var(--c) 46%,
+    rgba(8,14,28,.55) 82%,#05070f 100%);
+  box-shadow:0 0 20px var(--c),0 0 56px -8px var(--c),0 0 130px -22px var(--c);
+  animation:ksBreath 6.5s ease-in-out infinite}
+
+/* 公转轨道：一条轨道一颗行星（轨道线极淡、行星亮）
+   `--r` 半径(无单位 px 数) ｜ `--t` 一圈秒数 ｜ `--d` 起始相位（负的 animation-delay）
+   `--s` 行星直径 ｜ `--pc` 行星色 */
+.ksorb{position:absolute;left:50%;top:50%;pointer-events:none;
+  width:calc(var(--r) * 2px);height:calc(var(--r) * 2px);
+  margin:calc(var(--r) * -1px) 0 0 calc(var(--r) * -1px);
+  animation:ksSpin var(--t) linear infinite;animation-delay:var(--d,0s)}
+.ksorb::before{content:"";position:absolute;inset:0;border-radius:50%;
+  border:1px solid var(--c);opacity:.085}
+.kspl{position:absolute;left:50%;top:0;width:var(--s);height:var(--s);border-radius:50%;
+  transform:translate(-50%,-50%);
+  background:radial-gradient(circle at 32% 28%,#fff 0%,var(--pc) 58%,rgba(0,0,0,.72) 100%);
+  box-shadow:0 0 7px var(--pc),0 0 16px -4px var(--pc)}
+
+.kspart b{position:absolute;left:-40px;right:-40px;top:204px;font-size:13px;font-weight:500;
+  letter-spacing:.04em;text-align:center;white-space:nowrap;transition:opacity .4s ease;
+  text-shadow:0 1px 8px #04060e,0 0 16px #04060e}
+.kspart em{position:absolute;left:-40px;right:-40px;top:227px;font-style:normal;font-size:10.5px;
+  color:#8fb0d4;text-align:center;transition:opacity .4s ease;
+  text-shadow:0 1px 8px #04060e,0 0 14px #04060e}
+.kspart:hover .kspart-glow{opacity:.26}
+.kspart:hover .kssp{opacity:calc(var(--po) * 1.3)}
+.kspart:hover .kspart-core{box-shadow:0 0 24px var(--c),0 0 66px -8px var(--c),0 0 150px -22px var(--c)}
+/* 聚焦时：选中的星系被点亮，其余退到后面变暗。
+   ⚠️⚠️ 必须写成 `.ksspace.focusing .kspart.on`（**三个 class**）——
+   `.ksspace.focusing .kspart` 的优先级(0,3,0) 高于 `.kspart.on`(0,2,0)，
+   写成后者根本压不住：选中星系会被一并压到 22%，看起来"聚焦后核心发灰、整个星系糊掉"
+   （2026-09-22 实测踩到，是从截图里看出来的）。 */
+.ksspace.focusing .kspart{opacity:.22}
+.ksspace.focusing .kspart.on{opacity:1}
+.kspart.on .kspart-glow{opacity:.30}
+.kspart.on .kssp{opacity:calc(var(--po) * 1.35)}
+.kspart.on .kspart-core{box-shadow:0 0 30px var(--c),0 0 92px -8px var(--c),0 0 200px -22px var(--c)}
 /* ⚠️ 聚焦时把星系上的文字**收掉** —— 文档星就绕着它摆，标题会压到名字上
    （2026-09-22 截图看见）。名字改到右上角那条显示。 */
 .kspart.on b,.kspart.on em{opacity:0}
-@keyframes ksBreath{0%,100%{opacity:.52}50%{opacity:.96}}
+@keyframes ksBreath{0%,100%{opacity:.62}50%{opacity:1}}
+@keyframes ksSpin{to{transform:rotate(360deg)}}
 
-/* ── 文档星：一篇文档一颗 ── */
+/* ── 文档星：一篇文档一颗（聚焦后才出现，也是唯一可拖的） ── */
 .ksdoc{position:absolute;left:var(--x);top:var(--y);transform:translate(-50%,-50%);
-  width:154px;padding:0;border:0;background:transparent;cursor:pointer;font:inherit;
-  display:flex;flex-direction:column;align-items:center;gap:6px;
+  width:158px;padding:0;border:0;background:transparent;cursor:pointer;font:inherit;
+  display:flex;flex-direction:column;align-items:center;gap:7px;
   opacity:0;transition:opacity .55s ease;touch-action:none}
 .ksdoc.on{opacity:1}
-.ksdoc i{display:block;width:11px;height:11px;border-radius:50%;background:var(--c);
-  box-shadow:0 0 12px var(--c),0 0 30px var(--c);transition:transform .18s ease}
-.ksdoc b{font-size:11.5px;font-weight:400;line-height:1.45;text-align:center;color:#b9d3ee}
+.ksdoc i{display:block;width:13px;height:13px;border-radius:50%;
+  background:radial-gradient(circle at 33% 30%,#fff 0%,var(--c) 62%,rgba(0,0,0,.5) 100%);
+  box-shadow:0 0 10px var(--c),0 0 26px -4px var(--c);transition:transform .18s ease}
+.ksdoc b{font-size:11.5px;font-weight:400;line-height:1.45;text-align:center;color:#b9d3ee;
+  text-shadow:0 1px 8px #04060e}
 .ksdoc:hover i{transform:scale(1.35)}
 .ksdoc:hover b{color:#fff}
 .ksdoc.drag{z-index:9}
@@ -1611,14 +1669,15 @@ img{display:block}
 
 /* ── 星团：把几颗星合到一起 ── */
 .ksclump{position:absolute;left:var(--x);top:var(--y);transform:translate(-50%,-50%);
-  width:104px;height:104px;border-radius:50%;border:1px dashed rgba(150,196,255,.4);
-  background:radial-gradient(circle,rgba(120,170,240,.14),rgba(0,0,0,0) 72%);
+  width:118px;height:118px;border-radius:50%;border:1px dashed rgba(150,196,255,.36);
+  background:radial-gradient(circle,rgba(120,170,240,.15),rgba(0,0,0,0) 72%);
+  box-shadow:inset 0 0 26px -8px rgba(150,200,255,.45);
   animation:ksBreath 6.5s ease-in-out infinite}
-.ksclump em{position:absolute;left:-20px;right:-20px;bottom:-16px;font-style:normal;font-size:10px;
+.ksclump em{position:absolute;left:-22px;right:-22px;bottom:-18px;font-style:normal;font-size:10px;
   letter-spacing:.08em;color:#7f9dc0;text-align:center}
 
 /* ── 顶部与底部 ── */
-.ksspace-top{position:absolute;left:0;right:0;top:0;z-index:2;display:flex;align-items:center;
+.ksspace-top{position:absolute;left:0;right:0;top:0;z-index:3;display:flex;align-items:center;
   gap:14px;padding:clamp(14px,2.8vh,26px) clamp(16px,3.6vw,40px);pointer-events:none}
 .ksspace-back{pointer-events:auto;font:inherit;font-size:12px;letter-spacing:.1em;cursor:pointer;
   padding:7px 15px;border-radius:999px;color:#a9c6e6;background:rgba(12,22,40,.72);
@@ -1626,16 +1685,14 @@ img{display:block}
 .ksspace-back:hover{color:#fff;border-color:#85b7eb;background:rgba(20,38,66,.92)}
 .ksspace-t{margin-left:auto;font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;
   color:#3f5f88}
-.ksspace-hint{position:absolute;left:0;right:0;bottom:clamp(14px,3vh,30px);z-index:2;margin:0;
+.ksspace-hint{position:absolute;left:0;right:0;bottom:clamp(14px,3vh,30px);z-index:3;margin:0;
   padding:0 clamp(16px,4vw,40px);text-align:center;font-size:11.5px;line-height:1.7;
   color:#5f83b3;pointer-events:none}
 
 @media (max-width:900px){
-  .kspart{width:118px;height:110px}
-  .kspart-o{width:68px;height:68px;margin:-34px 0 0 -34px;top:54px}
-  .kspart-i{top:54px}
-  .kspart b{top:74px;font-size:11.5px}
-  .kspart em{top:92px;font-size:10px}
+  .kspart{width:212px;height:212px;--k:.62}
+  .kspart b{top:136px;font-size:11.5px}
+  .kspart em{top:155px;font-size:10px}
   .ksdoc{width:124px}
   .ksdoc b{font-size:11px}
   .ksclump{width:86px;height:86px}
@@ -4141,6 +4198,6 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 <script src="study-plan.js?v=20260922c"></script>
 <script src="docs.js?v=20260921b"></script>
 <script src="app.js?v=20260920f"></script>
-<script src="knowledge.js?v=20260922g"></script>
+<script src="knowledge.js?v=20260922h"></script>
 </body>
 </html>
