@@ -779,7 +779,9 @@ function kstSetLit(n) {
    ⚠️ 纯静态无后端 → 只存在**本机浏览器**，换设备从零开始；它是记录，不是待办工具。 */
 var KST_MARK_KEY = "study_marks_v1";   // 清单刻痕：勾过的条目 id
 var KST_GEAR_KEY = "study_gear_v1";    // 书 / 软件：已入手、已装好的 id
-var kstFilter = "all";                 // 清单方向筛选（"all" 或 KST_GROUPS 下标字符串）
+var kstFilter = "0";   // 清单当前翻到**哪一册**（KST_GROUPS 下标）
+/* ⚠️ 刻意没有「全部」：60 条一次铺开要 2666px、必然出滚动条。
+      一次看一册（14–17 条）才是一屏放得下的量 —— 也正合"翻阅某本册子"的动作。 */
 
 function kstIds(key) {
   try { return (localStorage.getItem(key) || "").split(",").filter(Boolean); }
@@ -793,6 +795,125 @@ function kstFlip(key, id) {
   return i < 0;                        // true = 这一下刚勾上
 }
 function kstCount(key) { return kstIds(key).length; }
+
+/* ── 大厅的六个入口 → 各自**独立一页**（2026-09-21 用户：
+      "不要用滚动条，最好是有分开入口然后弹出独立页面"）─────────────────────
+   ⚠️ 每页的容器一次性建出来，再调各自的渲染函数（元素必须先存在）。
+   ⚠️ **页内也按"一屏放得下"设计**；`.kspage-c` 的 overflow 只是矮窗时的安全网。 */
+var KST_MENU = [
+  { k: "plan",    t: "我的学习计划", d: "四个方向依次相扣" },
+  { k: "books",   t: "书目",         d: "要读的课程与要买的书" },
+  { k: "tools",   t: "工具台",       d: "要装的软件，按三档分" },
+  { k: "entries", t: "修习条目",     d: "一册登记簿，可以勾" },
+  { k: "trail",   t: "实际修习轨迹", d: "只记录，不安排" },
+  { k: "sum",     t: "年度修习录",   d: "这一年留下的" }
+];
+var KST_PAGES = {
+  plan: {
+    t: "Learning Plan · 我的学习计划",
+    h: '<p class="kst-pg-s">四个方向依次相扣。点开任何一间，进入它自己的档案。</p>' +
+       '<div class="kst-map" id="kstMap"></div>',
+    r: function () { kstMapRender(); }
+  },
+  books: {
+    t: "Books · 书目",
+    h: '<p class="kst-pg-s">表 02 原文照录 —— 课程怎么跟、书要不要买、学到什么程度算够。' +
+       '有书要买的那几条，左沿是朱红的；点开看详情。</p>' +
+       '<div class="ksgrid" id="kstBooks"></div>',
+    r: function () { kstBooksRender(); }
+  },
+  tools: {
+    t: "Toolkit · 工具台",
+    h: '<p class="kst-pg-s">表 03 原文照录 —— 按 🟢🟡🔵 三档排，左沿的颜色就是它的装订档位。</p>' +
+       '<div id="kstMain"></div><div class="ksgrid" id="kstTools"></div>',
+    r: function () { kstToolsRender(); }
+  },
+  entries: {
+    t: "Entries · 修习条目",
+    h: '<p class="kst-pg-s">每一条都照录原表 · 勾一条就是留下一道刻痕 —— 不排名、不催促。</p>' +
+       '<div class="kst-cf" id="kstCf"></div><p class="kst-tally" id="kstTally"></p>' +
+       '<div class="kst-reg ksgrid ksgrid-2" id="kstReg"></div>',
+    r: function () { kstRegRender(); }
+  },
+  trail: {
+    t: "Trail · 实际修习轨迹",
+    h: '<p class="kst-pg-s">这里的顺序是你自己走出来的 —— 不是日程表。</p>' +
+       '<ol class="kst-trail" id="kstTrail"></ol>',
+    r: function () { kstTrailRender(); }
+  },
+  sum: {
+    t: "年度修习录",
+    h: '<div class="ksta ksta-sum" id="kstSum">' +
+       '<span class="ksta-c tl"></span><span class="ksta-c tr"></span>' +
+       '<span class="ksta-c bl"></span><span class="ksta-c br"></span>' +
+       '<div id="kstSumB"></div></div>',
+    r: function () { kstSumRender(); }
+  }
+};
+
+function kstMenuRender() {
+  var box = document.getElementById("kstaMenu");
+  if (!box) return;
+  box.innerHTML = KST_MENU.map(function (m) {
+    return '<button class="ksta-m" type="button" data-p="' + m.k + '"><b>' + m.t +
+      "</b><i>" + m.d + "</i></button>";
+  }).join("");
+}
+
+function ksPageOpen(key) {
+  var p = KST_PAGES[key];
+  if (!p) return;
+  var box = document.getElementById("ksPage"), c = document.getElementById("ksPageC");
+  var t = document.getElementById("ksPageT");
+  if (!box || !c) return;
+  if (t) t.textContent = p.t;
+  c.innerHTML = p.h;
+  c.scrollTop = 0;
+  box.hidden = false;
+  requestAnimationFrame(function () { box.classList.add("on"); });
+  p.r();                 // 先建容器、再渲染内容
+  kstBind();             // 新元素要重新挂事件
+}
+function ksPageClose() {
+  var box = document.getElementById("ksPage");
+  if (!box || box.hidden) return;
+  box.classList.remove("on");
+  kstFileClose();        // 从"我的学习计划"里点开的档案抽屉一并收走
+  window.setTimeout(function () {
+    if (box.classList.contains("on")) return;
+    box.hidden = true;
+    var c = document.getElementById("ksPageC");
+    if (c) c.innerHTML = "";
+  }, 320);
+}
+/* 离开这一格时用：**不走动画**，直接复位（整个舞台都在收） */
+function ksPageReset() {
+  var box = document.getElementById("ksPage");
+  if (box) { box.classList.remove("on"); box.hidden = true; }
+  var c = document.getElementById("ksPageC");
+  if (c) c.innerHTML = "";
+  ksLeafReset();
+}
+function ksLeafReset() {
+  var b = document.getElementById("ksLeaf");
+  if (b) { b.classList.remove("on"); b.hidden = true; }
+}
+
+/* 二级：单件详情（一本书 / 一件工具）＝一张浮起的小纸 */
+function ksLeafOpen(html) {
+  var b = document.getElementById("ksLeaf"), c = document.getElementById("ksLeafB");
+  if (!b || !c) return;
+  c.innerHTML = html;
+  b.hidden = false;
+  b.scrollTop = 0;
+  requestAnimationFrame(function () { b.classList.add("on"); });
+}
+function ksLeafClose() {
+  var b = document.getElementById("ksLeaf");
+  if (!b || b.hidden) return;
+  b.classList.remove("on");
+  window.setTimeout(function () { if (!b.classList.contains("on")) b.hidden = true; }, 280);
+}
 
 function kstStage(n) {
   var P = window.STUDY_PLAN;
@@ -835,12 +956,7 @@ function kstRender() {
     stat.textContent = "已在修习的方向 · " + String(dirs).padStart(2, "0") +
       "　｜　走过的台阶 · " + String(lit).padStart(2, "0") + " / 14";
   }
-  kstMapRender();
-  kstTrailRender();
-  kstSumRender();
-  kstBooksRender();      // ② 书目
-  kstToolsRender();      // ③ 工具台
-  kstRegRender();        // ④ 全局清单
+  kstMenuRender();       // 大厅的六个入口（各自成一页，页内内容在 ksPageOpen 时才渲染）
   kstLawRender();        // ① 法则纸（内容静态，随渲染一起备好）
   kstBind();
 }
@@ -964,31 +1080,49 @@ function kstLink(u, label) {
   if (!/^https?:/i.test(u || "")) return '<span class="kst-a" style="cursor:default">' + (u || "") + "</span>";
   return '<a class="kst-a" href="' + u + '" target="_blank" rel="noopener">' + label + "</a>";
 }
+/* ② 书目：一页**行式列表**（一屏放得下，不靠滚动）—— 点一行 → `.ksleaf` 详情 */
+function kstBookInfo(c) {
+  var raw = c.book || "";
+  var bk = (raw && raw !== "\u2014") ? raw : "";
+  // "不建议买 AI 原理纸书" 是**忠告**、不是待购 → 不算"要买"，也不给"已入手"
+  return { bk: bk, buy: !!bk && bk.indexOf("\u4e0d\u5efa\u8bae") !== 0 };
+}
 function kstBooksRender() {
   var P = window.STUDY_PLAN, box = document.getElementById("kstBooks");
   if (!P || !box || !P.courses) return;
   box.innerHTML = P.courses.map(function (c) {
-    var raw = c.book || "";
-    var bk = (raw && raw !== "\u2014") ? raw : "";
-    var buy = !!bk && bk.indexOf("\u4e0d\u5efa\u8bae") !== 0;   // "不建议买…" 是忠告，不是待购
-    var gid = "bk" + c.order, on = kstHas(KST_GEAR_KEY, gid);
-    return '<div class="kst-bk" style="--bd:' +
-      (buy ? "rgba(255,70,31,.5)" : "rgba(176,140,84,.45)") + '">' +
-      '<div class="kst-bk-h"><b>' + c.order + "</b><span>" + c.stage + "</span>" +
-      (buy ? "<i>有书要买</i>" : "") + "</div>" +
-      '<p class="kst-bk-t">' + c.content + "</p>" +
-      '<p class="kst-r"><em>怎么学</em><span>' + c.how + "</span></p>" +
-      '<p class="kst-r"><em>推荐</em><span>' + c.rec + "</span></p>" +
-      (bk ? '<p class="kst-r"><em>' + (buy ? "要买" : "书") + '</em><span class="' + (on ? "on" : "") + '">' +
-        bk + "</span></p>" : "") +
-      '<p class="kst-r"><em>学到</em><span>' + c.done + "</span></p>" +
-      '<div class="kst-lk">' + kstLink(c.url, /bilibili\.com/.test(c.url) ? "\u25b6 B 站" : "\u25b6 文档") +
-        (c.url2 ? kstLink(c.url2, "\u2197 参考") : "") +
-        (buy ? '<button class="kst-own' + (on ? " on" : "") + '" type="button" data-own="' + gid +
-          '" data-on="&#10003; 已入手" data-off="&#9675; 未入手">' +
-          (on ? "&#10003; 已入手" : "&#9675; 未入手") + "</button>" : "") +
-      "</div></div>";
+    var i = kstBookInfo(c);
+    var on = i.buy && kstHas(KST_GEAR_KEY, "bk" + c.order);
+    return '<button class="ksrow" type="button" data-bk="' + c.order + '" style="--bd:' +
+      (i.buy ? "rgba(255,70,31,.5)" : "rgba(176,140,84,.45)") + '">' +
+      '<span class="ksrow-no">' + c.order + "</span>" +
+      '<span class="ksrow-b"><b>' + c.content + "</b><i>" + c.stage + " · " + c.how + "</i></span>" +
+      '<span class="ksrow-m">' + (i.buy ? (on ? "&#10003; 已有书" : "要买书") : "") + "</span>" +
+      "</button>";
   }).join("");
+}
+function ksBookLeaf(order) {
+  var P = window.STUDY_PLAN, c = null;
+  if (!P) return;
+  P.courses.forEach(function (x) { if (x.order === order) c = x; });
+  if (!c) return;
+  var i = kstBookInfo(c), on = i.buy && kstHas(KST_GEAR_KEY, "bk" + c.order);
+  ksLeafOpen(
+    '<button class="ksleaf-x" id="ksLeafX" type="button" aria-label="收起">&#215;</button>' +
+    '<p class="ksleaf-k">' + c.stage + " · " + c.order + '</p>' +
+    '<h4 class="ksleaf-t">' + c.content + "</h4>" +
+    '<div class="ksleaf-q">' + c.rec + "</div>" +
+    '<p class="kst-r"><em>怎么学</em><span>' + c.how + "</span></p>" +
+    (i.bk ? '<p class="kst-r"><em>' + (i.buy ? "要买" : "书") + '</em><span class="' + (on ? "on" : "") +
+      '">' + i.bk + "</span></p>" : "") +
+    '<p class="kst-r"><em>学到</em><span>' + c.done + "</span></p>" +
+    '<div class="kst-lk">' + kstLink(c.url, /bilibili\.com/.test(c.url) ? "\u25b6 B 站" : "\u25b6 文档") +
+      (c.url2 ? kstLink(c.url2, "\u2197 参考") : "") +
+      (i.buy ? '<button class="kst-own' + (on ? " on" : "") + '" type="button" data-own="bk' + c.order +
+        '" data-on="&#10003; 已入手" data-off="&#9675; 未入手">' +
+        (on ? "&#10003; 已入手" : "&#9675; 未入手") + "</button>" : "") +
+    "</div>"
+  );
 }
 
 /* ③ 工具台：右页 —— 按 🟢🟡🔵 三档分组，卡片左沿就是它的"装订档位"（用户原话） */
@@ -1001,6 +1135,7 @@ var KST_PRI = { S: 0, A: 1, B: 2 };
 /* ⚠️ 别写 `KST_PRI[x] || 9` —— S 的档位值是 **0**，`0 || 9` 会算成 9，
       于是 S 级全被排到最后（2026-09-21 实测踩到：🟢 组首条跑出 Docker 而不是 Claude Code）。 */
 function kstPri(p) { return (p && Object.prototype.hasOwnProperty.call(KST_PRI, p)) ? KST_PRI[p] : 9; }
+/* ③ 工具台：一页**行式列表**（按档位分组，一屏放得下）—— 点一行 → `.ksleaf` 详情 */
 function kstToolsRender() {
   var P = window.STUDY_PLAN, box = document.getElementById("kstTools");
   var mb = document.getElementById("kstMain");
@@ -1013,69 +1148,83 @@ function kstToolsRender() {
     var list = P.tools.filter(function (x) { return (x.inst || "").indexOf(t.e) === 0; });
     if (!list.length) return;
     list.sort(function (a, b) { return kstPri(a.pri) - kstPri(b.pri); });
-    out += '<p class="kst-tg">' + t.e + " " + t.label + "</p>";
+    out += '<p class="kst-tg ksfull">' + t.e + " " + t.label + "</p>";
     list.forEach(function (x) {
-      var gid = "tl" + x.name, on = kstHas(KST_GEAR_KEY, gid);
-      out += '<div class="kst-tl" style="--bd:' + t.color + '">' +
-        '<div class="kst-tl-h"><b>' + x.name + "</b><i>" + x.pri + "</i></div>" +
-        '<p class="kst-tl-m">' + x.cat + " · " + x.nature + "</p>" +
-        '<p class="kst-tl-m">' + x.inst + "</p>" +
-        '<p class="kst-r"><em>为什么</em><span>' + x.why + "</span></p>" +
-        '<p class="kst-r"><em>学什么</em><span>' + x.learn + "</span></p>" +
-        '<div class="kst-lk">' + kstLink(x.url, "\u2197 官网") +
-        '<button class="kst-own' + (on ? " on" : "") + '" type="button" data-own="' + gid +
-        '" data-on="&#10003; 已装好" data-off="&#9675; 还没装">' +
-        (on ? "&#10003; 已装好" : "&#9675; 还没装") + "</button></div></div>";
+      var on = kstHas(KST_GEAR_KEY, "tl" + x.name);
+      out += '<button class="ksrow ksrow-flat" type="button" data-tl="' + x.name +
+        '" style="--bd:' + t.color + '">' +
+        '<span class="ksrow-b"><b>' + x.name + "</b><i>" + x.cat + " · " + x.why + "</i></span>" +
+        '<span class="ksrow-g">' + x.pri + (on ? " &#10003;" : "") + "</span></button>";
     });
   });
   box.innerHTML = out;
+}
+function ksToolLeaf(name) {
+  var P = window.STUDY_PLAN, x = null;
+  if (!P) return;
+  P.tools.forEach(function (t) { if (t.name === name) x = t; });
+  if (!x) return;
+  var on = kstHas(KST_GEAR_KEY, "tl" + x.name);
+  ksLeafOpen(
+    '<button class="ksleaf-x" id="ksLeafX" type="button" aria-label="收起">&#215;</button>' +
+    '<p class="ksleaf-k">' + x.cat + " · " + x.pri + " \u7ea7</p>" +
+    '<h4 class="ksleaf-t">' + x.name + "</h4>" +
+    '<div class="ksleaf-q">' + x.nature + "<br>" + x.inst + "</div>" +
+    '<p class="kst-r"><em>为什么</em><span>' + x.why + "</span></p>" +
+    '<p class="kst-r"><em>学什么</em><span>' + x.learn + "</span></p>" +
+    '<div class="kst-lk">' + kstLink(x.url, "\u2197 官网") +
+      '<button class="kst-own' + (on ? " on" : "") + '" type="button" data-own="tl' + x.name +
+      '" data-on="&#10003; 已装好" data-off="&#9675; 还没装">' +
+      (on ? "&#10003; 已装好" : "&#9675; 还没装") + "</button></div>"
+  );
 }
 
 /* ④ 修习条目：一页登记簿（全局清单）*/
 var KST_KIND = { L: "掌握", O: "产出", G: "条件" };
-function kstTallyText() {
-  var n = kstCount(KST_MARK_KEY);
-  return n ? "这一页上，你已经留下了 " + n + " 道刻痕"
-           : "还没有刻痕 —— 这不着急，等你真的做过一条再回来";
+function kstTallyNow() {
+  var P = window.STUDY_PLAN;
+  var gi = parseInt(kstFilter, 10);
+  if (!P || isNaN(gi) || gi < 0 || gi >= KST_GROUPS.length) gi = 0;
+  var g = KST_GROUPS[gi];
+  var list = P.tasks.filter(function (t) { return t.n >= g.n[0] && t.n <= g.n[1]; });
+  var marks = kstIds(KST_MARK_KEY);
+  var done = list.filter(function (t) { return marks.indexOf(t.id) >= 0; }).length;
+  // ⚠️ 只报"已留下多少"，**永不报分母 / 剩余**；"记录不是欠债"这句并进同一行，
+  //    省下一整行高度（登记簿 22 条时正是这一行的差别决定要不要出滚动条）。
+  return "「" + g.key + "」· " + (done ? "已留 " + done + " 道刻痕" : "这一册还没有刻痕") +
+    "　——　记的是你做过什么，不是你欠着什么。";
 }
 function kstRegRender() {
   var P = window.STUDY_PLAN, box = document.getElementById("kstReg");
   if (!P || !box || !P.tasks) return;
-  var marks = kstIds(KST_MARK_KEY), out = "";
-  KST_GROUPS.forEach(function (g, gi) {
-    if (kstFilter !== "all" && String(gi) !== kstFilter) return;
-    var list = P.tasks.filter(function (t) { return t.n >= g.n[0] && t.n <= g.n[1]; });
-    if (!list.length) return;
-    var done = list.filter(function (t) { return marks.indexOf(t.id) >= 0; }).length;
-    out += '<div class="kst-grp">' + g.key + "<em>" + (done ? "已留 " + done + " 道" : "") + "</em></div>";
-    var cur = 0;
-    list.forEach(function (t) {
-      if (t.n !== cur) {
-        cur = t.n;
-        var s = kstStage(t.n);
-        out += '<div class="kst-stg">第 ' + String(t.n).padStart(2, "0") + " 级 · " +
-          (s ? s.key : "") + "</div>";
-      }
-      var on = marks.indexOf(t.id) >= 0;
-      out += '<button class="kst-c' + (on ? " on" : "") + '" type="button" data-mark="' + t.id + '">' +
-        "<span>" + t.text + '</span><em class="kst-c-kind">' + (KST_KIND[t.k] || "") + "</em></button>";
-    });
+  var marks = kstIds(KST_MARK_KEY);
+  var gi = parseInt(kstFilter, 10);
+  if (isNaN(gi) || gi < 0 || gi >= KST_GROUPS.length) gi = 0;
+  kstFilter = String(gi);
+  var g = KST_GROUPS[gi];
+  var list = P.tasks.filter(function (t) { return t.n >= g.n[0] && t.n <= g.n[1]; });
+  var done = list.filter(function (t) { return marks.indexOf(t.id) >= 0; }).length;
+  var out = "", cur = 0;
+  list.forEach(function (t) {
+    if (t.n !== cur) {
+      cur = t.n;
+      var s = kstStage(t.n);
+      out += '<div class="kst-stg">第 ' + String(t.n).padStart(2, "0") + " 级 · " +
+        (s ? s.key : "") + "</div>";
+    }
+    var on = marks.indexOf(t.id) >= 0;
+    out += '<button class="kst-c' + (on ? " on" : "") + '" type="button" data-mark="' + t.id + '">' +
+      "<span>" + t.text + '</span><em class="kst-c-kind">' + (KST_KIND[t.k] || "") + "</em></button>";
   });
   box.innerHTML = out;
   var cf = document.getElementById("kstCf");
   if (cf) {
-    cf.innerHTML = '<b class="' + (kstFilter === "all" ? "on" : "") + '" data-f="all">全部</b>' +
-      KST_GROUPS.map(function (g, i) {
-        return '<b class="' + (kstFilter === String(i) ? "on" : "") + '" data-f="' + i + '">' +
-          g.key + "</b>";
-      }).join("");
+    cf.innerHTML = KST_GROUPS.map(function (x, i) {
+      return '<b class="' + (i === gi ? "on" : "") + '" data-f="' + i + '">' + x.key + "</b>";
+    }).join("");
   }
   var tal = document.getElementById("kstTally");
-  if (tal) tal.textContent = kstTallyText();
-  var note = document.getElementById("kstNote");
-  /* ⚠️ 刻意**不列举**"没有剩余条数/没有完成度"那些词 —— 提一次就把概念带进来了。
-       只正面说清它的性质：记录，不是欠债（用户设计原则）。 */
-  if (note) note.textContent = "它只是一页登记簿 —— 记的是你做过什么，不是你欠着什么。";
+  if (tal) tal.textContent = kstTallyNow();
 }
 
 /* 修习项目档案：从右侧落下（不遮住大厅中央），"纸页归档"而不是弹窗 */
@@ -1149,15 +1298,6 @@ function kstBind() {
       }
     });
   }
-  var go = document.getElementById("kstaGo");
-  if (go && !go.__kstBound) {
-    go.__kstBound = true;
-    go.addEventListener("click", function () {
-      var sc = document.getElementById("kstScroll");
-      if (sc) sc.scrollTo({ top: sc.clientHeight, behavior: "smooth" });
-    });
-  }
-
   /* ① 法则纸：开 / 收（点纸外也收；ESC 见全局键处理） */
   var lawBtn = document.getElementById("kstaLaw");
   if (lawBtn && !lawBtn.__kstBound) {
@@ -1193,24 +1333,52 @@ function kstBind() {
       if (!b) return;
       b.classList.toggle("on", kstFlip(KST_MARK_KEY, b.getAttribute("data-mark")));
       var tal = document.getElementById("kstTally");
-      if (tal) tal.textContent = kstTallyText();
+      if (tal) tal.textContent = kstTallyNow();
       kstSumRender();        // 修习录同步（它只记"留下了多少"，从不报分母）
     });
   }
-  /* ②③ 物料：书「已入手」/ 软件「已装好」（标签随按钮自带，别写死） */
-  ["kstBooks", "kstTools"].forEach(function (id) {
-    var box = document.getElementById(id);
-    if (!box || box.__kstBound) return;
-    box.__kstBound = true;
-    box.addEventListener("click", function (e) {
-      var b = e.target.closest("[data-own]");
-      if (!b) return;
-      kstFlip(KST_GEAR_KEY, b.getAttribute("data-own"));
-      kstBooksRender();      // 重画这两页：勾上时那行说明由灰转墨（外层滚动位置不受影响）
+  /* 大厅的六个入口 → 各自独立一页 */
+  var menu = document.getElementById("kstaMenu");
+  if (menu && !menu.__kstBound) {
+    menu.__kstBound = true;
+    menu.addEventListener("click", function (e) {
+      var b = e.target.closest("[data-p]");
+      if (b) ksPageOpen(b.getAttribute("data-p"));
+    });
+  }
+  var pback = document.getElementById("ksPageBack");
+  if (pback && !pback.__kstBound) {
+    pback.__kstBound = true;
+    pback.addEventListener("click", ksPageClose);
+  }
+  /* 页内：点一行书 / 一件工具 → 二级详情（不把页面撑长） */
+  var page = document.getElementById("ksPage");
+  if (page && !page.__kstBound) {
+    page.__kstBound = true;
+    page.addEventListener("click", function (e) {
+      var bk = e.target.closest("[data-bk]");
+      if (bk) { ksBookLeaf(bk.getAttribute("data-bk")); return; }
+      var tl = e.target.closest("[data-tl]");
+      if (tl) ksToolLeaf(tl.getAttribute("data-tl"));
+    });
+  }
+  /* 二级详情：点纸外 / × 收走；书「已入手」、软件「已装好」也在这里 */
+  var leaf = document.getElementById("ksLeaf");
+  if (leaf && !leaf.__kstBound) {
+    leaf.__kstBound = true;
+    leaf.addEventListener("click", function (e) {
+      if (e.target.closest("#ksLeafX")) { ksLeafClose(); return; }
+      if (!e.target.closest(".ksleaf-b")) { ksLeafClose(); return; }
+      var ob = e.target.closest("[data-own]");
+      if (!ob) return;
+      var gid = ob.getAttribute("data-own");
+      kstFlip(KST_GEAR_KEY, gid);
+      if (gid.indexOf("bk") === 0) ksBookLeaf(gid.slice(2)); else ksToolLeaf(gid.slice(2));
+      kstBooksRender();      // 列表里的"要买书 / 已有书"标记跟着变
       kstToolsRender();
       kstSumRender();
     });
-  });
+  }
 }
 
 function knOpenShelf(shelf) {
@@ -1246,7 +1414,8 @@ function knOpenShelf(shelf) {
   var st = document.getElementById("knowledgeStage");
   if (st) { st.classList.toggle("kn-home-on", bright); st.classList.add("kn-subpage"); }
   kstFileClose();                      // 换分类时，收起上一级留下的抽屉
-  if (shelf === "rule") kstRender();    // 「年度修习」＝环梯视图（其余三格仍走卡片列表）
+  ksPageReset();                        // 以及可能开着的独立页 / 二级详情
+  if (shelf === "rule") kstRender();    // 「年度修习」＝学院大厅 ＋ 六个入口（其余三格仍走卡片列表）
   knPortalClock(false);
 }
 
@@ -1256,6 +1425,7 @@ function knShelfBack() {
   if (sh) { sh.classList.remove("ks-in"); sh.hidden = true; sh.setAttribute("data-shelf", ""); }
   knShelfList = [];
   kstFileClose();
+  ksPageReset();
   var kh = document.getElementById("knowledgeHome");
   if (kh) kh.hidden = false;
   var st = document.getElementById("knowledgeStage");
@@ -1443,9 +1613,13 @@ function warmGateImages() {
       document.body.style.overflow = "";
       return;
     }
-    // ESC 的层级：门 > 法则纸 > 修习档案 > 阅读页 > 整个舞台
+    // ESC 的层级：门 > 单件详情 > 法则纸 > 独立页 > 修习档案 > 阅读页 > 整个舞台
+    var kleaf = document.getElementById("ksLeaf");
+    if (kleaf && !kleaf.hidden) { ksLeafClose(); return; }
     var klaw = document.getElementById("ksLaw");
     if (klaw && !klaw.hidden) { kstLawClose(); return; }
+    var kpage = document.getElementById("ksPage");
+    if (kpage && !kpage.hidden) { ksPageClose(); return; }
     var kfile = document.getElementById("kstFile");
     if (kfile && !kfile.hidden) { kstFileClose(); return; }
     var st = document.getElementById("knowledgeStage");

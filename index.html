@@ -1409,11 +1409,10 @@ img{display:block}
 .kst-side-l{left:clamp(18px,4vw,54px)}
 .kst-side-r{right:clamp(18px,4vw,54px)}
 
-/* 内容层：可滚动，背景固定不动 */
-.kst-scroll{position:absolute;inset:0;z-index:4;overflow-y:auto;overscroll-behavior:contain;
-  scroll-behavior:smooth;padding:0 clamp(18px,4vw,54px)}
-.kst-sc{min-height:100%;display:flex;flex-direction:column;align-items:center;
-  justify-content:center;padding:clamp(40px,7vh,90px) 0;gap:14px}
+/* 大厅层：**不再长滚动**（用户 2026-09-21："不要用滚动条，分开入口 → 弹出独立页面"）。
+   这里只居中放那一张档案纸；窗太矮时才允许它自己滚（安全网，不是常态）。 */
+.kshall{position:absolute;inset:0;z-index:4;display:flex;align-items:center;justify-content:center;
+  padding:clamp(16px,4vh,48px) clamp(16px,4vw,54px);overflow-y:auto;overscroll-behavior:contain}
 
 /* 档案纸：轻纸纹 ＋ 细边 ＋ 几乎无阴影 ＋ 四角极淡装饰 ＋ 半透明 */
 .ksta{position:relative;width:min(520px,88%);
@@ -1447,12 +1446,15 @@ img{display:block}
 .ksta-fields i{font-style:normal;font-size:11px;color:#9a8355;letter-spacing:.1em}
 .ksta-fields li.on i{color:#b4462a}
 .ksta-stat{font-size:11.5px;letter-spacing:.14em;color:#8a7a55;margin:0}
-.ksta-go{margin-top:16px;font:inherit;font-size:12.5px;letter-spacing:.16em;cursor:pointer;
-  padding:10px 22px;color:#7a5a22;background:transparent;border-radius:2px;
-  border:1px solid rgba(176,140,84,.6);transition:.25s}
-.ksta-go:hover{color:#c2330f;border-color:#c2330f;background:rgba(255,70,31,.05)}
-.kst-hint{font-size:13px;color:rgba(122,98,56,.6);margin:0;animation:kstBob 2.6s ease-in-out infinite}
-@keyframes kstBob{0%,100%{transform:translateY(0);opacity:.5}50%{transform:translateY(5px);opacity:1}}
+/* 六个入口：前台上的"目录牌"。每个入口点开＝**独立一页**（`.kspage`）。 */
+.ksta-menu{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;
+  margin-top:16px;text-align:left}
+.ksta-m{font:inherit;cursor:pointer;padding:9px 11px;border-radius:2px;text-align:left;
+  color:#40331a;background:rgba(255,253,246,.55);border:1px solid rgba(140,116,70,.35);
+  transition:.2s}
+.ksta-m:hover{background:rgba(255,70,31,.06);border-color:#c0563a;transform:translateY(-1px)}
+.ksta-m b{display:block;font-size:12.5px;font-weight:600;letter-spacing:.06em}
+.ksta-m i{display:block;font-style:normal;font-size:10.5px;color:#8a7d62;margin-top:2px}
 
 /* 二 · 学院总图 */
 /* ⚠️ 标题/副标题是**唯一直接压在插画上**的文字（其余都在纸上）—— 大厅图偏亮，
@@ -1494,8 +1496,9 @@ img{display:block}
 .ksta-sum li{padding:5px 0;font-size:13px;color:#40331a}
 .ksta-sum li span{color:#9a8355;font-size:11.5px;margin-left:8px}
 
-/* 修习项目档案：纸页向左滑开，右侧落下档案 */
-.kst-file{position:absolute;top:0;right:0;bottom:0;z-index:7;
+/* 修习项目档案：纸页向左滑开，右侧落下档案
+   ⚠️ z-index 必须**高过 `.kspage`（8）** —— 它是从"我的学习计划"那一页里点开的。 */
+.kst-file{position:absolute;top:0;right:0;bottom:0;z-index:12;
   width:min(440px,94vw);overflow-y:auto;overscroll-behavior:contain;
   padding:30px 26px 44px;color:#3b2f1a;
   background:
@@ -1529,10 +1532,13 @@ img{display:block}
 .kst-file-b .fbtn.re{color:#a82b0c;border-color:rgba(255,70,31,.4);background:rgba(255,70,31,.06)}
 
 /* ══════════════════════════════════════════════════════════════════════════
-   2026-09-21 追加四件（用户选定）：
-     ① 学习理论 → 一张「法则纸」（题记 ＋ 目标 ＋ 使用方法 ＋ 三条判断规则，**不加编号**）
-     ② 要学什么 ＋ ③ 用什么软件 → 第 3 屏「读与器」＝摊开的对开册（左书目 / 右工具台）
-     ④ 学习任务清单 → 第 4 屏「修习条目」＝一页登记簿（**全局清单**，用户选定）
+   2026-09-21 一次追加四件（用户选定）—— 结构 ＝ **大厅 ＋ 分开入口 → 独立页面**：
+     ① 学习理论 → 「法则纸」（题记 ＋ 目标 ＋ 使用方法 ＋ 三条判断规则，**不加编号**）
+     ② 要学什么 → 「书目」一页（17 条，行式列表，点一行 → `.ksleaf` 详情）
+     ③ 用什么软件 → 「工具台」一页（29 项，🟢🟡🔵 三档，卡左沿＝档位色）
+     ④ 学习任务清单 → 「修习条目」一页（**全局清单 60 条**，一次看一个方向）
+   ⚠️⚠️ 用户当天又推翻"一页长滚动"："**不要用滚动条，最好是有分开入口然后弹出独立页面**"
+      → `.kshall` 一屏不滚动；六个入口各成一页（`.kspage`）；**页内也按一屏放得下设计**。
    ⚠️ 三道防线：**不出现**剩余条数 / 完成度百分比 / 逾期 / 连续打卡 / "今天该做"。
       勾选＝**记录**（"这一条我认了"），不是欠债。分组标题只报"已留 N 道"，**绝不报分母**。
    ⚠️ 圆刻代替 checkbox 方框（方框＝表单语言）；已勾＝朱红实心 ＋ 该行由灰转墨。
@@ -1568,18 +1574,75 @@ img{display:block}
 .kslaw-r h5{margin:0 0 3px;font-size:10.5px;letter-spacing:.2em;color:#8a6d2b;font-weight:600}
 .kslaw-r p{margin:0;font-size:12.5px;line-height:1.9;color:#4a3b1d}
 
-/* ② ③ 读与器：一本摊开的对开册（左书目 / 右工具台） */
-.kst-dbl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;
-  width:min(1000px,100%);align-items:start;text-align:left}
-.kst-pg{padding:16px 15px 18px;border-radius:2px;
-  background:rgba(252,248,238,.82);border:1px solid rgba(140,116,70,.26);
-  max-height:min(72vh,660px);overflow-y:auto}
-/* ⚠️ 每页各自滚动（否则右页 29 件工具把整屏撑到 5600px＋）。
-   刻意**不设** overscroll-behavior:contain —— 让滚到页底时能自然接力到外层。 */
-.kst-sheet{width:min(680px,100%);padding:22px 26px 20px;border-radius:2px;
+/* 独立页面层：一个入口一页 —— 一张大纸"盖上来"，不是浏览器弹窗 */
+.kspage{position:absolute;inset:0;z-index:8;display:flex;align-items:center;justify-content:center;
+  padding:clamp(12px,3.4vh,38px) clamp(12px,3.4vw,42px);
+  background:rgba(38,26,10,.30);opacity:0;transition:opacity .28s ease}
+.kspage[hidden]{display:none}
+.kspage.on{opacity:1}
+.kspage-b{display:flex;flex-direction:column;width:min(1080px,100%);height:100%;overflow:hidden;
   background:repeating-linear-gradient(0deg,rgba(150,124,78,.032) 0 1px,transparent 1px 4px),
-    rgba(252,248,238,.88);
-  border:1px solid rgba(140,116,70,.3);box-shadow:0 1px 10px rgba(60,40,10,.06)}
+    rgba(252,248,238,.965);
+  border:1px solid rgba(140,116,70,.34);border-radius:2px;
+  box-shadow:0 14px 48px rgba(40,26,6,.3);
+  transform:translateY(14px);transition:transform .4s cubic-bezier(.2,.72,.2,1)}
+.kspage.on .kspage-b{transform:none}
+.kspage-bar{display:flex;align-items:center;gap:14px;flex:none;padding:13px 20px;
+  border-bottom:1px solid rgba(140,116,70,.24);background:rgba(255,252,245,.55)}
+.kspage-back{font:inherit;font-size:11.5px;letter-spacing:.12em;cursor:pointer;padding:5px 12px;
+  color:#7a5a22;background:transparent;border:1px solid rgba(176,140,84,.55);border-radius:2px;
+  transition:.2s}
+.kspage-back:hover{color:#c2330f;border-color:#c2330f}
+.kspage-t{font-size:12px;letter-spacing:.2em;color:#6a4d13}
+/* 安全网：内容本身按"一屏放得下"设计，窗太矮时才出滚动 */
+.kspage-c{flex:1;min-height:0;overflow-y:auto;padding:18px 22px 22px}
+
+/* 二级：单件详情（一本书 / 一件工具）＝一张浮起的小纸 */
+.ksleaf{position:absolute;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;
+  padding:clamp(16px,4vh,48px) clamp(14px,4vw,48px);background:rgba(38,26,10,.34);
+  opacity:0;transition:opacity .26s ease}
+.ksleaf[hidden]{display:none}
+.ksleaf.on{opacity:1}
+.ksleaf-b{position:relative;width:min(520px,100%);max-height:100%;overflow-y:auto;
+  padding:24px 22px 20px;border-radius:2px;
+  background:repeating-linear-gradient(0deg,rgba(150,124,78,.035) 0 1px,transparent 1px 4px),
+    rgba(252,248,238,.98);
+  border:1px solid rgba(140,116,70,.34);box-shadow:0 12px 40px rgba(40,26,6,.28);
+  color:#40331a;text-align:left;
+  transform:translateY(12px);transition:transform .34s cubic-bezier(.2,.72,.2,1)}
+.ksleaf.on .ksleaf-b{transform:none}
+.ksleaf-x{position:absolute;top:11px;right:13px;width:30px;height:30px;border-radius:50%;
+  display:grid;place-items:center;font:inherit;font-size:17px;line-height:1;cursor:pointer;
+  color:#6b5730;background:rgba(255,255,255,.7);border:1px solid rgba(140,116,70,.3)}
+.ksleaf-x:hover{color:#c2330f;border-color:#c2330f}
+.ksleaf-t{margin:0 0 3px;font-size:16px;font-weight:600;letter-spacing:.04em;color:#33280f}
+.ksleaf-k{font-size:10px;letter-spacing:.24em;color:#8a6d2b;margin:0 0 12px}
+.ksleaf-q{margin:0 0 12px;padding-bottom:11px;border-bottom:1px solid rgba(140,116,70,.22);
+  font-size:12px;line-height:1.8;color:#6d5c38}
+
+/* 行式列表：一页里铺得下（不靠滚动）—— grid 自动分栏 */
+.ksgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:4px;
+  align-content:start;text-align:left}
+/* 登记簿用两栏（条目文字长，太窄会折行反而更高）；宽度不够时自然退回一栏 */
+.ksgrid-2{grid-template-columns:repeat(auto-fill,minmax(430px,1fr))}
+.ksfull{grid-column:1/-1}
+.ksrow{display:flex;align-items:baseline;gap:9px;width:100%;padding:8px 10px;text-align:left;
+  font:inherit;cursor:pointer;border-radius:2px;background:rgba(255,252,245,.6);
+  border:1px solid rgba(140,116,70,.2);border-left:2px solid var(--bd,rgba(176,140,84,.45));
+  transition:.2s}
+.ksrow:hover{background:rgba(255,253,248,.95);border-color:rgba(192,86,58,.45)}
+.ksrow-no{flex:none;font-size:10px;letter-spacing:.14em;color:#a08a5c}
+.ksrow-b{flex:1;min-width:0}
+.ksrow-b b{display:block;font-size:12.5px;font-weight:600;color:#3b2f12}
+.ksrow-b i{display:block;margin-top:1px;font-style:normal;font-size:11px;color:#8a7d62;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ksrow-m{flex:none;font-size:10px;letter-spacing:.1em;color:#b4462a}
+.ksrow-g{flex:none;font-size:9.5px;letter-spacing:.16em;color:#a08a5c}
+/* ⚠️ 工具台 29 行必须压成**单行**（两行版会到 1013px，超出 703px 的内容区 → 出滚动条） */
+.ksrow-flat{padding:6px 10px}
+.ksrow-flat .ksrow-b{display:flex;align-items:baseline;gap:8px;overflow:hidden}
+.ksrow-flat .ksrow-b b{flex:none}
+.ksrow-flat .ksrow-b i{margin-top:0;flex:1;min-width:0}
 .kst-pg-h{margin:0 0 2px;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:#8a6d2b}
 .kst-pg-s{margin:0 0 13px;padding-bottom:10px;font-size:11px;line-height:1.7;color:#7a6640;
   border-bottom:1px solid rgba(140,116,70,.2)}
@@ -1587,21 +1650,8 @@ img{display:block}
   background:rgba(255,70,31,.05);border-left:2px solid rgba(255,70,31,.45);border-radius:2px}
 .kst-main b{display:block;font-size:10px;letter-spacing:.2em;color:#8a6d2b;font-weight:600;
   margin-bottom:2px}
-.kst-tg{margin:16px 0 7px;font-size:10.5px;letter-spacing:.16em;color:#8a6d2b}
-.kst-tg:first-of-type{margin-top:0}
-.kst-bk,.kst-tl{margin:0 0 9px;padding:10px 11px;border-radius:2px;background:rgba(255,252,245,.6);
-  border:1px solid rgba(140,116,70,.2);border-left:2px solid var(--bd,rgba(176,140,84,.45));
-  transition:.22s}
-.kst-bk:hover,.kst-tl:hover{background:rgba(255,253,248,.92);border-color:rgba(192,86,58,.42)}
-.kst-bk-h{display:flex;align-items:baseline;gap:8px;font-size:10.5px;letter-spacing:.12em;color:#a08a5c}
-.kst-bk-h b{font-weight:600;color:#8a6d2b}
-.kst-bk-h span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.kst-bk-h i{font-style:normal;color:#b4462a;letter-spacing:.06em}
-.kst-bk-t{margin:4px 0 7px;font-size:12.5px;font-weight:600;line-height:1.62;color:#3b2f12}
-.kst-tl-h{display:flex;align-items:baseline;gap:7px}
-.kst-tl-h b{font-size:12.5px;font-weight:600;color:#3b2f12;letter-spacing:.02em}
-.kst-tl-h i{font-style:normal;margin-left:auto;font-size:9.5px;letter-spacing:.16em;color:#a08a5c}
-.kst-tl-m{margin:1px 0 4px;font-size:10.5px;color:#9a8355}
+.kst-tg{margin:14px 0 4px;font-size:10.5px;letter-spacing:.16em;color:#8a6d2b}
+.kst-tg:first-child{margin-top:0}
 .kst-r{display:flex;gap:8px;margin:0 0 3px;font-size:11.5px;line-height:1.72;color:#4a3b1d}
 .kst-r em{font-style:normal;flex:none;width:42px;color:#a08a5c;letter-spacing:.06em}
 .kst-r span{flex:1;min-width:0;color:#8a7d62;transition:.22s}
@@ -1625,17 +1675,12 @@ img{display:block}
   border:1px solid rgba(140,116,70,.3);transition:.2s}
 .kst-cf b:hover{color:#c2330f;border-color:#c2330f}
 .kst-cf b.on{color:#b4462a;border-color:rgba(255,70,31,.45);background:rgba(255,70,31,.07)}
-.kst-tally{margin:0 0 14px;font-size:11px;letter-spacing:.14em;color:rgba(122,98,56,.72);
+.kst-tally{margin:0 0 12px;font-size:11px;letter-spacing:.14em;color:rgba(122,98,56,.72);
   text-align:center}
-.kst-reg{width:min(640px,100%);text-align:left}
-.kst-grp{display:flex;align-items:center;gap:10px;margin:22px 0 4px;font-size:11.5px;
-  letter-spacing:.16em;color:#8a6d2b}
-.kst-grp:first-child{margin-top:0}
-.kst-grp::after{content:"";flex:1;height:1px;background:rgba(176,140,84,.34)}
-.kst-grp em{font-style:normal;order:3;font-size:10px;color:#b3a184;letter-spacing:.1em}
-.kst-stg{margin:11px 0 3px;font-size:10.5px;letter-spacing:.14em;color:#a08a5c}
+.kst-reg{text-align:left}
+.kst-stg{grid-column:1/-1;margin:6px 0 0;font-size:10.5px;letter-spacing:.14em;color:#a08a5c}
 .kst-c{position:relative;display:flex;align-items:flex-start;gap:9px;width:100%;
-  padding:5px 6px 5px 4px;font:inherit;font-size:12.5px;line-height:1.7;text-align:left;
+  padding:4px 6px 4px 4px;font:inherit;font-size:12.5px;line-height:1.65;text-align:left;
   cursor:pointer;background:transparent;border:0;border-radius:2px;color:#8a7d62;transition:.18s}
 .kst-c:hover{background:rgba(255,70,31,.045)}
 .kst-c::before{content:"";flex:none;width:7px;height:7px;margin-top:6px;border-radius:50%;
@@ -1646,18 +1691,17 @@ img{display:block}
 .kst-c-kind{flex:none;margin-top:2px;font-style:normal;font-size:10px;letter-spacing:.1em;
   color:#b3a184}
 .kst-c.on .kst-c-kind{color:#b4462a}
-.kst-note{margin:18px 0 0;font-size:11px;letter-spacing:.06em;text-align:center;
-  color:rgba(122,98,56,.68)}
 
 @media (max-width:900px){
-  .kst-dbl{grid-template-columns:minmax(0,1fr);gap:12px}
-  .kst-pg{padding:14px 12px 16px;max-height:none;overflow:visible}
-  .kst-sheet{padding:18px 14px 16px}
-  .kst-reg{width:100%}
-  .kst-c{font-size:12px;padding:6px 4px}
+  .ksgrid{grid-template-columns:minmax(0,1fr)}
+  .kspage{padding:6px}
+  .kspage-c{padding:14px 14px 18px}
+  .ksrow-b b{font-size:12px}
+  .ksrow-flat .ksrow-b{display:block}
+  .ksrow-flat .ksrow-b i{margin-top:1px}
+  .kst-c{font-size:12px;padding:5px 4px}
   .kst-r{font-size:11px}
   .kslaw-b{padding:24px 18px 30px}
-  .kst-grp{margin-top:18px}
 }
 
 @media (max-width:900px){
@@ -3280,94 +3324,56 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
               （左 PLAN / 右 REVIEW），信息全在中央那张"档案纸"里。
            ⚠️ 页面上**绝不出现**：本月该学什么 / 今日任务 / 逾期 / 连续打卡 / 剩余天数。
               设计原则（用户原话）：**计划由我制定，修习由我完成，年度只负责记录。**
-           ⚠️ 2026-09-21 再追加四件（用户选定），顺序 ＝ **六屏**：
-              一 修习台（＋① 修习法则入口）→ 二 我的学习计划 → 三 读与器（② 书目 ／ ③ 工具台）
-              → 四 修习条目（④ 全局清单）→ 五 实际修习轨迹 → 六 年度修习录。
+           ⚠️ 2026-09-21 追加四件（用户选定）：① 学习理论＝法则纸 ② 要学什么＝书目
+              ③ 用什么软件＝工具台 ④ 任务清单＝修习条目（60 条）。
+           ⚠️⚠️ 同日用户又推翻"六屏长滚动"："**不要用滚动条，最好是有分开入口然后弹出独立页面**"
+              → 结构改成 **大厅（一屏，不滚动）＋ 六个分开入口 → 各自独立一页（`.kspage`）**：
+              我的学习计划 ／ 书目 ／ 工具台 ／ 修习条目 ／ 实际修习轨迹 ／ 年度修习录
+              （外加档案纸下缘的「修习法则」）。**页内也按"一屏放得下"设计**，
+              `.kspage-c` 的 overflow 只是矮窗时的安全网，不是常态滚动。
+              点一行书 / 一件工具 → 二级详情（`.ksleaf` 一张浮起的小纸），也不滚动。
               ②③④ 的数据：②③ 早就在 study-plan.js（courses 17 / tools 29 ＋ quick 速查），
               ④ 由 stages 的 level/out/gate 三列派生（tasks 60 条，原文照录）。 -->
       <div class="ks-study" id="ksStudy">
         <span class="kst-side kst-side-l" aria-hidden="true">PLAN</span>
         <span class="kst-side kst-side-r" aria-hidden="true">REVIEW</span>
 
-        <div class="kst-scroll" id="kstScroll">
-          <!-- 一 · 大厅中央的修习台（＝一张漂浮的学院档案纸，不是卡片） -->
-          <section class="kst-sc">
-            <div class="ksta" id="ksta">
-              <span class="ksta-c tl"></span><span class="ksta-c tr"></span>
-              <span class="ksta-c bl"></span><span class="ksta-c br"></span>
-              <p class="ksta-y" id="kstaY"></p>
-              <p class="ksta-en">Annual Studia</p>
-              <h3 class="ksta-t">年度修习</h3>
-              <p class="ksta-q" id="kstaQ"></p>
-              <div class="ksta-div"></div>
-              <ul class="ksta-fields" id="kstaFields"></ul>
-              <div class="ksta-div"></div>
-              <p class="ksta-stat" id="kstaStat"></p>
-              <button class="ksta-go" id="kstaGo" type="button">查看年度计划</button>
-              <!-- ① 学习理论：入口做成一行很淡的小字（不是一张大卡） -->
-              <button class="ksta-law" id="kstaLaw" type="button">修习法则 · 三条</button>
+        <!-- 大厅：中央那张档案纸 ＝ 一块**目录牌**（六个入口）
+             ⚠️ 2026-09-21 用户："不要用滚动条，最好是有分开入口然后弹出独立页面"
+                → 大厅**不再长滚动**；六个入口各自成为独立一页（`.kspage`）。 -->
+        <div class="kshall">
+          <div class="ksta" id="ksta">
+            <span class="ksta-c tl"></span><span class="ksta-c tr"></span>
+            <span class="ksta-c bl"></span><span class="ksta-c br"></span>
+            <p class="ksta-y" id="kstaY"></p>
+            <p class="ksta-en">Annual Studia</p>
+            <h3 class="ksta-t">年度修习</h3>
+            <p class="ksta-q" id="kstaQ"></p>
+            <div class="ksta-div"></div>
+            <ul class="ksta-fields" id="kstaFields"></ul>
+            <div class="ksta-div"></div>
+            <p class="ksta-stat" id="kstaStat"></p>
+            <div class="ksta-menu" id="kstaMenu"></div>
+            <!-- ① 学习理论：入口做成一行很淡的小字（不是一张大卡） -->
+            <button class="ksta-law" id="kstaLaw" type="button">修习法则 · 三条</button>
+          </div>
+        </div>
+
+        <!-- 独立页面层：一个入口一页（顶上一条「← 回到大厅」）。
+             ⚠️ 内容**按"一屏放得下"设计**；`.kspage-c` 的 overflow 只是矮窗时的安全网。 -->
+        <div class="kspage" id="ksPage" hidden>
+          <div class="kspage-b">
+            <div class="kspage-bar">
+              <button class="kspage-back" id="ksPageBack" type="button">&#8592; 回到大厅</button>
+              <span class="kspage-t" id="ksPageT"></span>
             </div>
-            <p class="kst-hint" aria-hidden="true">↓</p>
-          </section>
+            <div class="kspage-c" id="ksPageC"></div>
+          </div>
+        </div>
 
-          <!-- 二 · 学院总图：四个修习室，依次相扣 -->
-          <section class="kst-sc">
-            <h4 class="kst-h">Learning Plan · 我的学习计划</h4>
-            <p class="kst-sub">四个方向依次相扣。点开任何一间，进入它自己的档案。</p>
-            <div class="kst-map" id="kstMap"></div>
-          </section>
-
-          <!-- 三 · 读与器（② 要学什么 ＋ ③ 用什么软件）＝一本摊开的对开册 -->
-          <section class="kst-sc">
-            <h4 class="kst-h">Reader &amp; Toolkit · 读与器</h4>
-            <p class="kst-sub">左页是这一路要读的，右页是要装的 —— 都照录原表，随时翻。</p>
-            <div class="kst-dbl">
-              <div class="kst-pg">
-                <p class="kst-pg-h">Books · 书目</p>
-                <p class="kst-pg-s">课程怎么跟、书要不要买、学到什么程度算够。</p>
-                <div id="kstBooks"></div>
-              </div>
-              <div class="kst-pg">
-                <p class="kst-pg-h">Toolkit · 工具台</p>
-                <p class="kst-pg-s">按 🟢🟡🔵 三档排 —— 卡片左沿的颜色就是它的装订档位。</p>
-                <div id="kstMain"></div>
-                <div id="kstTools"></div>
-              </div>
-            </div>
-          </section>
-
-          <!-- 四 · 修习条目（④ 全局清单）＝一页登记簿
-               ⚠️ 勾选＝**记录**不是欠债：分组标题只报"已留 N 道"，**绝不报分母**；
-                  页面上没有剩余条数、没有完成度、没有逾期、没有"今天该做"。 -->
-          <section class="kst-sc">
-            <h4 class="kst-h">Entries · 修习条目</h4>
-            <p class="kst-sub">每一条都照录原表 · 勾一条就是留下一道刻痕 —— 不排名、不催促。</p>
-            <!-- ⚠️ 整页装在一张**纸**上：大厅背景是亮的插画，文字直接浮在上面会看不清
-                 （2026-09-21 实测：清单 60 条几乎读不出来）。 -->
-            <div class="kst-sheet">
-              <div class="kst-cf" id="kstCf"></div>
-              <p class="kst-tally" id="kstTally"></p>
-              <div class="kst-reg" id="kstReg"></div>
-              <p class="kst-note" id="kstNote"></p>
-            </div>
-          </section>
-
-          <!-- 五 · 实际修习轨迹（只记录，不安排） -->
-          <section class="kst-sc">
-            <h4 class="kst-h">Trail · 实际修习轨迹</h4>
-            <p class="kst-sub">这里的顺序是你自己走出来的 —— 不是日程表。</p>
-            <ol class="kst-trail" id="kstTrail"></ol>
-          </section>
-
-          <!-- 六 · 年度总结 -->
-          <section class="kst-sc">
-            <h4 class="kst-h" id="kstSumH"></h4>
-            <div class="ksta ksta-sum" id="kstSum">
-              <span class="ksta-c tl"></span><span class="ksta-c tr"></span>
-              <span class="ksta-c bl"></span><span class="ksta-c br"></span>
-              <div id="kstSumB"></div>
-            </div>
-          </section>
+        <!-- 二级：单件详情（一本书 / 一件工具）＝一张浮起的小纸，不占页面宽度 -->
+        <div class="ksleaf" id="ksLeaf" hidden>
+          <div class="ksleaf-b" id="ksLeafB"></div>
         </div>
 
         <!-- 修习项目档案：纸页向左滑开，右侧落下一份档案 -->
@@ -3866,6 +3872,6 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 <script src="study-plan.js?v=20260921b"></script>
 <script src="docs.js?v=20260921b"></script>
 <script src="app.js?v=20260920f"></script>
-<script src="knowledge.js?v=20260921p"></script>
+<script src="knowledge.js?v=20260921q"></script>
 </body>
 </html>
