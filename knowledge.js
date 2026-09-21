@@ -701,9 +701,98 @@ function knSyncPortal() {
 }
 
 // 门户条目 → 打开该分类的第一篇（该分类暂无文档时条目已禁用，走不到这里）
+// ---------- 4.5 分类空间（2026-09-21 批十七）----------
+// 门户四个条目 → 各自进一个**有自己性格的房间**（用户："每个入口 ui 展示都要符合特色"）：
+//   rule        魔法图书馆**大厅**：推门而入，正前方前台、左右各一道环梯、大厅里有学生
+//   tech        **蓝**（冷静 / 客观 / 缜密：直角、网格、等宽编号）
+//   humanities  **红**（关怀 / 博爱 / 哲思：圆角、衬线、暖晕）
+//   archive     图书馆**书架区**（暖褐 ＋ 档案卡：编号与年份像真卷宗）
+// ⚠️ 四套主题只靠 `data-shelf` 切 CSS 变量，DOM 骨架共用 —— 加分类只写一段主题 CSS ＋ 一条 META。
+// ⚠️ 页面文案在这里（META），不写进 HTML —— 用户要改措辞只动这一处。
+var KN_SHELF_META = {
+  rule: {
+    eyebrow: "Circulation Desk · 前台登记",
+    tag: "RULE",
+    title: "馆藏规则",
+    sub: "推开这扇门就是大厅：正前方是前台，左手右手各有一道环梯盘旋而上，来借书的人两两结伴从两侧走过。所有约定都写在前台的登记簿上。",
+    foot: "从两侧的环梯可以上到二层书架 —— 那几排还在整理，暂时不对外开放。"
+  },
+  tech: {
+    eyebrow: "Technical Library · 技术文库",
+    tag: "TECH · 01",
+    title: "技术文库",
+    sub: "工程实践类的整理：AI 编程、GIS 制图、Python 与开发环境配置。这里只回答「怎么做」，所以尽量给能照着走一遍的步骤。",
+    foot: "本区偏工程实践；涉及版本与接口的内容，以你手上工具的官方文档为准。"
+  },
+  humanities: {
+    eyebrow: "Humanities Library · 人文文库",
+    tag: "HUMANITIES · 02",
+    title: "人文文库",
+    sub: "这里放的是关于「怎么看待」的文章：阅读、历史、社会与自我。它们不下结论，只提供一种角度。",
+    foot: "本区的文章适合被反复重读 —— 这是它和技术文档最大的不同。"
+  },
+  archive: {
+    eyebrow: "Originals · 馆藏原件",
+    tag: "ARCHIVE · 03",
+    title: "馆藏原件",
+    sub: "文库的底稿都在这一格：完整版、配图版、可下载的文档摘录。它们保留着原始的面貌，正文页里被裁掉的细节都在这里。",
+    foot: "原件均为文档；软件类资源不在本站存储，具体见站点免责声明。"
+  }
+};
+var knShelfList = [];   // 当前分类的文档（列表项按序号取用）
+
+// 门户条目 → 打开该分类的「分类空间」（结构缺失时退回旧行为：直接开第一篇）
 function knOpenShelf(shelf) {
   var list = knShelfDocs(shelf);
-  if (list.length) openKnowledge(list[0]);
+  if (!list.length) return;
+  var sh = document.getElementById("knShelf");
+  if (!sh) { openKnowledge(list[0]); return; }
+  var meta = KN_SHELF_META[shelf] || {};
+  knShelfList = list;
+  sh.setAttribute("data-shelf", shelf);
+  document.getElementById("ksTag").textContent = meta.tag || String(shelf).toUpperCase();
+  document.getElementById("ksEyebrow").textContent = meta.eyebrow || "Knowledge Archive";
+  document.getElementById("ksTitle").textContent = meta.title || shelf;
+  document.getElementById("ksSub").textContent = meta.sub || "";
+  document.getElementById("ksFoot").textContent = meta.foot || "";
+  document.getElementById("ksList").innerHTML = list.map(function (d, i) {
+    return '<button class="ks-item" type="button" data-i="' + i + '" style="--i:' + i + '">' +
+      '<span class="ks-no">' + String(i + 1).padStart(2, "0") + '</span>' +
+      '<span class="ks-tx"><b>' + (d.title || "") + '</b><i>' + (d.summary || "") + '</i></span>' +
+      '<span class="ks-go">&#8594;</span></button>';
+  }).join("");
+  var kh = document.getElementById("knowledgeHome");
+  if (kh) kh.hidden = true;
+  var kd = document.getElementById("knowledgeDetail");
+  if (kd) kd.style.display = "none";
+  sh.hidden = false;
+  sh.classList.remove("ks-in");
+  void sh.offsetWidth;                                        // 强制重排 → 入场过渡才会跑
+  requestAnimationFrame(function () { sh.classList.add("ks-in"); });
+  // 顶栏配色跟着**场景亮度**走：rule（大厅）与 archive（书架区）都是米纸插画＝亮场景
+  // → 用学院风浅色顶栏（深色字）；tech / humanities 是深场景 → 深色顶栏（浅色字）。
+  var bright = (shelf === "rule" || shelf === "archive");
+  var st = document.getElementById("knowledgeStage");
+  if (st) st.classList.toggle("kn-home-on", bright);
+  knPortalClock(false);
+}
+
+// 分类空间 → 回门户目录
+function knShelfBack() {
+  var sh = document.getElementById("knShelf");
+  if (sh) { sh.classList.remove("ks-in"); sh.hidden = true; sh.setAttribute("data-shelf", ""); }
+  knShelfList = [];
+  var kh = document.getElementById("knowledgeHome");
+  if (kh) kh.hidden = false;
+  var st = document.getElementById("knowledgeStage");
+  if (st) st.classList.add("kn-home-on");
+  knPortalClock(true);
+}
+
+// 当前是否停在某个分类空间里（阅读页返回要用）
+function knInShelf() {
+  var sh = document.getElementById("knShelf");
+  return !!(sh && !sh.hidden);
 }
 
 // 「随机一读」：从知识库里随机翻一篇（只有一篇时就是它）—— 替代原来名不副实的「听书台」
@@ -749,6 +838,9 @@ function closeKnowledgeStage() {
 function knBackToHome() {
   var kd = document.getElementById("knowledgeDetail");
   if (kd) kd.style.display = "none";
+  // ⭐ 批十七：如果这篇是从某个「分类空间」里点开的，返回时**回到那个空间**，
+  //    而不是弹回目录 —— 否则每次读完一篇都要重新进一遍房间。
+  if (knInShelf()) { knPortalClock(false); return; }
   var kh = document.getElementById("knowledgeHome");
   if (kh) kh.hidden = false;
   var st = document.getElementById("knowledgeStage");
@@ -799,7 +891,9 @@ function warmGateImages() {
     "assets/wheat-base.webp?v=20260921i",
     "assets/knowledge-bg.jpg?v=20260920a",
     "assets/knight-l.webp?v=20260921f",
-    "assets/knight-r.webp?v=20260921f"
+    "assets/knight-r.webp?v=20260921f",
+    "assets/hall-great.webp?v=20260921a",
+    "assets/hall-shelf.webp?v=20260921a"
   ];
   list.forEach(function (u) {
     var im = new Image();
@@ -831,6 +925,17 @@ function warmGateImages() {
     if (home) home.click();
   });
   if (kb) kb.addEventListener("click", knBackToHome);
+
+  // 分类空间：返回目录 ＋ 点列表项开文档（事件委托，列表是动态生成的）
+  var sb = document.getElementById("ksBack");
+  if (sb) sb.addEventListener("click", knShelfBack);
+  var sh = document.getElementById("knShelf");
+  if (sh) sh.addEventListener("click", function (e) {
+    var it = e.target.closest(".ks-item");
+    if (!it || it.hasAttribute("disabled")) return;
+    var d = knShelfList[+it.getAttribute("data-i")];
+    if (d) openKnowledge(d);
+  });
 
   // 门户点击：书目条目 → 打开该分类第一篇；「随机一读」→ 随机翻一篇
   if (kh) kh.addEventListener("click", function (e) {
