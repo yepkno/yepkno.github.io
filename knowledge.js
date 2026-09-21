@@ -837,12 +837,12 @@ var KST_PAGES = {
   },
   trail: {
     t: "Trail · 实际修习轨迹",
-    h: '<p class="kst-pg-s">这里的顺序是你自己走出来的 —— 不是日程表。</p>' +
-       '<ol class="kst-trail" id="kstTrail"></ol>',
+    h: '<p class="kst-pg-s" id="kstTrailLede"></p>' +
+       '<div class="kst-trail" id="kstTrail"></div>',
     r: function () { kstTrailRender(); }
   },
   sum: {
-    t: "年度修习录",
+    t: "Annual Report · 年度修习录",
     h: '<div class="ksta ksta-sum" id="kstSum">' +
        '<span class="ksta-c tl"></span><span class="ksta-c tr"></span>' +
        '<span class="ksta-c bl"></span><span class="ksta-c br"></span>' +
@@ -935,10 +935,12 @@ function kstGroupDone(g) {
   return c;
 }
 function kstGroupTotal(g) { return g.n[1] - g.n[0] + 1; }
+/* ⚠️ 只报"已走过多少"，**不写 n / m 这种分母** —— 与全站"不催促"的口径一致
+      （2026-09-22 之前的版本会在修习录里显示"修习中 3 / 5"，那是进度条的语言）。 */
 function kstGroupState(g) {
-  var d = kstGroupDone(g), t = kstGroupTotal(g);
+  var d = kstGroupDone(g);
   if (!d) return "未启程";
-  return d >= t ? "已走完" : ("修习中 " + d + " / " + t);
+  return d >= kstGroupTotal(g) ? "已走完" : ("已走过 " + d + " 级");
 }
 
 /* 一 · 大厅：前台的小对话条 ＋ 由它呼出的档案纸
@@ -987,69 +989,88 @@ function kstMapRender() {
   box.innerHTML = out;
 }
 
-/* 三 · 修习轨迹：只按**顺序**记，不带日期（用户："时间不要成为我的负担"） */
+/* 三 · 实际修习轨迹 —— 形状呼应大厅里的**两道环梯**：左 01–07 ／ 右 08–14。
+   ⚠️ 只记"第 N 步"与产出，**从不带日期**（用户："时间不能成为我的负担"）。
+   ⚠️ 未走到的那几级**只露级号与阶段名 ＋ "待走"**，不显示任何要求 ——
+      路要看得见，但不给人布置作业（用户早先的设计："尚未抵达＝虚化"）。 */
+function kstTrailNode(n, lit) {
+  var P = window.STUDY_PLAN, s = kstStage(n);
+  if (!s) return "";
+  var no = String(n).padStart(2, "0");
+  if (n > lit) {
+    return '<li class="off"><b><i>' + no + "</i>" + s.key + "</b><em>待走</em></li>";
+  }
+  var nC = (P.courses || []).filter(function (c) { return c.stage === s.key; }).length;
+  var nT = ((P.stageTools || {})[n] || []).length;
+  var meta = (nC ? nC + " 份资料" : "") + (nC && nT ? " · " : "") + (nT ? nT + " 件工具" : "");
+  return '<li class="on' + (n === lit ? " cur" : "") + '">' +
+    '<b><i>' + no + "</i>" + s.key + "</b>" +
+    '<span class="kstn-t">' + s.tech + "</span>" +
+    '<em>产出：' + s.out + "</em>" +
+    (meta ? '<span class="kstn-m">' + meta + "</span>" : "") + "</li>";
+}
 function kstTrailRender() {
   var box = document.getElementById("kstTrail");
   if (!box) return;
-  var lit = kstLit(), out = "";
-  if (!lit) {
-    out = '<li><b>还没有留下足迹。</b><em>这不着急 —— 等你真的走完第一级，' +
-      '这里就会出现第一行记录。</em></li>';
-  } else {
-    for (var n = 1; n <= lit; n++) {
-      var s = kstStage(n);
-      if (!s) continue;
-      out += '<li class="on"><b>第 ' + String(n).padStart(2, "0") + ' 步 · ' + s.key + '</b>' +
-        '<em>产出：' + s.out + '</em></li>';
-    }
-    if (lit < 14) {
-      var nx = kstStage(lit + 1);
-      if (nx) out += '<li><b>下一步 · ' + nx.key + '</b><em>还没有走到 —— 这一行等你。</em></li>';
-    }
+  var lit = kstLit(), L = "", R = "", n;
+  for (n = 1; n <= 7; n++) L += kstTrailNode(n, lit);
+  for (n = 8; n <= 14; n++) R += kstTrailNode(n, lit);
+  box.innerHTML =
+    '<div class="kstw"><p class="kstw-h">左环梯 · 01 – 07</p><ol class="kstw-l">' + L + "</ol></div>" +
+    '<div class="kstw"><p class="kstw-h">右环梯 · 08 – 14</p><ol class="kstw-l">' + R + "</ol></div>";
+  var lede = document.getElementById("kstTrailLede");
+  if (lede) {
+    lede.textContent = lit
+      ? "下面这 " + lit + " 步是你自己走出来的 —— 不是日程表。"
+      : "这条路还一步未走 —— 它不催你。";
   }
-  box.innerHTML = out;
 }
 
-/* 四 · 年度修习录 */
+/* 四 · 年度修习录 —— 一页年度档案：一行数字带 ＋ 四个方向各一段。
+   全部由**真实记录**推出来（点亮了几级 / 勾了几道刻痕 / 手边有什么），不掺一句漂亮话。
+   ⚠️ 数字只报"已经有了多少"，**没有分母、没有完成度、没有排名**（三道防线）。 */
+function kstSumCell(v, label) {
+  return '<div class="kstsum-c"><b>' + v + "</b><i>" + label + "</i></div>";
+}
 function kstSumRender() {
   var P = window.STUDY_PLAN, box = document.getElementById("kstSumB");
-  var h = document.getElementById("kstSumH");
   if (!P || !box) return;
   var lit = kstLit(), yr = String(new Date().getFullYear());
-  if (h) h.textContent = yr + " · 年度修习录";
-  var nC = 0, nT = 0;
-  P.stages.slice(0, lit).forEach(function (s) {
-    nC += P.courses.filter(function (c) { return c.stage === s.key; }).length;
-    nT += ((P.stageTools && P.stageTools[s.n]) || []).length;
-  });
-  var reached = KST_GROUPS.filter(function (g) { return kstGroupDone(g) > 0; });
   var marks = kstCount(KST_MARK_KEY), gear = kstCount(KST_GEAR_KEY);
-  var out;
-  // 空的判据要连清单/物料一起看：只勾了条目、还没点亮台阶时，也算"这一年已经动过了"。
-  if (!lit && !marks && !gear) {
-    out = '<p>这一年还没有开始记录。<br><em>修习录不催你 —— 它只在你真的走过后，' +
-      '才写下第一行。</em></p>';
-  } else {
-    out = '<p>';
-    if (lit) {
-      out += '这一年，实际修习了 <b>' + reached.length + '</b> 个方向，走过了 <b>' + lit +
-        '</b> 级台阶。<br><em>带上的：' + nC + ' 份课程与资料、' + nT + ' 件工具。</em>';
-    } else {
-      out += '这一年，还没有点亮任何一级台阶。<br><em>台阶只在你亲手点亮时才记一笔。</em>';
-    }
-    out += '</p><p><em>修习条目上留下 <b>' + marks + '</b> 道刻痕 ｜ 手边已有 <b>' + gear +
-      '</b> 件书与工具。</em></p>';
-    if (reached.length) {
-      out += '<div class="ksta-div"></div><ul>';
-      reached.forEach(function (g) {
-        out += '<li>' + g.key + '<span>' + kstGroupState(g) + '</span></li>';
-      });
-      out += '</ul>';
-    }
-    out += '<div class="ksta-div"></div>' +
-      '<p><em>『计划可以改变，方向可以调整。修习录只记录最后留下的路径。』</em></p>';
+  var reached = KST_GROUPS.filter(function (g) { return kstGroupDone(g) > 0; });
+  // 空的判据要连清单/物料一起看：只勾了条目、还没点亮台阶时，也算"这一年动过了"。
+  var started = lit || marks || gear;
+  var head = '<p class="kstsum-y">' + yr + ' · 年度修习录</p>' +
+    '<p class="kstsum-q">不是规定这一年要完成什么，而是记录这一年实际走过的路。</p>' +
+    '<div class="kstsum-b">' + kstSumCell(lit, "走过的台阶") +
+      kstSumCell(reached.length, "修习的方向") +
+      kstSumCell(marks, "留下的刻痕") +
+      kstSumCell(gear, "手边的书与工具") + "</div>";
+  if (!started) {
+    box.innerHTML = head + '<p class="kstsum-e">这一年还没有开始记录 —— ' +
+      '<em>修习录不催你，它只在你真的走过后才写下第一行。</em></p>';
+    return;
   }
-  box.innerHTML = out;
+  var segs = KST_GROUPS.map(function (g) {
+    var done = kstGroupDone(g);
+    if (!done) return '<div class="kstsum-s off"><b>' + g.key + "</b><i>未启程</i></div>";
+    var last = Math.min(lit, g.n[1]), s = kstStage(last), tools = [];
+    for (var k = g.n[0]; k <= last; k++) {
+      ((P.stageTools || {})[k] || []).forEach(function (t) {
+        if (tools.indexOf(t) < 0) tools.push(t);
+      });
+    }
+    // ⚠️ 工具名里本身含 " / "（如 "DeepSeek / Qwen / GLM / Kimi / Seed"）—— 只举 4 个，
+    //    超长的截断，末尾报"另有 N 件"，否则这一行会糊成长长一串读不出（2026-09-22 实测）。
+    var tl = tools.slice(0, 4).map(function (t) {
+      return t.length > 15 ? t.slice(0, 14) + "…" : t;
+    }).join(" · ") + (tools.length > 4 ? "，另有 " + (tools.length - 4) + " 件" : "");
+    return '<div class="kstsum-s on"><b>' + g.key + "</b><i>" + kstGroupState(g) + "</i>" +
+      '<em>走到「' + (s ? s.key : "") + "」 —— 产出：" + (s ? s.out : "") + "</em>" +
+      (tl ? "<u>带上：" + tl + "</u>" : "") + "</div>";
+  }).join("");
+  box.innerHTML = head + segs +
+    '<p class="kstsum-f">『计划可以改变，方向可以调整。修习录只记录最后留下的路径。』</p>';
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
