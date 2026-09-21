@@ -603,11 +603,19 @@ img{display:block}
       · 文字居中压在底座**上方**；底座是**绝对定位层**，不参与排版、也不撑高本件。
    ⚠️ 层级：必须 `z-index ≥ 5` 且挂 `.mail-env` 下 —— 它落在封口 V（z:4）之内，
       挂在 `.env-front`（自身 z:3）里会被整个盖掉（`.gwel` 与批九那支枝是同一个坑）。
-   ⭐⭐ 批十二：麦穗从**手画 SVG 换成 AI 生成的雕版图片**（`assets/wheat-base.webp`，
-      194×77）。用户："你又是用 svg 画的？直接生成一个吧，这个太假了也不好看"。
-      宽 = `30%` envH（桌面 97px ＝ **文字宽的 1.35 倍**，比批十一的 130px 收窄）；顶 = 文字顶
-      +`1.11%` envH（≈3.6px）。⚠️ 换成图片后**宽高比由图定**（194:77 ≈ 2.5:1），
-      改显示宽要同步重跑 `scripts\wheat_cross_asset.py`（它按 `--display-w` 出图）。
+   ⭐⭐ 批十二：麦穗从**手画 SVG 换成 AI 生成的雕版图片**（`assets/wheat-base.webp`）。
+      用户："你又是用 svg 画的？直接生成一个吧，这个太假了也不好看"。
+   ⭐⭐ 批十三（用户："麦穗**太小了而且不对称**"）—— 两处都改：
+      · **对称**：批十二是"同一支穗转 +58 / −58"（**不是镜像**）→ 左右麦粒朝向不同。
+        现在 `right = left.transpose(FLIP_LEFT_RIGHT)`（绕画布中心翻）⇒ **严格镜像**；
+        回归新增"资产左右两半镜像差 < 3/255"的判据守着。
+      · **放大**：`30%` → **`43%` envH**（桌面 97 → **140px**，文字宽的 1.94 倍）；
+        倾角 58° → **62°**（更扁）→ 显示 **140×34**（宽高比 4.06）。
+        ⚠️ 尺寸是**被封口 V 卡死的**：宽 140px（占信封宽 27%）时底座下缘到 y23.5%，
+        而 V 在 y23.5% 处只剩 x36.8~63.2%（收口段）—— **再宽就会挑出封口线**。
+        要更大只能同时上移整件（会牺牲刚拉开的"不拥挤"间距）。
+      · 生成参数（`scripts\wheat_cross_asset.py --crop .90 --angle 62 --display-w 140`），
+        改显示宽要**重跑脚本**并同步这里的 `width`。
    ⭐⭐ 批十二的另一半 —— **治"拥挤"**（用户："我画的蓝框里这些信息太拥挤了"）：
       `.gperm` 的 `top` **10.2% → 11.8%** ⇒ 与 `WELCOME` 的间距 4.5px → **9.7px**，
       再叠上麦穗收窄（130 → 97px）→ 上部三件（WELCOME／ADMITTED／麦穗）之间的净空从
@@ -625,8 +633,8 @@ img{display:block}
   letter-spacing:.3em;text-indent:.3em;text-transform:uppercase;white-space:nowrap;
   color:rgba(158,122,52,.85)}
 #knowledgeGate .ge-base{position:absolute;left:50%;top:calc(var(--envH) * .0111);
-  width:calc(var(--envH) * .30);height:auto;transform:translateX(-50%);
-  display:block;opacity:.88}
+  width:calc(var(--envH) * .43);height:auto;transform:translateX(-50%);
+  display:block;opacity:.9}
 
 /* ⭐⭐ 批九：把**"衔住信封"的大猫头鹰**接回来（用户："我猫头鹰怎么不见了？"
    —— 指信封上沿正中那块）。它是第九轮被**整只删除**的 `.perchowl`（当时为了让位给左右骑士），
@@ -2929,7 +2937,7 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
                     `.env-front` 自身 z:3 是 stacking context —— 挂进去会被三角整个盖掉。 -->
 
             <p class="gperm" aria-hidden="true"><em>Admitted</em><img class="ge-base"
-               src="assets/wheat-base.webp?v=20260921g" alt="" width="194" height="77"
+               src="assets/wheat-base.webp?v=20260921h" alt="" width="194" height="77"
                loading="lazy" decoding="async"></p>
             <!-- 封口：内嵌 SVG 画这个三角（**不用 clip-path** —— 它会把两条斜边上的描边整条切掉，
                  所以之前那两条边是"硬切"的、很假）。
@@ -3192,6 +3200,6 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 
 <script src="docs.js?v=20260920c"></script>
 <script src="app.js?v=20260920f"></script>
-<script src="knowledge.js?v=20260921g"></script>
+<script src="knowledge.js?v=20260921h"></script>
 </body>
 </html>
