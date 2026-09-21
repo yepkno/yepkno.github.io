@@ -1467,12 +1467,59 @@ img{display:block}
 .kst-it b{display:block;font-size:13px;margin-bottom:2px}
 .kst-it span{color:#8a7a58;font-size:11.5px}
 
+/* ── 两侧书架：每侧 7 段，自下而上对应 01–07 / 08–14 ──────────────────────
+   段 = 那一级"这一路带的工具"，书脊高低/根数按该级工具数生成，颜色随状态走。
+   它和台阶共用同一份 state（走到的级数），所以只是**同一件事的另一种呈现**。 */
+.kst-shelves{position:absolute;inset:0;pointer-events:none;transition:opacity .45s ease}
+/* ⚠️ 别把书架做成"一排实心色块" —— 第一版画成书脊阵列，结果是画面左侧一堵红墙，把大厅压死了。
+   图里本来就有一排书架，这里只需**把对应那一段照亮**：一层柔光 ＋ 左侧一道细竖线。 */
+.kstsh{position:absolute;left:var(--x);top:var(--y);width:var(--w);height:var(--h);
+  border-radius:8px;color:rgba(176,86,50,.55);opacity:0;
+  background:linear-gradient(90deg,rgba(255,186,124,.30),rgba(255,208,152,.10));
+  transition:opacity .4s ease,box-shadow .4s ease,color .4s ease}
+.kstsh::before{content:"";position:absolute;left:0;top:10%;bottom:10%;width:2px;
+  border-radius:2px;background:currentColor;opacity:.7}
+.kstsh.done{opacity:.85;color:#bf5a3a;box-shadow:0 0 20px rgba(255,168,92,.26)}
+.kstsh.cur{opacity:1;color:#ff461f;
+  background:linear-gradient(90deg,rgba(255,126,62,.36),rgba(255,186,116,.12));
+  box-shadow:0 0 26px rgba(255,92,40,.32)}
+
+/* ── 年度回望：把已点亮的台阶连成一条路径 ＋ 一句总结 ────────────────────
+   平时不出现、也不提醒；只有主动点「回望这一年」才切过来。 */
+.kst-path{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;
+  opacity:0;transition:opacity .5s ease}
+.kst-path polyline{fill:none;stroke:#ff461f;stroke-width:2.5;stroke-linecap:round;
+  stroke-linejoin:round;vector-effect:non-scaling-stroke;
+  filter:drop-shadow(0 0 5px rgba(255,70,31,.55))}
+.ks-study.recap .kst-path{opacity:1}
+.ks-study.recap .kst{opacity:.20}
+.ks-study.recap .kst.done,.ks-study.recap .kst.cur{opacity:1}
+.ks-study.recap .kst-shelves{opacity:.22}
+.ks-study.recap .kst-plaque{opacity:.30}
+
+.kst-view{position:absolute;right:clamp(16px,3.6vw,40px);bottom:clamp(15px,3vh,28px);z-index:4;
+  font:inherit;font-size:12.5px;padding:9px 16px;border-radius:999px;cursor:pointer;
+  color:#5b4a2e;background:rgba(255,252,244,.88);border:1px solid rgba(120,96,54,.34);
+  box-shadow:0 5px 16px rgba(60,40,10,.16);backdrop-filter:blur(8px);transition:.22s}
+.kst-view:hover{background:#fff;border-color:#ff461f;color:#c2330f}
+.kst-recap{position:absolute;left:50%;bottom:15%;transform:translateX(-50%);z-index:5;
+  width:min(640px,86%);padding:20px 26px;border-radius:14px;
+  background:rgba(255,252,244,.96);border:1px solid rgba(255,70,31,.30);
+  box-shadow:0 18px 52px rgba(60,40,10,.28);backdrop-filter:blur(14px);
+  color:#41331a;font-size:14px;line-height:1.95}
+.kst-recap p{margin:0}
+.kst-recap b{color:#c2330f}
+.kst-recap em{font-style:normal;color:#8a6d2b;font-size:12px}
+
 @media (max-width:900px){
   .kst i{width:19px;height:19px;font-size:9px}
   .kst b{font-size:10px}
   .kst-plaque{width:88%;bottom:2.5%;padding:11px 15px}
   .kst-plaque-x{font-size:11.5px}
   .kst-sheet{width:100%;padding:24px 20px 34px}
+  .kstsh{gap:1px;padding:0 1px 2px}
+  .kst-view{right:14px;bottom:12px;font-size:11.5px;padding:7px 12px}
+  .kst-recap{width:92%;bottom:13%;padding:15px 17px;font-size:12.5px;line-height:1.8}
 }
 
 /* 窄屏：卡片不再"沉底"（场景缩得太小时贴屏底会顶到内容），改成紧跟标题 */
@@ -3081,6 +3128,15 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
         <div class="kst-shot">
           <img class="kst-img" src="assets/hall-great.webp?v=20260921b" alt="" decoding="async">
           <div class="kst-steps" id="kstSteps"></div>
+          <!-- 两侧书架：走到哪一级，对应那一段就亮起 —— 与台阶是**同一份数据**的两种呈现
+               （台阶答"走到哪"，书架答"这一路带了什么"），所以视觉呼应、功能不叠加。 -->
+          <div class="kst-shelves" id="kstShelves" aria-hidden="true"></div>
+          <!-- 年度回望：把已点亮的台阶连成一条路径 ＋ 一句自动总结。平时它只是一条路径记录，
+               不提醒、不催促；只有主动点「回望这一年」才切换到这个视角。 -->
+          <svg class="kst-path" id="kstPath" viewBox="0 0 1440 865" preserveAspectRatio="none"
+               aria-hidden="true"></svg>
+          <button class="kst-view" id="kstView" type="button">回望这一年</button>
+          <div class="kst-recap" id="kstRecap" hidden><p id="kstRecapX"></p></div>
         </div>
         <button class="kst-plaque" id="kstPlaque" type="button">
           <span class="kst-plaque-t">馆训</span>
@@ -3560,6 +3616,6 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 <script src="study-plan.js?v=20260921a"></script>
 <script src="docs.js?v=20260921b"></script>
 <script src="app.js?v=20260920f"></script>
-<script src="knowledge.js?v=20260921m"></script>
+<script src="knowledge.js?v=20260921n"></script>
 </body>
 </html>

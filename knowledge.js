@@ -777,6 +777,7 @@ function kstRender() {
   }).join("");
   var pq = document.getElementById("kstPlaqueX");
   if (pq) pq.textContent = P.meta.principle;
+  kstShelfRender();          // 两侧书架：与台阶同一份 state
   kstBind();
 }
 
@@ -786,8 +787,18 @@ function kstBind() {
     box.__kstBound = true;
     box.addEventListener("click", function (e) {
       var b = e.target.closest(".kst");
-      if (b) kstSheetOpen(parseInt(b.getAttribute("data-n"), 10));
+      if (b) { kstRecapOff(); kstSheetOpen(parseInt(b.getAttribute("data-n"), 10)); }
     });
+  }
+  var vb = document.getElementById("kstView");
+  if (vb && !vb.__kstBound) {
+    vb.__kstBound = true;
+    vb.addEventListener("click", kstRecapToggle);
+  }
+  var rc = document.getElementById("kstRecap");
+  if (rc && !rc.__kstBound) {
+    rc.__kstBound = true;
+    rc.addEventListener("click", kstRecapOff);
   }
   var sh = document.getElementById("kstSheet");
   if (sh && !sh.__kstBound) {
@@ -807,6 +818,86 @@ function kstBind() {
 }
 
 /* 关联资料：课程按表 02 的「阶段」列匹配；软件按 study-plan.js 的 stageTools 映射 */
+/* 两侧书架：每侧 7 段，自下而上对应 01–07（左）与 08–14（右）。
+   段的位置贴在图里那两排书架上（x/y 是占图的百分比）；走到的段变亮。
+   与台阶共用 kstLit()，所以两处永远同步。 */
+function kstShelfRender() {
+  var P = window.STUDY_PLAN, box = document.getElementById("kstShelves");
+  if (!P || !box) return;
+  var lit = kstLit(), hi = (78 - 40) / 7;
+  var out = "";
+  P.stages.forEach(function (s, i) {
+    var side = i < 7 ? 19 : 63;              // 左排 / 右排（对齐图里那两排书架）
+    var idx = i % 7;                         // 0 = 每排最下面那一段
+    var y = 78 - (idx + 1) * hi;             // 自下而上
+    var cls = "kstsh" + (s.n <= lit ? " done" : "") + (s.n === lit + 1 ? " cur" : "");
+    out += '<div class="' + cls + '" data-n="' + s.n + '" style="--x:' + side + '%;--y:' +
+      y.toFixed(2) + '%;--w:17%;--h:' + hi.toFixed(2) + '%"></div>';
+  });
+  box.innerHTML = out;
+}
+
+/* 年度回望：把已点亮的台阶连成一条路径 ＋ 一句自动写出来的总结。
+   平时不存在、不提醒；只有主动点「回望这一年」才切过来。 */
+function kstRecapOn() {
+  var P = window.STUDY_PLAN;
+  var study = document.getElementById("ksStudy");
+  var path = document.getElementById("kstPath");
+  var rc = document.getElementById("kstRecap");
+  var tx = document.getElementById("kstRecapX");
+  if (!P || !study || !path || !rc) return;
+  var lit = kstLit();
+
+  var old = document.getElementById("kstPl");
+  if (old) old.parentNode.removeChild(old);
+  if (lit > 0) {
+    var poly = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+    poly.setAttribute("id", "kstPl");
+    poly.setAttribute("points", P.stages.slice(0, lit).map(function (s) {
+      return (s.x / 100 * 1440).toFixed(1) + "," + (s.y / 100 * 865).toFixed(1);
+    }).join(" "));
+    path.appendChild(poly);
+  }
+
+  var h;
+  if (!lit) {
+    h = '还一级都没点亮。<br><em>这不着急 —— 这份记录存在的意义不是催你，'
+      + '而是等你真的走完一级时，有个地方替你记住。</em>';
+  } else {
+    var first = P.stages[0], last = P.stages[lit - 1];
+    var nC = 0, nT = 0;
+    P.stages.slice(0, lit).forEach(function (s) {
+      nC += P.courses.filter(function (c) { return c.stage === s.key; }).length;
+      nT += ((P.stageTools && P.stageTools[s.n]) || []).length;
+    });
+    h = '这一年，你走过了 <b>' + lit + '</b> 级台阶 —— 从「<b>' + first.key +
+      '</b>」到「<b>' + last.key + '</b>」。<br>' +
+      '<em>这一路带上：' + nC + ' 份课程与资料、' + nT + ' 件工具。</em>';
+    if (lit < 14) {
+      var nx = P.stages[lit];
+      h += '<br>下一级还是「<b>' + nx.key + '</b>」 —— 等你说自己做到了，它才会亮。';
+    } else {
+      h += '<br>十四级都走完了。这一年没有白过。';
+    }
+  }
+  tx.innerHTML = h;
+  study.classList.add("recap");
+  rc.hidden = false;
+}
+
+function kstRecapOff() {
+  var study = document.getElementById("ksStudy");
+  var rc = document.getElementById("kstRecap");
+  if (study) study.classList.remove("recap");
+  if (rc) rc.hidden = true;
+}
+
+function kstRecapToggle() {
+  var rc = document.getElementById("kstRecap");
+  if (rc && !rc.hidden) kstRecapOff();
+  else kstRecapOn();
+}
+
 function kstRefs(s) {
   var P = window.STUDY_PLAN, h = "";
   var cs = P.courses.filter(function (c) { return c.stage === s.key; });
@@ -903,6 +994,7 @@ function knOpenShelf(shelf) {
   var st = document.getElementById("knowledgeStage");
   if (st) { st.classList.toggle("kn-home-on", bright); st.classList.add("kn-subpage"); }
   kstSheetClose();                      // 换分类时，收起上一级留下的抽屉
+  kstRecapOff();                        // 回望视角也一并退出
   if (shelf === "rule") kstRender();    // 「年度修习」＝环梯视图（其余三格仍走卡片列表）
   knPortalClock(false);
 }
@@ -1100,7 +1192,9 @@ function warmGateImages() {
       document.body.style.overflow = "";
       return;
     }
-    // ESC 的层级：门 > 「年度修习」的详情抽屉 > 阅读页 > 整个舞台
+    // ESC 的层级：门 > 回望 > 年度修习的详情抽屉 > 阅读页 > 整个舞台
+    var krc = document.getElementById("kstRecap");
+    if (krc && !krc.hidden) { kstRecapOff(); return; }
     var ksheet = document.getElementById("kstSheet");
     if (ksheet && !ksheet.hidden) { kstSheetClose(); return; }
     var st = document.getElementById("knowledgeStage");
