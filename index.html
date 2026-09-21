@@ -603,13 +603,19 @@ img{display:block}
       · 文字居中压在底座**上方**；底座是**绝对定位层**，不参与排版、也不撑高本件。
    ⚠️ 层级：必须 `z-index ≥ 5` 且挂 `.mail-env` 下 —— 它落在封口 V（z:4）之内，
       挂在 `.env-front`（自身 z:3）里会被整个盖掉（`.gwel` 与批九那支枝是同一个坑）。
-   ⚠️ 尺寸全走 `--envH` 的百分比（信封宽高随视口变）：宽 40% envH ≈ 桌面 130px ＝
-      **文字宽的 1.8 倍**（1.4× 时"底座"读不出来，实测过）；底座顶 = 文字顶 +1.11% envH（≈3.6px）。
-      ⚠️ 摆位是**在真站点上扫出来的**（顶 +1.5/+3.6/+5.5 × 麦粒朝内/朝外 共六组）：
-      +1.5 时两条秆压在字母下缘上；+5.5 塌成一条下划线；**+3.6 且麦粒朝外** ＝ 文字正好坐在底座上。
+   ⭐⭐ 批十二：麦穗从**手画 SVG 换成 AI 生成的雕版图片**（`assets/wheat-base.webp`，
+      194×77）。用户："你又是用 svg 画的？直接生成一个吧，这个太假了也不好看"。
+      宽 = `30%` envH（桌面 97px ＝ **文字宽的 1.35 倍**，比批十一的 130px 收窄）；顶 = 文字顶
+      +`1.11%` envH（≈3.6px）。⚠️ 换成图片后**宽高比由图定**（194:77 ≈ 2.5:1），
+      改显示宽要同步重跑 `scripts\wheat_cross_asset.py`（它按 `--display-w` 出图）。
+   ⭐⭐ 批十二的另一半 —— **治"拥挤"**（用户："我画的蓝框里这些信息太拥挤了"）：
+      `.gperm` 的 `top` **10.2% → 11.8%** ⇒ 与 `WELCOME` 的间距 4.5px → **9.7px**，
+      再叠上麦穗收窄（130 → 97px）→ 上部三件（WELCOME／ADMITTED／麦穗）之间的净空从
+      "挤在一起"变成 **≈10px / ≈4px**。⚠️ 不能再往下推：`top` 超过 ~13% 时麦穗下缘会越过
+      封口 V 的收口段（V 在 y25% 处只剩 x38.8~61.2%）。
    ⚠️ 净空（信封坐标，桌面 520×324）：`.gwel` y3.4~8.8% ｜ 左上徽章 x2.3~17.8%/y2.8~27.7%
       ｜ 右上抬头 x≈70~93%/y3~17% ｜ 左右骑士 y≥29.6% ｜ 中央场景 y≥32.4%。 */
-#knowledgeGate .gperm{position:absolute;left:50%;top:10.2%;margin:0;z-index:5;
+#knowledgeGate .gperm{position:absolute;left:50%;top:11.8%;margin:0;z-index:5;
   transform:translateX(-50%);display:block;text-align:center;
   color:rgba(158,122,52,.70);
   opacity:0;pointer-events:none;transition:opacity .9s ease 2.3s}
@@ -619,8 +625,8 @@ img{display:block}
   letter-spacing:.3em;text-indent:.3em;text-transform:uppercase;white-space:nowrap;
   color:rgba(158,122,52,.85)}
 #knowledgeGate .ge-base{position:absolute;left:50%;top:calc(var(--envH) * .0111);
-  width:calc(var(--envH) * .40);height:auto;transform:translateX(-50%);
-  display:block;fill:currentColor;opacity:.85}
+  width:calc(var(--envH) * .30);height:auto;transform:translateX(-50%);
+  display:block;opacity:.88}
 
 /* ⭐⭐ 批九：把**"衔住信封"的大猫头鹰**接回来（用户："我猫头鹰怎么不见了？"
    —— 指信封上沿正中那块）。它是第九轮被**整只删除**的 `.perchowl`（当时为了让位给左右骑士），
@@ -2909,22 +2915,22 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
                     它正好落在封口 V 覆盖的范围内，封口是 z:4 —— 放 `.env-front` 里
                     会被整个盖掉（父级 z:3 的子元素压不过兄弟层）。 -->
             <p class="gwel">WELCOME TO KNOWLEDGE&#39;S SEA</p>
-            <!-- ⭐⭐ 批十/十一：`.gwel` 正下方的**通行印记**＝「麦穗底座 ＋ 居中 `ADMITTED`」。
+            <!-- ⭐⭐ 批十/十一/十二：`.gwel` 正下方的**通行印记**＝「交叉麦穗 ＋ 居中 `ADMITTED`」。
                  用户批十："把这个猫头鹰挂树梢的要素去掉，在 welcome……下加一个装饰性要素，
                  可以是英文的允许通行啊，或者像政府公文上的麦穗啊等等"；
-                 用户批十一："麦穗太多了了，最好是底部交叉，斜着分别向两边延申，
-                 像一个底座拖住 admition 这个字"。
-                 ⚠️ 麦穗是**手写内联 SVG**（不是图片资产 → **没有 `?v=` 要跟**）：
-                    2 条 `path`＝两根主秆（左秆 d 从 x89 起、终点 x6 ⇒ **尾巴越过中线 75，真的交叉**）；
-                    18 个 `ellipse`＝麦粒（4 对 ＋ 1 顶粒，两支共 18 颗）。
-                    ⚠️⚠️ **麦粒别再往上加**：批十那版是 14 颗/支，用户评价"太多了"；
-                    ⚠️ 麦粒挂**外侧**（背离文字那侧）—— 朝内会戳进字母下缘，像插了一排小旗子。
-                    几何由 `scripts\wheat_base.py` 生成（改参数重跑，别手改这些数）。
+                 用户批十一："最好底部交叉，斜着分别向两边延申，像一个底座托住 admition"；
+                 ⭐⭐ 用户批十二（**这一版**）："这个麦穗你又是用 svg 画的？**直接生成一个**吧，
+                 这个太假了也不好看" → 麦穗改成 **AI 生成的雕版插画图片**（`wheat-base.webp`，
+                 194×77 ＝ 站内显示 97×38 的 2 倍），**不再手画 SVG**。
+                 ⚠️ 图是"单支麦穗"生成的，**两支交叉由脚本转出来**（让模型直接画"两支交叉"必歪）：
+                    管线＝`scripts\wheat_cross_asset.py`（抠白底 → 染金 → 各自绕秆上一点旋转 ±58°
+                    → 裁包围盒 → 存 2 倍图）。**要调就改参数重跑脚本**，别手改这张图。
                  ⚠️⚠️ 必须挂在这里（`.mail-env` 下）＋ z-index ≥ 5：它落在封口 V（z:4）之内，
-                    `.env-front` 自身 z:3 是 stacking context —— 挂进去会被三角整个盖掉。
-                 ⚠️ `ADMITTED` 是"允许通行"的英文写法，与上一行的 WELCOME 连成一句
-                    "欢迎来到知识之海 · 准予通行"；**解锁后**才浮现（延迟 2.3s，接在 WELCOME 之后）。 -->
-            <p class="gperm" aria-hidden="true"><em>Admitted</em><svg class="ge-base" viewBox="0 0 150 28" aria-hidden="true"><path d="M89.0 27.0Q50.5 20.5 6.0 4.0" fill="none" stroke="currentColor" stroke-width="1.20" stroke-linecap="round"/><ellipse cx="56.23" cy="17.36" rx="1.75" ry="4.30" transform="rotate(-315.4 56.23 17.36)"/><ellipse cx="54.97" cy="22.20" rx="1.75" ry="4.30" transform="rotate(-135.4 54.97 22.20)"/><ellipse cx="41.91" cy="13.37" rx="1.65" ry="4.04" transform="rotate(-313.5 41.91 13.37)"/><ellipse cx="40.49" cy="18.16" rx="1.65" ry="4.04" transform="rotate(-133.5 40.49 18.16)"/><ellipse cx="27.22" cy="8.78" rx="1.54" ry="3.78" transform="rotate(-311.8 27.22 8.78)"/><ellipse cx="25.66" cy="13.53" rx="1.54" ry="3.78" transform="rotate(-131.8 25.66 13.53)"/><ellipse cx="12.17" cy="3.59" rx="1.44" ry="3.53" transform="rotate(-310.2 12.17 3.59)"/><ellipse cx="10.47" cy="8.30" rx="1.44" ry="3.53" transform="rotate(-130.2 10.47 8.30)"/><ellipse cx="6.00" cy="4.00" rx="1.66" ry="4.51" transform="rotate(-249.7 6.00 4.00)"/><g transform="translate(150,0) scale(-1,1)"><path d="M89.0 27.0Q50.5 20.5 6.0 4.0" fill="none" stroke="currentColor" stroke-width="1.20" stroke-linecap="round"/><ellipse cx="56.23" cy="17.36" rx="1.75" ry="4.30" transform="rotate(-315.4 56.23 17.36)"/><ellipse cx="54.97" cy="22.20" rx="1.75" ry="4.30" transform="rotate(-135.4 54.97 22.20)"/><ellipse cx="41.91" cy="13.37" rx="1.65" ry="4.04" transform="rotate(-313.5 41.91 13.37)"/><ellipse cx="40.49" cy="18.16" rx="1.65" ry="4.04" transform="rotate(-133.5 40.49 18.16)"/><ellipse cx="27.22" cy="8.78" rx="1.54" ry="3.78" transform="rotate(-311.8 27.22 8.78)"/><ellipse cx="25.66" cy="13.53" rx="1.54" ry="3.78" transform="rotate(-131.8 25.66 13.53)"/><ellipse cx="12.17" cy="3.59" rx="1.44" ry="3.53" transform="rotate(-310.2 12.17 3.59)"/><ellipse cx="10.47" cy="8.30" rx="1.44" ry="3.53" transform="rotate(-130.2 10.47 8.30)"/><ellipse cx="6.00" cy="4.00" rx="1.66" ry="4.51" transform="rotate(-249.7 6.00 4.00)"/></g></svg></p>
+                    `.env-front` 自身 z:3 是 stacking context —— 挂进去会被三角整个盖掉。 -->
+
+            <p class="gperm" aria-hidden="true"><em>Admitted</em><img class="ge-base"
+               src="assets/wheat-base.webp?v=20260921g" alt="" width="194" height="77"
+               loading="lazy" decoding="async"></p>
             <!-- 封口：内嵌 SVG 画这个三角（**不用 clip-path** —— 它会把两条斜边上的描边整条切掉，
                  所以之前那两条边是"硬切"的、很假）。
                  ⚠️ 第二版把三条边从**直线改成微微内凹的曲线**（2026-09-20 用户："上部分还是太违和了"）：
@@ -3186,6 +3192,6 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 
 <script src="docs.js?v=20260920c"></script>
 <script src="app.js?v=20260920f"></script>
-<script src="knowledge.js?v=20260921f"></script>
+<script src="knowledge.js?v=20260921g"></script>
 </body>
 </html>
