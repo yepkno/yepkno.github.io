@@ -1455,8 +1455,12 @@ img{display:block}
 @keyframes kstBob{0%,100%{transform:translateY(0);opacity:.5}50%{transform:translateY(5px);opacity:1}}
 
 /* 二 · 学院总图 */
-.kst-h{font-size:11px;letter-spacing:.34em;text-transform:uppercase;color:#8a6d2b;margin:0}
-.kst-sub{font-size:12.5px;color:#6d5c38;margin:2px 0 18px}
+/* ⚠️ 标题/副标题是**唯一直接压在插画上**的文字（其余都在纸上）—— 大厅图偏亮，
+   所以把颜色压深并加一层极淡的浅色描边托底（2026-09-21 实测：原 #8a6d2b 在拱顶处发飘）。 */
+.kst-h{font-size:11px;letter-spacing:.34em;text-transform:uppercase;color:#6a4d13;margin:0;
+  text-shadow:0 1px 0 rgba(255,253,246,.7)}
+.kst-sub{font-size:12.5px;color:#54472a;margin:2px 0 18px;
+  text-shadow:0 1px 0 rgba(255,253,246,.7)}
 .kst-map{display:flex;flex-direction:column;align-items:center;gap:8px;width:min(560px,92%)}
 .kst-mk{position:relative;width:100%;display:flex;align-items:center;gap:14px;
   padding:13px 18px;cursor:pointer;font:inherit;text-align:left;
@@ -1523,6 +1527,138 @@ img{display:block}
   color:#7a5a22;background:transparent;border:1px solid rgba(176,140,84,.6)}
 .kst-file-b .fbtn:hover{color:#c2330f;border-color:#c2330f;background:rgba(255,70,31,.05)}
 .kst-file-b .fbtn.re{color:#a82b0c;border-color:rgba(255,70,31,.4);background:rgba(255,70,31,.06)}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   2026-09-21 追加四件（用户选定）：
+     ① 学习理论 → 一张「法则纸」（题记 ＋ 目标 ＋ 使用方法 ＋ 三条判断规则，**不加编号**）
+     ② 要学什么 ＋ ③ 用什么软件 → 第 3 屏「读与器」＝摊开的对开册（左书目 / 右工具台）
+     ④ 学习任务清单 → 第 4 屏「修习条目」＝一页登记簿（**全局清单**，用户选定）
+   ⚠️ 三道防线：**不出现**剩余条数 / 完成度百分比 / 逾期 / 连续打卡 / "今天该做"。
+      勾选＝**记录**（"这一条我认了"），不是欠债。分组标题只报"已留 N 道"，**绝不报分母**。
+   ⚠️ 圆刻代替 checkbox 方框（方框＝表单语言）；已勾＝朱红实心 ＋ 该行由灰转墨。
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ① 修习法则：档案纸下缘一行很淡的小字 → 一张同质感的纸 */
+.ksta-law{margin:12px auto 0;display:block;font:inherit;font-size:11.5px;letter-spacing:.16em;
+  cursor:pointer;padding:5px 8px;color:rgba(138,109,43,.8);background:transparent;border:0;
+  border-bottom:1px solid rgba(176,140,84,.42);transition:.22s}
+.ksta-law:hover{color:#c2330f;border-bottom-color:#c2330f}
+.kslaw{position:absolute;inset:0;z-index:9;display:flex;align-items:center;justify-content:center;
+  padding:clamp(18px,5vh,56px) clamp(16px,4vw,54px);
+  background:rgba(38,26,10,.32);
+  opacity:0;transition:opacity .3s ease}
+.kslaw[hidden]{display:none}
+.kslaw.on{opacity:1}
+.kslaw-b{position:relative;width:min(600px,100%);max-height:100%;overflow-y:auto;
+  overscroll-behavior:contain;padding:clamp(26px,4vw,42px) clamp(22px,3.4vw,38px);
+  background:repeating-linear-gradient(0deg,rgba(150,124,78,.035) 0 1px,transparent 1px 4px),
+    rgba(252,248,238,.97);
+  border:1px solid rgba(140,116,70,.34);border-radius:2px;
+  box-shadow:0 10px 40px rgba(40,26,6,.26);color:#40331a;text-align:center;
+  transform:translateY(14px);transition:transform .42s cubic-bezier(.2,.72,.2,1)}
+.kslaw.on .kslaw-b{transform:none}
+.kslaw-x{position:absolute;top:11px;right:13px;width:30px;height:30px;border-radius:50%;
+  display:grid;place-items:center;font:inherit;font-size:17px;line-height:1;cursor:pointer;
+  color:#6b5730;background:rgba(255,255,255,.7);border:1px solid rgba(140,116,70,.3)}
+.kslaw-x:hover{color:#c2330f;border-color:#c2330f}
+.kslaw-h{font-size:10.5px;letter-spacing:.34em;text-transform:uppercase;color:#8a6d2b;margin:0 0 8px}
+.kslaw-q{font-size:clamp(14.5px,1.5vw,16.5px);line-height:2.05;color:#3b2f12;margin:0;
+  font-family:Georgia,"Songti SC",serif;text-align:left}
+.kslaw-r{margin:0 0 13px;text-align:left}
+.kslaw-r h5{margin:0 0 3px;font-size:10.5px;letter-spacing:.2em;color:#8a6d2b;font-weight:600}
+.kslaw-r p{margin:0;font-size:12.5px;line-height:1.9;color:#4a3b1d}
+
+/* ② ③ 读与器：一本摊开的对开册（左书目 / 右工具台） */
+.kst-dbl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;
+  width:min(1000px,100%);align-items:start;text-align:left}
+.kst-pg{padding:16px 15px 18px;border-radius:2px;
+  background:rgba(252,248,238,.82);border:1px solid rgba(140,116,70,.26);
+  max-height:min(72vh,660px);overflow-y:auto}
+/* ⚠️ 每页各自滚动（否则右页 29 件工具把整屏撑到 5600px＋）。
+   刻意**不设** overscroll-behavior:contain —— 让滚到页底时能自然接力到外层。 */
+.kst-sheet{width:min(680px,100%);padding:22px 26px 20px;border-radius:2px;
+  background:repeating-linear-gradient(0deg,rgba(150,124,78,.032) 0 1px,transparent 1px 4px),
+    rgba(252,248,238,.88);
+  border:1px solid rgba(140,116,70,.3);box-shadow:0 1px 10px rgba(60,40,10,.06)}
+.kst-pg-h{margin:0 0 2px;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:#8a6d2b}
+.kst-pg-s{margin:0 0 13px;padding-bottom:10px;font-size:11px;line-height:1.7;color:#7a6640;
+  border-bottom:1px solid rgba(140,116,70,.2)}
+.kst-main{margin:0 0 12px;padding:9px 10px;font-size:11.5px;line-height:1.75;color:#4a3b1d;
+  background:rgba(255,70,31,.05);border-left:2px solid rgba(255,70,31,.45);border-radius:2px}
+.kst-main b{display:block;font-size:10px;letter-spacing:.2em;color:#8a6d2b;font-weight:600;
+  margin-bottom:2px}
+.kst-tg{margin:16px 0 7px;font-size:10.5px;letter-spacing:.16em;color:#8a6d2b}
+.kst-tg:first-of-type{margin-top:0}
+.kst-bk,.kst-tl{margin:0 0 9px;padding:10px 11px;border-radius:2px;background:rgba(255,252,245,.6);
+  border:1px solid rgba(140,116,70,.2);border-left:2px solid var(--bd,rgba(176,140,84,.45));
+  transition:.22s}
+.kst-bk:hover,.kst-tl:hover{background:rgba(255,253,248,.92);border-color:rgba(192,86,58,.42)}
+.kst-bk-h{display:flex;align-items:baseline;gap:8px;font-size:10.5px;letter-spacing:.12em;color:#a08a5c}
+.kst-bk-h b{font-weight:600;color:#8a6d2b}
+.kst-bk-h span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kst-bk-h i{font-style:normal;color:#b4462a;letter-spacing:.06em}
+.kst-bk-t{margin:4px 0 7px;font-size:12.5px;font-weight:600;line-height:1.62;color:#3b2f12}
+.kst-tl-h{display:flex;align-items:baseline;gap:7px}
+.kst-tl-h b{font-size:12.5px;font-weight:600;color:#3b2f12;letter-spacing:.02em}
+.kst-tl-h i{font-style:normal;margin-left:auto;font-size:9.5px;letter-spacing:.16em;color:#a08a5c}
+.kst-tl-m{margin:1px 0 4px;font-size:10.5px;color:#9a8355}
+.kst-r{display:flex;gap:8px;margin:0 0 3px;font-size:11.5px;line-height:1.72;color:#4a3b1d}
+.kst-r em{font-style:normal;flex:none;width:42px;color:#a08a5c;letter-spacing:.06em}
+.kst-r span{flex:1;min-width:0;color:#8a7d62;transition:.22s}
+.kst-r span.on{color:#3b2f12}
+.kst-lk{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:8px}
+.kst-a{font:inherit;font-size:11px;letter-spacing:.06em;cursor:pointer;text-decoration:none;
+  padding:4px 9px;color:#7a5a22;background:transparent;border:1px solid rgba(176,140,84,.5);
+  border-radius:2px;transition:.2s}
+.kst-a:hover{color:#c2330f;border-color:#c2330f;background:rgba(255,70,31,.05)}
+.kst-own{margin-left:auto;font:inherit;font-size:10.5px;letter-spacing:.06em;cursor:pointer;
+  padding:4px 9px;border-radius:2px;color:#a08a5c;background:transparent;
+  border:1px dashed rgba(140,116,70,.42);transition:.2s}
+.kst-own:hover{color:#c2330f;border-color:#c2330f}
+.kst-own.on{color:#b4462a;border-style:solid;border-color:rgba(255,70,31,.45);
+  background:rgba(255,70,31,.07)}
+
+/* ④ 修习条目：一页登记簿（全局清单） */
+.kst-cf{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:0 0 6px}
+.kst-cf b{font:inherit;font-weight:400;font-size:11.5px;letter-spacing:.1em;cursor:pointer;
+  padding:5px 12px;border-radius:2px;color:#7a6640;background:transparent;
+  border:1px solid rgba(140,116,70,.3);transition:.2s}
+.kst-cf b:hover{color:#c2330f;border-color:#c2330f}
+.kst-cf b.on{color:#b4462a;border-color:rgba(255,70,31,.45);background:rgba(255,70,31,.07)}
+.kst-tally{margin:0 0 14px;font-size:11px;letter-spacing:.14em;color:rgba(122,98,56,.72);
+  text-align:center}
+.kst-reg{width:min(640px,100%);text-align:left}
+.kst-grp{display:flex;align-items:center;gap:10px;margin:22px 0 4px;font-size:11.5px;
+  letter-spacing:.16em;color:#8a6d2b}
+.kst-grp:first-child{margin-top:0}
+.kst-grp::after{content:"";flex:1;height:1px;background:rgba(176,140,84,.34)}
+.kst-grp em{font-style:normal;order:3;font-size:10px;color:#b3a184;letter-spacing:.1em}
+.kst-stg{margin:11px 0 3px;font-size:10.5px;letter-spacing:.14em;color:#a08a5c}
+.kst-c{position:relative;display:flex;align-items:flex-start;gap:9px;width:100%;
+  padding:5px 6px 5px 4px;font:inherit;font-size:12.5px;line-height:1.7;text-align:left;
+  cursor:pointer;background:transparent;border:0;border-radius:2px;color:#8a7d62;transition:.18s}
+.kst-c:hover{background:rgba(255,70,31,.045)}
+.kst-c::before{content:"";flex:none;width:7px;height:7px;margin-top:6px;border-radius:50%;
+  border:1px solid rgba(140,126,96,.65);transition:.22s}
+.kst-c.on{color:#3b2f12}
+.kst-c.on::before{background:#ff461f;border-color:#ff461f}
+.kst-c span{flex:1;min-width:0}
+.kst-c-kind{flex:none;margin-top:2px;font-style:normal;font-size:10px;letter-spacing:.1em;
+  color:#b3a184}
+.kst-c.on .kst-c-kind{color:#b4462a}
+.kst-note{margin:18px 0 0;font-size:11px;letter-spacing:.06em;text-align:center;
+  color:rgba(122,98,56,.68)}
+
+@media (max-width:900px){
+  .kst-dbl{grid-template-columns:minmax(0,1fr);gap:12px}
+  .kst-pg{padding:14px 12px 16px;max-height:none;overflow:visible}
+  .kst-sheet{padding:18px 14px 16px}
+  .kst-reg{width:100%}
+  .kst-c{font-size:12px;padding:6px 4px}
+  .kst-r{font-size:11px}
+  .kslaw-b{padding:24px 18px 30px}
+  .kst-grp{margin-top:18px}
+}
 
 @media (max-width:900px){
   .ksta{width:92%;padding:22px 18px}
@@ -3143,7 +3279,12 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
            ⚠️ **楼梯上不放 UI**（用户明确）：背景保持完整，只在两侧各留一个很淡的概念
               （左 PLAN / 右 REVIEW），信息全在中央那张"档案纸"里。
            ⚠️ 页面上**绝不出现**：本月该学什么 / 今日任务 / 逾期 / 连续打卡 / 剩余天数。
-              设计原则（用户原话）：**计划由我制定，修习由我完成，年度只负责记录。** -->
+              设计原则（用户原话）：**计划由我制定，修习由我完成，年度只负责记录。**
+           ⚠️ 2026-09-21 再追加四件（用户选定），顺序 ＝ **六屏**：
+              一 修习台（＋① 修习法则入口）→ 二 我的学习计划 → 三 读与器（② 书目 ／ ③ 工具台）
+              → 四 修习条目（④ 全局清单）→ 五 实际修习轨迹 → 六 年度修习录。
+              ②③④ 的数据：②③ 早就在 study-plan.js（courses 17 / tools 29 ＋ quick 速查），
+              ④ 由 stages 的 level/out/gate 三列派生（tasks 60 条，原文照录）。 -->
       <div class="ks-study" id="ksStudy">
         <span class="kst-side kst-side-l" aria-hidden="true">PLAN</span>
         <span class="kst-side kst-side-r" aria-hidden="true">REVIEW</span>
@@ -3163,6 +3304,8 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
               <div class="ksta-div"></div>
               <p class="ksta-stat" id="kstaStat"></p>
               <button class="ksta-go" id="kstaGo" type="button">查看年度计划</button>
+              <!-- ① 学习理论：入口做成一行很淡的小字（不是一张大卡） -->
+              <button class="ksta-law" id="kstaLaw" type="button">修习法则 · 三条</button>
             </div>
             <p class="kst-hint" aria-hidden="true">↓</p>
           </section>
@@ -3174,14 +3317,49 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
             <div class="kst-map" id="kstMap"></div>
           </section>
 
-          <!-- 三 · 实际修习轨迹（只记录，不安排） -->
+          <!-- 三 · 读与器（② 要学什么 ＋ ③ 用什么软件）＝一本摊开的对开册 -->
+          <section class="kst-sc">
+            <h4 class="kst-h">Reader &amp; Toolkit · 读与器</h4>
+            <p class="kst-sub">左页是这一路要读的，右页是要装的 —— 都照录原表，随时翻。</p>
+            <div class="kst-dbl">
+              <div class="kst-pg">
+                <p class="kst-pg-h">Books · 书目</p>
+                <p class="kst-pg-s">课程怎么跟、书要不要买、学到什么程度算够。</p>
+                <div id="kstBooks"></div>
+              </div>
+              <div class="kst-pg">
+                <p class="kst-pg-h">Toolkit · 工具台</p>
+                <p class="kst-pg-s">按 🟢🟡🔵 三档排 —— 卡片左沿的颜色就是它的装订档位。</p>
+                <div id="kstMain"></div>
+                <div id="kstTools"></div>
+              </div>
+            </div>
+          </section>
+
+          <!-- 四 · 修习条目（④ 全局清单）＝一页登记簿
+               ⚠️ 勾选＝**记录**不是欠债：分组标题只报"已留 N 道"，**绝不报分母**；
+                  页面上没有剩余条数、没有完成度、没有逾期、没有"今天该做"。 -->
+          <section class="kst-sc">
+            <h4 class="kst-h">Entries · 修习条目</h4>
+            <p class="kst-sub">每一条都照录原表 · 勾一条就是留下一道刻痕 —— 不排名、不催促。</p>
+            <!-- ⚠️ 整页装在一张**纸**上：大厅背景是亮的插画，文字直接浮在上面会看不清
+                 （2026-09-21 实测：清单 60 条几乎读不出来）。 -->
+            <div class="kst-sheet">
+              <div class="kst-cf" id="kstCf"></div>
+              <p class="kst-tally" id="kstTally"></p>
+              <div class="kst-reg" id="kstReg"></div>
+              <p class="kst-note" id="kstNote"></p>
+            </div>
+          </section>
+
+          <!-- 五 · 实际修习轨迹（只记录，不安排） -->
           <section class="kst-sc">
             <h4 class="kst-h">Trail · 实际修习轨迹</h4>
             <p class="kst-sub">这里的顺序是你自己走出来的 —— 不是日程表。</p>
             <ol class="kst-trail" id="kstTrail"></ol>
           </section>
 
-          <!-- 四 · 年度总结 -->
+          <!-- 六 · 年度总结 -->
           <section class="kst-sc">
             <h4 class="kst-h" id="kstSumH"></h4>
             <div class="ksta ksta-sum" id="kstSum">
@@ -3197,6 +3375,27 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
           <button class="kst-file-x" id="kstFileX" type="button" aria-label="归档">&#215;</button>
           <div class="kst-file-b" id="kstFileB"></div>
         </aside>
+
+        <!-- ① 学习理论：一张「法则纸」—— 题记居中，下面才是目标与三条规则。
+             ⚠️ **不加编号**：一编号就变成"规则说明"，而它该是一句馆训。 -->
+        <div class="kslaw" id="ksLaw" hidden>
+          <div class="kslaw-b">
+            <button class="kslaw-x" id="ksLawX" type="button" aria-label="收起">&#215;</button>
+            <p class="kslaw-h">Principle</p>
+            <h3 class="ksta-t">修习法则</h3>
+            <p class="kslaw-q" id="ksLawQ"></p>
+            <div class="ksta-div"></div>
+            <div class="kslaw-r">
+              <h5>这一年想抵达的地方</h5>
+              <p id="ksLawGoal"></p>
+            </div>
+            <div class="kslaw-r">
+              <h5>这些资料怎么用</h5>
+              <p id="ksLawHow"></p>
+            </div>
+            <div id="ksLawRules"></div>
+          </div>
+        </div>
       </div>
 
       <div class="ks-wrap">
@@ -3664,9 +3863,9 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
   </div>
 </div>
 
-<script src="study-plan.js?v=20260921a"></script>
+<script src="study-plan.js?v=20260921b"></script>
 <script src="docs.js?v=20260921b"></script>
 <script src="app.js?v=20260920f"></script>
-<script src="knowledge.js?v=20260921o"></script>
+<script src="knowledge.js?v=20260921p"></script>
 </body>
 </html>

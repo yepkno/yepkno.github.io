@@ -774,6 +774,26 @@ function kstSetLit(n) {
   try { localStorage.setItem(KST_KEY, String(Math.max(0, Math.min(n, 14)))); } catch (e) {}
 }
 
+/* ── ④ 全局清单 ＋ ②③ 物料的**自评状态**（2026-09-21 追加）─────────────────
+   ⚠️ 与台阶（KST_KEY）互不干扰：台阶答"走到哪一级"，这里答"认了哪几条 / 手边有什么"。
+   ⚠️ 纯静态无后端 → 只存在**本机浏览器**，换设备从零开始；它是记录，不是待办工具。 */
+var KST_MARK_KEY = "study_marks_v1";   // 清单刻痕：勾过的条目 id
+var KST_GEAR_KEY = "study_gear_v1";    // 书 / 软件：已入手、已装好的 id
+var kstFilter = "all";                 // 清单方向筛选（"all" 或 KST_GROUPS 下标字符串）
+
+function kstIds(key) {
+  try { return (localStorage.getItem(key) || "").split(",").filter(Boolean); }
+  catch (e) { return []; }
+}
+function kstHas(key, id) { return kstIds(key).indexOf(id) >= 0; }
+function kstFlip(key, id) {
+  var a = kstIds(key), i = a.indexOf(id);
+  if (i < 0) a.push(id); else a.splice(i, 1);
+  try { localStorage.setItem(key, a.join(",")); } catch (e) {}
+  return i < 0;                        // true = 这一下刚勾上
+}
+function kstCount(key) { return kstIds(key).length; }
+
 function kstStage(n) {
   var P = window.STUDY_PLAN;
   if (!P) return null;
@@ -818,6 +838,10 @@ function kstRender() {
   kstMapRender();
   kstTrailRender();
   kstSumRender();
+  kstBooksRender();      // ② 书目
+  kstToolsRender();      // ③ 工具台
+  kstRegRender();        // ④ 全局清单
+  kstLawRender();        // ① 法则纸（内容静态，随渲染一起备好）
   kstBind();
 }
 
@@ -871,27 +895,194 @@ function kstSumRender() {
     nT += ((P.stageTools && P.stageTools[s.n]) || []).length;
   });
   var reached = KST_GROUPS.filter(function (g) { return kstGroupDone(g) > 0; });
+  var marks = kstCount(KST_MARK_KEY), gear = kstCount(KST_GEAR_KEY);
   var out;
-  if (!lit) {
+  // 空的判据要连清单/物料一起看：只勾了条目、还没点亮台阶时，也算"这一年已经动过了"。
+  if (!lit && !marks && !gear) {
     out = '<p>这一年还没有开始记录。<br><em>修习录不催你 —— 它只在你真的走过后，' +
       '才写下第一行。</em></p>';
   } else {
-    out = '<p>这一年，实际修习了 <b>' + reached.length + '</b> 个方向，走过了 <b>' + lit +
-      '</b> 级台阶。<br><em>带上的：' + nC + ' 份课程与资料、' + nT + ' 件工具。</em></p>' +
-      '<div class="ksta-div"></div><ul>';
-    reached.forEach(function (g) {
-      out += '<li>' + g.key + '<span>' + kstGroupState(g) + '</span></li>';
-    });
-    out += '</ul><div class="ksta-div"></div>' +
+    out = '<p>';
+    if (lit) {
+      out += '这一年，实际修习了 <b>' + reached.length + '</b> 个方向，走过了 <b>' + lit +
+        '</b> 级台阶。<br><em>带上的：' + nC + ' 份课程与资料、' + nT + ' 件工具。</em>';
+    } else {
+      out += '这一年，还没有点亮任何一级台阶。<br><em>台阶只在你亲手点亮时才记一笔。</em>';
+    }
+    out += '</p><p><em>修习条目上留下 <b>' + marks + '</b> 道刻痕 ｜ 手边已有 <b>' + gear +
+      '</b> 件书与工具。</em></p>';
+    if (reached.length) {
+      out += '<div class="ksta-div"></div><ul>';
+      reached.forEach(function (g) {
+        out += '<li>' + g.key + '<span>' + kstGroupState(g) + '</span></li>';
+      });
+      out += '</ul>';
+    }
+    out += '<div class="ksta-div"></div>' +
       '<p><em>『计划可以改变，方向可以调整。修习录只记录最后留下的路径。』</em></p>';
   }
   box.innerHTML = out;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   2026-09-21 追加四件（用户选定）：① 法则纸 ② 书目 ③ 工具台 ④ 全局清单
+   ⚠️ 三道防线：**不出现**剩余条数 / 完成度百分比 / 逾期 / 连续打卡 / "今天该做"。
+      勾选＝**记录**（"这一条我认了"），不是欠债；分组只报"已留 N 道"，**绝不报分母**。
+   ⚠️ 勾选**不与台阶联动** —— 晋级仍然只能由用户自己按"点亮这一级"。
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ① 学习理论：一张「法则纸」（题记 ＋ 目标 ＋ 使用方法 ＋ 三条判断规则，不加编号） */
+function kstLawRender() {
+  var P = window.STUDY_PLAN;
+  if (!P || !P.meta) return;
+  var set = function (id, v) { var e = document.getElementById(id); if (e) e.textContent = v || ""; };
+  set("ksLawQ", P.meta.principle);
+  set("ksLawGoal", P.meta.goal);
+  set("ksLawHow", P.meta.howto);
+  var r = document.getElementById("ksLawRules");
+  if (r && P.quick && P.quick.rules) {
+    r.innerHTML = P.quick.rules.map(function (x) {
+      return '<div class="kslaw-r"><h5>' + x.tag + "</h5><p>" + x.list + "</p></div>";
+    }).join("");
+  }
+}
+function kstLawOpen() {
+  var b = document.getElementById("ksLaw");
+  if (!b) return;
+  b.hidden = false;
+  requestAnimationFrame(function () { b.classList.add("on"); });
+}
+function kstLawClose() {
+  var b = document.getElementById("ksLaw");
+  if (!b || b.hidden) return;
+  b.classList.remove("on");
+  window.setTimeout(function () { if (!b.classList.contains("on")) b.hidden = true; }, 320);
+}
+
+/* ② 书目：左页 —— 课程 / 书 / 怎么学 / 学到什么程度（表 02 原文照录） */
+function kstLink(u, label) {
+  if (!/^https?:/i.test(u || "")) return '<span class="kst-a" style="cursor:default">' + (u || "") + "</span>";
+  return '<a class="kst-a" href="' + u + '" target="_blank" rel="noopener">' + label + "</a>";
+}
+function kstBooksRender() {
+  var P = window.STUDY_PLAN, box = document.getElementById("kstBooks");
+  if (!P || !box || !P.courses) return;
+  box.innerHTML = P.courses.map(function (c) {
+    var raw = c.book || "";
+    var bk = (raw && raw !== "\u2014") ? raw : "";
+    var buy = !!bk && bk.indexOf("\u4e0d\u5efa\u8bae") !== 0;   // "不建议买…" 是忠告，不是待购
+    var gid = "bk" + c.order, on = kstHas(KST_GEAR_KEY, gid);
+    return '<div class="kst-bk" style="--bd:' +
+      (buy ? "rgba(255,70,31,.5)" : "rgba(176,140,84,.45)") + '">' +
+      '<div class="kst-bk-h"><b>' + c.order + "</b><span>" + c.stage + "</span>" +
+      (buy ? "<i>有书要买</i>" : "") + "</div>" +
+      '<p class="kst-bk-t">' + c.content + "</p>" +
+      '<p class="kst-r"><em>怎么学</em><span>' + c.how + "</span></p>" +
+      '<p class="kst-r"><em>推荐</em><span>' + c.rec + "</span></p>" +
+      (bk ? '<p class="kst-r"><em>' + (buy ? "要买" : "书") + '</em><span class="' + (on ? "on" : "") + '">' +
+        bk + "</span></p>" : "") +
+      '<p class="kst-r"><em>学到</em><span>' + c.done + "</span></p>" +
+      '<div class="kst-lk">' + kstLink(c.url, /bilibili\.com/.test(c.url) ? "\u25b6 B 站" : "\u25b6 文档") +
+        (c.url2 ? kstLink(c.url2, "\u2197 参考") : "") +
+        (buy ? '<button class="kst-own' + (on ? " on" : "") + '" type="button" data-own="' + gid +
+          '" data-on="&#10003; 已入手" data-off="&#9675; 未入手">' +
+          (on ? "&#10003; 已入手" : "&#9675; 未入手") + "</button>" : "") +
+      "</div></div>";
+  }).join("");
+}
+
+/* ③ 工具台：右页 —— 按 🟢🟡🔵 三档分组，卡片左沿就是它的"装订档位"（用户原话） */
+var KST_TIER = [
+  { e: "\ud83d\udfe2", label: "需要装到本机", color: "rgba(120,150,60,.72)" },
+  { e: "\ud83d\udfe1", label: "云端可用 / 看情况", color: "rgba(196,150,42,.78)" },
+  { e: "\ud83d\udd35", label: "不必单独装", color: "rgba(92,132,190,.72)" }
+];
+var KST_PRI = { S: 0, A: 1, B: 2 };
+/* ⚠️ 别写 `KST_PRI[x] || 9` —— S 的档位值是 **0**，`0 || 9` 会算成 9，
+      于是 S 级全被排到最后（2026-09-21 实测踩到：🟢 组首条跑出 Docker 而不是 Claude Code）。 */
+function kstPri(p) { return (p && Object.prototype.hasOwnProperty.call(KST_PRI, p)) ? KST_PRI[p] : 9; }
+function kstToolsRender() {
+  var P = window.STUDY_PLAN, box = document.getElementById("kstTools");
+  var mb = document.getElementById("kstMain");
+  if (!P || !box || !P.tools) return;
+  if (mb && P.quick && P.quick.main) {
+    mb.innerHTML = '<div class="kst-main"><b>最终主力组合</b>' + P.quick.main + "</div>";
+  }
+  var out = "";
+  KST_TIER.forEach(function (t) {
+    var list = P.tools.filter(function (x) { return (x.inst || "").indexOf(t.e) === 0; });
+    if (!list.length) return;
+    list.sort(function (a, b) { return kstPri(a.pri) - kstPri(b.pri); });
+    out += '<p class="kst-tg">' + t.e + " " + t.label + "</p>";
+    list.forEach(function (x) {
+      var gid = "tl" + x.name, on = kstHas(KST_GEAR_KEY, gid);
+      out += '<div class="kst-tl" style="--bd:' + t.color + '">' +
+        '<div class="kst-tl-h"><b>' + x.name + "</b><i>" + x.pri + "</i></div>" +
+        '<p class="kst-tl-m">' + x.cat + " · " + x.nature + "</p>" +
+        '<p class="kst-tl-m">' + x.inst + "</p>" +
+        '<p class="kst-r"><em>为什么</em><span>' + x.why + "</span></p>" +
+        '<p class="kst-r"><em>学什么</em><span>' + x.learn + "</span></p>" +
+        '<div class="kst-lk">' + kstLink(x.url, "\u2197 官网") +
+        '<button class="kst-own' + (on ? " on" : "") + '" type="button" data-own="' + gid +
+        '" data-on="&#10003; 已装好" data-off="&#9675; 还没装">' +
+        (on ? "&#10003; 已装好" : "&#9675; 还没装") + "</button></div></div>";
+    });
+  });
+  box.innerHTML = out;
+}
+
+/* ④ 修习条目：一页登记簿（全局清单）*/
+var KST_KIND = { L: "掌握", O: "产出", G: "条件" };
+function kstTallyText() {
+  var n = kstCount(KST_MARK_KEY);
+  return n ? "这一页上，你已经留下了 " + n + " 道刻痕"
+           : "还没有刻痕 —— 这不着急，等你真的做过一条再回来";
+}
+function kstRegRender() {
+  var P = window.STUDY_PLAN, box = document.getElementById("kstReg");
+  if (!P || !box || !P.tasks) return;
+  var marks = kstIds(KST_MARK_KEY), out = "";
+  KST_GROUPS.forEach(function (g, gi) {
+    if (kstFilter !== "all" && String(gi) !== kstFilter) return;
+    var list = P.tasks.filter(function (t) { return t.n >= g.n[0] && t.n <= g.n[1]; });
+    if (!list.length) return;
+    var done = list.filter(function (t) { return marks.indexOf(t.id) >= 0; }).length;
+    out += '<div class="kst-grp">' + g.key + "<em>" + (done ? "已留 " + done + " 道" : "") + "</em></div>";
+    var cur = 0;
+    list.forEach(function (t) {
+      if (t.n !== cur) {
+        cur = t.n;
+        var s = kstStage(t.n);
+        out += '<div class="kst-stg">第 ' + String(t.n).padStart(2, "0") + " 级 · " +
+          (s ? s.key : "") + "</div>";
+      }
+      var on = marks.indexOf(t.id) >= 0;
+      out += '<button class="kst-c' + (on ? " on" : "") + '" type="button" data-mark="' + t.id + '">' +
+        "<span>" + t.text + '</span><em class="kst-c-kind">' + (KST_KIND[t.k] || "") + "</em></button>";
+    });
+  });
+  box.innerHTML = out;
+  var cf = document.getElementById("kstCf");
+  if (cf) {
+    cf.innerHTML = '<b class="' + (kstFilter === "all" ? "on" : "") + '" data-f="all">全部</b>' +
+      KST_GROUPS.map(function (g, i) {
+        return '<b class="' + (kstFilter === String(i) ? "on" : "") + '" data-f="' + i + '">' +
+          g.key + "</b>";
+      }).join("");
+  }
+  var tal = document.getElementById("kstTally");
+  if (tal) tal.textContent = kstTallyText();
+  var note = document.getElementById("kstNote");
+  /* ⚠️ 刻意**不列举**"没有剩余条数/没有完成度"那些词 —— 提一次就把概念带进来了。
+       只正面说清它的性质：记录，不是欠债（用户设计原则）。 */
+  if (note) note.textContent = "它只是一页登记簿 —— 记的是你做过什么，不是你欠着什么。";
 }
 
 /* 修习项目档案：从右侧落下（不遮住大厅中央），"纸页归档"而不是弹窗 */
 function kstFileOpen(gi) {
   var g = KST_GROUPS[gi];
   if (!g) return;
+  var P = window.STUDY_PLAN;
   var lit = kstLit();
   var h = '<div class="fk">' + g.en + '</div><h3>' + g.key + '</h3>' +
     '<p class="fs">' + g.aim + '</p>';
@@ -903,6 +1094,14 @@ function kstFileOpen(gi) {
       ' 级</h4><p><b>' + s.key + '</b><br>' + s.why + '</p></div>' +
       '<div class="fstep' + (on ? " on" : "") + '"><b>' + String(n).padStart(2, "0") + '</b>' +
       '<span>' + s.out + '</span><span class="fgo">' + (on ? "&#10003;" : "") + '</span></div>';
+    // ②③ 就近重列：这一级要读的书与要用的工具（数据早就在 study-plan.js 里，只是没露出来）
+    var near = [];
+    var cs = (P && P.courses) ? P.courses.filter(function (c) { return c.stage === s.key; }) : [];
+    var tls = (P && P.stageTools && P.stageTools[s.n]) || [];
+    if (cs.length) near.push("读：" + cs.map(function (c) { return c.content; }).join(" ／ "));
+    if (tls.length) near.push("用：" + tls.join(" · "));
+    if (near.length) h += '<div class="fr"><h4>这一级的书与工具</h4><p>' +
+      near.join("<br>") + '</p></div>';
   }
   var cur = kstStage(lit + 1);
   if (cur && cur.n >= g.n[0] && cur.n <= g.n[1]) {
@@ -958,6 +1157,60 @@ function kstBind() {
       if (sc) sc.scrollTo({ top: sc.clientHeight, behavior: "smooth" });
     });
   }
+
+  /* ① 法则纸：开 / 收（点纸外也收；ESC 见全局键处理） */
+  var lawBtn = document.getElementById("kstaLaw");
+  if (lawBtn && !lawBtn.__kstBound) {
+    lawBtn.__kstBound = true;
+    lawBtn.addEventListener("click", kstLawOpen);
+  }
+  var law = document.getElementById("ksLaw");
+  if (law && !law.__kstBound) {
+    law.__kstBound = true;
+    law.addEventListener("click", function (e) {
+      if (e.target.closest("#ksLawX")) { kstLawClose(); return; }
+      if (!e.target.closest(".kslaw-b")) kstLawClose();
+    });
+  }
+
+  /* ④ 清单：方向筛选（翻阅某一册，不是"任务管理"） */
+  var cf = document.getElementById("kstCf");
+  if (cf && !cf.__kstBound) {
+    cf.__kstBound = true;
+    cf.addEventListener("click", function (e) {
+      var b = e.target.closest("[data-f]");
+      if (!b) return;
+      kstFilter = b.getAttribute("data-f");
+      kstRegRender();
+    });
+  }
+  /* ④ 清单：逐条勾选 —— **只改刻痕，不动台阶**（晋级仍只能自己点亮） */
+  var reg = document.getElementById("kstReg");
+  if (reg && !reg.__kstBound) {
+    reg.__kstBound = true;
+    reg.addEventListener("click", function (e) {
+      var b = e.target.closest("[data-mark]");
+      if (!b) return;
+      b.classList.toggle("on", kstFlip(KST_MARK_KEY, b.getAttribute("data-mark")));
+      var tal = document.getElementById("kstTally");
+      if (tal) tal.textContent = kstTallyText();
+      kstSumRender();        // 修习录同步（它只记"留下了多少"，从不报分母）
+    });
+  }
+  /* ②③ 物料：书「已入手」/ 软件「已装好」（标签随按钮自带，别写死） */
+  ["kstBooks", "kstTools"].forEach(function (id) {
+    var box = document.getElementById(id);
+    if (!box || box.__kstBound) return;
+    box.__kstBound = true;
+    box.addEventListener("click", function (e) {
+      var b = e.target.closest("[data-own]");
+      if (!b) return;
+      kstFlip(KST_GEAR_KEY, b.getAttribute("data-own"));
+      kstBooksRender();      // 重画这两页：勾上时那行说明由灰转墨（外层滚动位置不受影响）
+      kstToolsRender();
+      kstSumRender();
+    });
+  });
 }
 
 function knOpenShelf(shelf) {
@@ -1190,7 +1443,9 @@ function warmGateImages() {
       document.body.style.overflow = "";
       return;
     }
-    // ESC 的层级：门 > 修习档案 > 阅读页 > 整个舞台
+    // ESC 的层级：门 > 法则纸 > 修习档案 > 阅读页 > 整个舞台
+    var klaw = document.getElementById("ksLaw");
+    if (klaw && !klaw.hidden) { kstLawClose(); return; }
     var kfile = document.getElementById("kstFile");
     if (kfile && !kfile.hidden) { kstFileClose(); return; }
     var st = document.getElementById("knowledgeStage");
