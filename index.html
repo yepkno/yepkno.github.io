@@ -1382,6 +1382,99 @@ img{display:block}
   background:linear-gradient(to bottom,rgba(168,118,58,.85),rgba(168,118,58,.42))}
 .kn-shelf[data-shelf="archive"] .ks-item:hover{padding-left:32px}
 
+/* ══════════════════════════════════════════════════════════════════════════
+   「年度修习」：大厅图上的 14 级环梯（用户 2026-09-21 设计）
+   —— 只在这一个分类下启用（[data-shelf="rule"]）；另外三个分类照旧走 `.ks-card` 列表。
+   ⚠️ 图必须落在**严格宽高比**的容器里（`.kst-shot`），台阶用 % 坐标才能与画面环梯对齐。
+   ⚠️ 台阶三态：已走过 `.done`（实心朱红）／当前 `.cur`（描边＋光晕，阶段名常显）／
+     未抵达（默认：虚化）。**没有打卡、没有百分比** —— 点亮由用户自己判断（见 knowledge.js）。
+   ══════════════════════════════════════════════════════════════════════════ */
+.kn-shelf .ks-study{display:none}
+.kn-shelf[data-shelf="rule"] .ks-study{display:block;position:absolute;inset:0;z-index:2}
+.kn-shelf[data-shelf="rule"] .ks-scene,
+.kn-shelf[data-shelf="rule"] .ks-card{display:none}
+
+.kst-shot{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  aspect-ratio:1438/864;width:min(100%,calc(100vh * 1438 / 864));max-height:100%}
+.kst-img{position:absolute;inset:0;width:100%;height:100%;object-fit:fill}
+.kst-steps{position:absolute;inset:0}
+
+/* 一级台阶：编号是"踏板"，阶段名平时收起（14 个同时展开会糊成一片），hover / 当前才浮出 */
+.kst{position:absolute;left:var(--x);top:var(--y);transform:translate(-50%,-50%);
+  display:flex;align-items:center;gap:6px;padding:0;border:0;background:none;
+  font:inherit;cursor:pointer;white-space:nowrap;
+  opacity:.55;transition:opacity .25s ease}
+.kst i{font-style:normal;font-size:10px;font-variant-numeric:tabular-nums;
+  width:23px;height:23px;border-radius:50%;display:grid;place-items:center;
+  background:rgba(255,253,246,.88);border:1px solid rgba(120,96,54,.46);
+  box-shadow:0 1px 3px rgba(60,40,10,.20);color:#5b4a2e;transition:.25s}
+.kst b{font-size:11.5px;font-weight:600;color:#3d3016;
+  text-shadow:0 1px 0 rgba(255,255,255,.85);opacity:0;transform:translateX(-5px);
+  transition:opacity .2s ease,transform .2s ease}
+.kst:hover{opacity:1}
+.kst:hover b{opacity:1;transform:none}
+.kst.done{opacity:1}
+.kst.done i{background:#ff461f;border-color:#ff461f;color:#fff}
+.kst.cur{opacity:1}
+.kst.cur b{opacity:1;transform:none}
+.kst.cur i{background:#fffdf7;border:2px solid #ff461f;color:#c2330f;
+  box-shadow:0 0 0 5px rgba(255,70,31,.16),0 0 20px rgba(255,70,31,.42)}
+
+/* 前台（中央长桌）＝ 馆训：一句题记，不是使用说明 */
+.kst-plaque{position:absolute;left:50%;bottom:4.5%;transform:translateX(-50%);
+  width:min(560px,74%);display:flex;flex-direction:column;gap:5px;text-align:left;
+  font:inherit;color:#41331a;cursor:default;
+  padding:13px 20px;border-radius:12px;
+  background:rgba(255,252,244,.86);border:1px solid rgba(120,96,54,.34);
+  box-shadow:0 12px 34px rgba(60,40,10,.18);backdrop-filter:blur(10px)}
+.kst-plaque-t{font-size:10px;letter-spacing:.34em;color:#8a6d2b}
+.kst-plaque-x{font-size:12.5px;line-height:1.72}
+
+/* 右侧抽屉：某一级的详情（五列 + 关联资料）。抽屉而非弹窗 —— 不动画面里的楼梯 */
+.kst-sheet{position:absolute;top:0;right:0;bottom:0;z-index:6;
+  width:min(430px,94vw);overflow-y:auto;overscroll-behavior:contain;
+  padding:28px 26px 40px;color:#3b2f1a;
+  background:rgba(250,246,236,.975);border-left:1px solid rgba(120,96,54,.32);
+  box-shadow:-18px 0 46px rgba(40,26,6,.26);
+  transform:translateX(103%);transition:transform .36s cubic-bezier(.22,.72,.2,1)}
+.kst-sheet[hidden]{display:none}
+.kst-sheet.on{transform:none}
+.kst-close{position:absolute;top:13px;right:15px;width:30px;height:30px;border-radius:50%;
+  display:grid;place-items:center;font:inherit;font-size:17px;line-height:1;cursor:pointer;
+  color:#6b5730;background:rgba(255,255,255,.7);border:1px solid rgba(120,96,54,.28)}
+.kst-close:hover{background:#fff;color:#ff461f;border-color:#ff461f}
+.kst-n{font-size:11px;letter-spacing:.28em;color:#8a6d2b}
+.kst-name{font-size:20px;font-weight:700;margin:5px 0 3px}
+.kst-tech{font-size:12px;line-height:1.7;color:#7a6640;margin:0 0 16px;
+  padding-bottom:14px;border-bottom:1px solid rgba(120,96,54,.22)}
+.kst-row{margin:0 0 15px}
+.kst-row h4{margin:0 0 4px;font-size:11px;letter-spacing:.2em;color:#8a6d2b;font-weight:600}
+.kst-row p{margin:0;font-size:13.5px;line-height:1.8}
+.kst-gate{padding:13px 15px;border-radius:10px;background:rgba(255,70,31,.06);
+  border:1px solid rgba(255,70,31,.24)}
+.kst-gate p{font-size:14px;font-weight:600;color:#a82b0c}
+.kst-lit{margin-top:18px;width:100%;padding:12px 16px;border-radius:999px;font:inherit;
+  font-size:13.5px;font-weight:600;cursor:pointer;
+  color:#fff;background:#ff461f;border:1px solid #ff461f;transition:.22s}
+.kst-lit:hover{background:#e63a15;border-color:#e63a15}
+.kst-lit.re{color:#a82b0c;background:rgba(255,70,31,.07);border-color:rgba(255,70,31,.4)}
+.kst-sec{margin-top:20px;padding-top:16px;border-top:1px solid rgba(120,96,54,.22)}
+.kst-sec h4{margin:0 0 9px;font-size:11px;letter-spacing:.2em;color:#8a6d2b}
+.kst-it{display:block;padding:9px 12px;margin-bottom:7px;border-radius:9px;font-size:12.5px;
+  line-height:1.6;text-decoration:none;color:#4a3b1d;
+  background:rgba(255,255,255,.6);border:1px solid rgba(120,96,54,.2)}
+.kst-it:hover{background:#fff;border-color:#ff461f;color:#a82b0c}
+.kst-it b{display:block;font-size:13px;margin-bottom:2px}
+.kst-it span{color:#8a7a58;font-size:11.5px}
+
+@media (max-width:900px){
+  .kst i{width:19px;height:19px;font-size:9px}
+  .kst b{font-size:10px}
+  .kst-plaque{width:88%;bottom:2.5%;padding:11px 15px}
+  .kst-plaque-x{font-size:11.5px}
+  .kst-sheet{width:100%;padding:24px 20px 34px}
+}
+
 /* 窄屏：卡片不再"沉底"（场景缩得太小时贴屏底会顶到内容），改成紧跟标题 */
 @media (max-width:900px){
   /* ⚠️ 窄屏顶部有顶栏（KB-DB // 知识文档 ＋ 返回站点），实测三者会叠在一条线上 ——
@@ -2979,6 +3072,26 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
         <div class="ks-warm"></div>
         <div class="ks-dust"><i></i><i></i><i></i><i></i></div>
       </div>
+      <!-- ⭐ 「年度修习」专用：大厅图上的**14 级环梯**（用户 2026-09-21 的设计）。
+           数据在 `study-plan.js`（STUDY_PLAN.stages，x/y 是占图的百分比），台阶由 JS 渲染。
+           ⚠️ 图必须放在**严格宽高比的容器**里（aspect-ratio），台阶才能与画面里的环梯严丝合缝 ——
+              原来 `.ks-far` 用 `cover` 铺满，图与视口的关系不固定，坐标会漂。
+           ⚠️ 本层只在 `[data-shelf="rule"]` 显示（见 CSS），其余三个分类仍走 `.ks-card` 列表。 -->
+      <div class="ks-study" id="ksStudy">
+        <div class="kst-shot">
+          <img class="kst-img" src="assets/hall-great.webp?v=20260921a" alt="" decoding="async">
+          <div class="kst-steps" id="kstSteps"></div>
+        </div>
+        <button class="kst-plaque" id="kstPlaque" type="button">
+          <span class="kst-plaque-t">馆训</span>
+          <span class="kst-plaque-x" id="kstPlaqueX"></span>
+        </button>
+        <aside class="kst-sheet" id="kstSheet" hidden>
+          <button class="kst-close" id="kstClose" type="button" aria-label="收起">&#215;</button>
+          <div class="kst-body" id="kstBody"></div>
+        </aside>
+      </div>
+
       <div class="ks-wrap">
         <div class="ks-bar">
           <button class="ks-back" id="ksBack" type="button">&#8592; 回到目录</button>
@@ -3444,8 +3557,9 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
   </div>
 </div>
 
+<script src="study-plan.js?v=20260921a"></script>
 <script src="docs.js?v=20260921b"></script>
 <script src="app.js?v=20260920f"></script>
-<script src="knowledge.js?v=20260921l"></script>
+<script src="knowledge.js?v=20260921m"></script>
 </body>
 </html>

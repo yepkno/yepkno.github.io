@@ -742,6 +742,134 @@ var KN_SHELF_META = {
 var knShelfList = [];   // 当前分类的文档（列表项按序号取用）
 
 // 门户条目 → 打开该分类的「分类空间」（结构缺失时退回旧行为：直接开第一篇）
+// ══════════════════════════════════════════════════════════════════════════
+// 「年度修习」：大厅图上的 14 级环梯（数据在 study-plan.js，用户 2026-09-21 设计）
+//   ⭐ 三态只有三种，且**没有打卡、没有百分比、没有日期** ——
+//      点亮＝"你觉得自己做到了吗"，由用户自己判断；页面只负责"记住你说走到哪了"。
+//      用户原话："时间不能成为我的负担"。
+//   ⚠️ 进度键 `study_steps_v1` 只记**级数**；与主题偏好无关（主题仍是每次进站都是黑夜、不持久化）。
+// ══════════════════════════════════════════════════════════════════════════
+var KST_KEY = "study_steps_v1";
+
+function kstLit() {
+  try {
+    var v = parseInt(localStorage.getItem(KST_KEY) || "0", 10);
+    return (isNaN(v) || v < 0) ? 0 : Math.min(v, 14);
+  } catch (e) { return 0; }
+}
+
+function kstSetLit(n) {
+  try { localStorage.setItem(KST_KEY, String(Math.max(0, Math.min(n, 14)))); } catch (e) {}
+}
+
+/* 渲染 14 级台阶（沿左环梯螺旋；坐标见 study-plan.js 的 x/y） */
+function kstRender() {
+  var P = window.STUDY_PLAN;
+  var box = document.getElementById("kstSteps");
+  if (!P || !box) return;
+  var lit = kstLit();
+  box.innerHTML = P.stages.map(function (s) {
+    var cls = "kst" + (s.n <= lit ? " done" : "") + (s.n === lit + 1 ? " cur" : "");
+    return '<button class="' + cls + '" type="button" data-n="' + s.n + '"' +
+      ' style="--x:' + s.x + '%;--y:' + s.y + '%"' +
+      ' aria-label="第 ' + s.n + ' 级：' + s.key + '">' +
+      '<i>' + String(s.n).padStart(2, "0") + '</i><b>' + s.key + '</b></button>';
+  }).join("");
+  var pq = document.getElementById("kstPlaqueX");
+  if (pq) pq.textContent = P.meta.principle;
+  kstBind();
+}
+
+function kstBind() {
+  var box = document.getElementById("kstSteps");
+  if (box && !box.__kstBound) {
+    box.__kstBound = true;
+    box.addEventListener("click", function (e) {
+      var b = e.target.closest(".kst");
+      if (b) kstSheetOpen(parseInt(b.getAttribute("data-n"), 10));
+    });
+  }
+  var sh = document.getElementById("kstSheet");
+  if (sh && !sh.__kstBound) {
+    sh.__kstBound = true;
+    sh.addEventListener("click", function (e) {
+      if (e.target.closest("#kstClose")) { kstSheetClose(); return; }
+      var lit = e.target.closest("#kstLit");
+      if (lit) {
+        var n = parseInt(lit.getAttribute("data-n"), 10);
+        // 已点亮 → 收回这一级；未点亮 → 点亮到这一级（自评，不是打卡）
+        kstSetLit(n <= kstLit() ? n - 1 : n);
+        kstRender();
+        kstSheetOpen(n);
+      }
+    });
+  }
+}
+
+/* 关联资料：课程按表 02 的「阶段」列匹配；软件按 study-plan.js 的 stageTools 映射 */
+function kstRefs(s) {
+  var P = window.STUDY_PLAN, h = "";
+  var cs = P.courses.filter(function (c) { return c.stage === s.key; });
+  if (cs.length) {
+    h += '<div class="kst-sec"><h4>这一路带的资料</h4>';
+    cs.forEach(function (c) {
+      var sub = [];
+      if (c.book && c.book !== "—") sub.push("书：" + c.book);
+      if (c.how) sub.push(c.how);
+      h += '<a class="kst-it" target="_blank" rel="noopener" href="' + c.url + '">' +
+        '<b>' + c.content + '</b><span>' + sub.join("　") + '</span></a>';
+    });
+    h += '</div>';
+  }
+  var names = (P.stageTools && P.stageTools[s.n]) || [];
+  var ts = P.tools.filter(function (t) { return names.indexOf(t.name) >= 0; });
+  if (ts.length) {
+    h += '<div class="kst-sec"><h4>这段路上要备的工具</h4>';
+    ts.forEach(function (t) {
+      h += '<a class="kst-it" target="_blank" rel="noopener" href="' + t.url + '">' +
+        '<b>' + t.name + '　<span>' + t.pri + ' · ' + t.cat + '</span></b>' +
+        '<span>' + t.inst + '　' + t.why + '</span></a>';
+    });
+    h += '</div>';
+  }
+  return h;
+}
+
+function kstSheetOpen(n) {
+  var P = window.STUDY_PLAN;
+  if (!P) return;
+  var s = null;
+  for (var i = 0; i < P.stages.length; i++) if (P.stages[i].n === n) s = P.stages[i];
+  if (!s) return;
+  var lit = kstLit(), isDone = n <= lit;
+  var h = '';
+  h += '<div class="kst-n">第 ' + String(n).padStart(2, "0") + ' 级</div>';
+  h += '<h3 class="kst-name">' + s.key + '</h3>';
+  h += '<p class="kst-tech">' + s.tech + '</p>';
+  h += '<div class="kst-row"><h4>为什么学这一级</h4><p>' + s.why + '</p></div>';
+  h += '<div class="kst-row"><h4>要掌握的深度</h4><p>' + s.level + '</p></div>';
+  h += '<div class="kst-row"><h4>这一级的产出</h4><p>' + s.out + '</p></div>';
+  h += '<div class="kst-row kst-gate"><h4>走上下一级，要能说出</h4><p>' + s.gate + '</p></div>';
+  h += '<button class="kst-lit' + (isDone ? ' re' : '') + '" id="kstLit" type="button" data-n="' + n + '">' +
+    (isDone ? '这一级已经走过 · 点此退回未点亮' : '你觉得自己做到了吗？· 点亮这一级') + '</button>';
+  h += kstRefs(s);
+  var body = document.getElementById("kstBody");
+  if (body) body.innerHTML = h;
+  var sh = document.getElementById("kstSheet");
+  if (sh) {
+    sh.hidden = false;
+    sh.scrollTop = 0;
+    requestAnimationFrame(function () { sh.classList.add("on"); });
+  }
+}
+
+function kstSheetClose() {
+  var sh = document.getElementById("kstSheet");
+  if (!sh || sh.hidden) return;
+  sh.classList.remove("on");
+  window.setTimeout(function () { if (!sh.classList.contains("on")) sh.hidden = true; }, 380);
+}
+
 function knOpenShelf(shelf) {
   var list = knShelfDocs(shelf);
   if (!list.length) return;
@@ -774,6 +902,8 @@ function knOpenShelf(shelf) {
   var bright = (shelf === "rule" || shelf === "archive");
   var st = document.getElementById("knowledgeStage");
   if (st) { st.classList.toggle("kn-home-on", bright); st.classList.add("kn-subpage"); }
+  kstSheetClose();                      // 换分类时，收起上一级留下的抽屉
+  if (shelf === "rule") kstRender();    // 「年度修习」＝环梯视图（其余三格仍走卡片列表）
   knPortalClock(false);
 }
 
@@ -782,6 +912,7 @@ function knShelfBack() {
   var sh = document.getElementById("knShelf");
   if (sh) { sh.classList.remove("ks-in"); sh.hidden = true; sh.setAttribute("data-shelf", ""); }
   knShelfList = [];
+  kstSheetClose();
   var kh = document.getElementById("knowledgeHome");
   if (kh) kh.hidden = false;
   var st = document.getElementById("knowledgeStage");
@@ -969,6 +1100,9 @@ function warmGateImages() {
       document.body.style.overflow = "";
       return;
     }
+    // ESC 的层级：门 > 「年度修习」的详情抽屉 > 阅读页 > 整个舞台
+    var ksheet = document.getElementById("kstSheet");
+    if (ksheet && !ksheet.hidden) { kstSheetClose(); return; }
     var st = document.getElementById("knowledgeStage");
     if (st && !st.hidden) {
       var kd = document.getElementById("knowledgeDetail");
