@@ -811,7 +811,8 @@ var KST_MENU = [
 var KST_PAGES = {
   plan: {
     t: "Learning Plan · 我的学习计划",
-    h: '<p class="kst-pg-s">四个方向依次相扣。点开任何一间，进入它自己的档案。</p>' +
+    h: '<p class="kst-pg-s">四个方向依次相扣。点开任何一间，可以点亮下一级，' +
+       '也可以把误点的退回来 —— 记录是可以改的。</p>' +
        '<div class="kst-map" id="kstMap"></div>',
     r: function () { kstMapRender(); }
   },
@@ -860,6 +861,17 @@ function kstMenuRender() {
   }).join("");
 }
 
+/* ⚠️⚠️ 入场类名**不能只靠 `requestAnimationFrame`**：headless / 后台标签下 rAF 会被节流、
+   甚至完全不跑，那一刻 `.kspage` 停在 `display:none` —— 元素 `hidden=false` 但**高度是 0**，
+   于是"一屏放得下"那类断言 `0 <= 0 + 2` **假通过**（2026-09-22 实测踩到）。
+   加一个 60ms 的 setTimeout 兜底：rAF 正常时它只是重复 add（无副作用）。 */
+function ksOn(el) {
+  if (!el) return;
+  var add = function () { el.classList.add("on"); };
+  requestAnimationFrame(add);
+  window.setTimeout(add, 60);
+}
+
 function ksPageOpen(key) {
   var p = KST_PAGES[key];
   if (!p) return;
@@ -870,7 +882,7 @@ function ksPageOpen(key) {
   c.innerHTML = p.h;
   c.scrollTop = 0;
   box.hidden = false;
-  requestAnimationFrame(function () { box.classList.add("on"); });
+  ksOn(box);
   /* 独立页打开 → 把分类空间的「← 回到目录」收走（它和页内的「← 回到大厅」同角，会叠） */
   var sh = document.getElementById("knShelf");
   if (sh) sh.classList.add("ks-page-on");
@@ -913,7 +925,7 @@ function ksLeafOpen(html) {
   c.innerHTML = html;
   b.hidden = false;
   b.scrollTop = 0;
-  requestAnimationFrame(function () { b.classList.add("on"); });
+  ksOn(b);
 }
 function ksLeafClose() {
   var b = document.getElementById("ksLeaf");
@@ -951,6 +963,23 @@ function ksPaper(on) {
   if (p) p.hidden = !on;      // 从 display:none 转回来时，CSS 的 kstRise 会自己重跑
   if (d) d.hidden = !!on;
 }
+/* 纸面上那行统计（只报"已走过多少"，**不写 / 14 这种分母**） */
+function kstPlaqueRender() {
+  var stat = document.getElementById("kstaStat");
+  if (!stat) return;
+  var lit = kstLit();
+  var dirs = KST_GROUPS.filter(function (g) { return kstGroupDone(g) > 0; }).length;
+  stat.textContent = "已在修习的方向 · " + String(dirs).padStart(2, "0") +
+    "　｜　走过的台阶 · " + String(lit).padStart(2, "0");
+}
+/* 状态一变（点亮 / 撤回）就要刷这几处。
+   ⚠️ **不要**用 `kstRender()` 代替 —— 它末尾有 `ksPaper(false)`，会把大纸收掉。 */
+function kstSyncAll() {
+  kstPlaqueRender();
+  kstMapRender();
+  kstTrailRender();
+  kstSumRender();
+}
 function kstRender() {
   var P = window.STUDY_PLAN;
   if (!P) return;
@@ -962,13 +991,7 @@ function kstRender() {
   if (dh) dh.textContent = yr + " · Annual Studia";
   var q = document.getElementById("kstaQ");
   if (q) q.textContent = "不是规定这一年要完成什么，而是记录这一年实际走过的路。";
-  var stat = document.getElementById("kstaStat");
-  if (stat) {
-    var dirs = KST_GROUPS.filter(function (g) { return kstGroupDone(g) > 0; }).length;
-    // ⚠️ 只报"已走过多少"，**不写 / 14 这种分母**（与页面上"不催促"的口径一致）
-    stat.textContent = "已在修习的方向 · " + String(dirs).padStart(2, "0") +
-      "　｜　走过的台阶 · " + String(lit).padStart(2, "0");
-  }
+  kstPlaqueRender();
   kstMenuRender();       // 大厅的六个入口（各自成一页，页内内容在 ksPageOpen 时才渲染）
   kstLawRender();        // ① 法则纸（内容静态，随渲染一起备好）
   ksPaper(false);        // 每次进这一格都是"先进大厅、再自己点开"
@@ -976,14 +999,33 @@ function kstRender() {
 }
 
 /* 二 · 学院总图：四间修习室，依次相扣 */
+/* ⚠️ 2026-09-22 用户："学习计划界面太空了" —— 原来每间只有一行。
+   现在一张卡带：英文名／级段／这一间要做出什么／走过的**点串**（不走百分比，与台阶同一套语言）
+   ／这一路已带上的资料与工具数。 */
 function kstMapRender() {
   var box = document.getElementById("kstMap");
   if (!box) return;
-  var out = "";
+  var P = window.STUDY_PLAN || {}, lit = kstLit(), out = "";
   KST_GROUPS.forEach(function (g, i) {
-    out += '<button class="kst-mk" type="button" data-g="' + i + '">' +
-      '<span class="kst-mk-no">' + String(i + 1).padStart(2, "0") + '</span>' +
-      '<b>' + g.key + '</b><i>' + kstGroupState(g) + '</i></button>';
+    var done = kstGroupDone(g), last = kstStage(g.n[1]);
+    var nC = 0, nT = 0, dots = "";
+    for (var k = g.n[0]; k <= g.n[1]; k++) {
+      var st = kstStage(k);
+      if (k <= lit) {
+        nC += (P.courses || []).filter(function (c) { return st && c.stage === st.key; }).length;
+        nT += ((P.stageTools || {})[k] || []).length;
+      }
+      dots += '<u class="' + (k <= lit ? "on" : "") + '"></u>';
+    }
+    out += '<button class="kst-mk' + (done ? " has" : "") + '" type="button" data-g="' + i + '">' +
+      '<span class="kst-mk-no">' + String(i + 1).padStart(2, "0") + "</span>" +
+      '<span class="kst-mk-b"><b>' + g.key + "</b><i>" + g.en + "</i></span>" +
+      '<span class="kst-mk-st">' + kstGroupState(g) + "</span>" +
+      '<span class="kst-mk-r">第 ' + String(g.n[0]).padStart(2, "0") + " – " +
+        String(g.n[1]).padStart(2, "0") + " 级 ｜ 要做出：" + (last ? last.out : "") + "</span>" +
+      '<span class="kst-mk-d">' + dots +
+        (nC ? "<em>" + nC + " 份资料</em>" : "") +
+        (nT ? "<em>" + nT + " 件工具</em>" : "") + "</span></button>";
     if (i < KST_GROUPS.length - 1) out += '<span class="kst-mk-u"></span>';
   });
   box.innerHTML = out;
@@ -1004,7 +1046,9 @@ function kstTrailNode(n, lit) {
   var nT = ((P.stageTools || {})[n] || []).length;
   var meta = (nC ? nC + " 份资料" : "") + (nC && nT ? " · " : "") + (nT ? nT + " 件工具" : "");
   return '<li class="on' + (n === lit ? " cur" : "") + '">' +
-    '<b><i>' + no + "</i>" + s.key + "</b>" +
+    '<b><i>' + no + "</i>" + s.key +
+      '<button class="kstu" type="button" data-un="' + n + '" title="撤回这一级">&#8617;</button>' +
+      "</b>" +
     '<span class="kstn-t">' + s.tech + "</span>" +
     '<em>产出：' + s.out + "</em>" +
     (meta ? '<span class="kstn-m">' + meta + "</span>" : "") + "</li>";
@@ -1304,6 +1348,7 @@ function kstRegRender() {
 }
 
 /* 修习项目档案：从右侧落下（不遮住大厅中央），"纸页归档"而不是弹窗 */
+var kstFileGi = 0;                    // 当前打开的修习室下标（撤回后按它重开）
 function kstFileOpen(gi) {
   var g = KST_GROUPS[gi];
   if (!g) return;
@@ -1318,7 +1363,10 @@ function kstFileOpen(gi) {
     h += '<div class="fr"><h4>' + (on ? "已走过" : "待走") + ' · 第 ' + String(n).padStart(2, "0") +
       ' 级</h4><p><b>' + s.key + '</b><br>' + s.why + '</p></div>' +
       '<div class="fstep' + (on ? " on" : "") + '"><b>' + String(n).padStart(2, "0") + '</b>' +
-      '<span>' + s.out + '</span><span class="fgo">' + (on ? "&#10003;" : "") + '</span></div>';
+      '<span>' + s.out + '</span>' +
+      (on ? '<button class="fgo" type="button" data-un="' + n +
+            '" title="撤回这一级（退回第 ' + (n - 1) + ' 级）" aria-label="撤回这一级">&#8617; 撤回</button>'
+          : '<span class="fgo" aria-hidden="true"></span>') + '</div>';
     // ②③ 就近重列：这一级要读的书与要用的工具（数据早就在 study-plan.js 里，只是没露出来）
     var near = [];
     var cs = (P && P.courses) ? P.courses.filter(function (c) { return c.stage === s.key; }) : [];
@@ -1328,14 +1376,28 @@ function kstFileOpen(gi) {
     if (near.length) h += '<div class="fr"><h4>这一级的书与工具</h4><p>' +
       near.join("<br>") + '</p></div>';
   }
-  var cur = kstStage(lit + 1);
-  if (cur && cur.n >= g.n[0] && cur.n <= g.n[1]) {
-    // ⚠️ 包进 `.fbar`（sticky 底部）—— 否则会被埋在抽屉 1300px 处，用户点不到
-    h += '<div class="fbar">' +
-      '<div class="fr"><h4>走上下一级，要能说出</h4><p>' + cur.gate + '</p></div>' +
-      '<button class="fbtn" id="kstLitBtn" type="button" data-n="' + cur.n +
-      '" data-g="' + gi + '">你觉得自己做到了吗？· 点亮这一级</button></div>';
+  /* ⚠️⚠️ 工具条**必须常驻**（2026-09-22 用户："学习计划我还没走完呢，也没办法取消勾选"）：
+     旧写法是 `if (cur && cur.n 落在本方向内)` —— 于是 ① lit=14（走满）时 `kstStage(15)` 为 null
+     → **一个按钮都没有**；② 在别的方向的档案里也什么都点不到（下一步不属于这里）。
+     现在：点亮按钮（仅 lit<14，不再限定方向）＋ 退回按钮（lit>0 就有）两个都在。 */
+  var nxt = kstStage(lit + 1);
+  h += '<div class="fbar">';
+  if (nxt) {
+    h += '<div class="fr"><h4>走上下一级，要能说出</h4><p>' + nxt.gate + '</p></div>' +
+      '<button class="fbtn" id="kstLitBtn" type="button" data-n="' + nxt.n + '" data-g="' + gi +
+      '">你觉得自己做到了吗？· 点亮「' + nxt.key + '」</button>';
+  } else {
+    h += '<div class="fr"><h4>这一年已经走满 14 级</h4><p>' +
+      '这一年的路走到头了 —— 再往下，就是把走过的重走得更深一层。</p></div>';
   }
+  if (lit > 0) {
+    var prev = kstStage(lit);
+    h += '<button class="fbtn fbtn-un" type="button" data-un="' + lit +
+      '" data-g="' + gi + '">&#8617; 退回一级' + (prev ? "（撤回「" + prev.key + "」）" : "") +
+      '</button>';
+  }
+  h += '</div>';
+  kstFileGi = gi;                       // 抽屉里撤回后要**重开同一间**
   var b = document.getElementById("kstFileB");
   if (b) b.innerHTML = h;
   var box = document.getElementById("kstFile");
@@ -1370,9 +1432,16 @@ function kstBind() {
       var lb = e.target.closest("#kstLitBtn");
       if (lb) {
         kstSetLit(parseInt(lb.getAttribute("data-n"), 10));
-        var gi = parseInt(lb.getAttribute("data-g"), 10) || 0;
-        kstRender();
-        kstFileOpen(gi);
+        kstSyncAll();
+        kstFileOpen(parseInt(lb.getAttribute("data-g"), 10) || kstFileGi);
+        return;
+      }
+      /* 撤回：n-1（台阶是连续路径 —— 撤回第 n 级，就退回到它前面那一级） */
+      var ub = e.target.closest("#kstFile [data-un]");
+      if (ub) {
+        kstSetLit(parseInt(ub.getAttribute("data-un"), 10) - 1);
+        kstSyncAll();
+        kstFileOpen(kstFileGi);
       }
     });
   }
@@ -1457,6 +1526,13 @@ function kstBind() {
   if (page && !page.__kstBound) {
     page.__kstBound = true;
     page.addEventListener("click", function (e) {
+      /* 轨迹页每级右侧的撤回（`kstSetLit` 只记一个"走到第几级"，所以是退回 n-1） */
+      var ub = e.target.closest("#ksPageC [data-un]");
+      if (ub) {
+        kstSetLit(parseInt(ub.getAttribute("data-un"), 10) - 1);
+        kstSyncAll();
+        return;
+      }
       var bk = e.target.closest("[data-bk]");
       if (bk) { ksBookLeaf(bk.getAttribute("data-bk")); return; }
       var tl = e.target.closest("[data-tl]");

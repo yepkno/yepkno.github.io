@@ -1277,7 +1277,10 @@ img{display:block}
 /* 「← 回到目录」贴到**画面左上角**（用户 2026-09-21）。原来它落在 `.ks-wrap` 里，而 `.ks-wrap`
    是 `max-width:1000px; margin:0 auto` 的居中容器 → 按钮只到内容容器左边缘，不是画面角上。
    改用 fixed 相对视口（舞台本身也是 `fixed; inset:0`，两者等价），内容滚动时仍常驻角上。 */
-.ks-bar{position:fixed;top:clamp(16px,3.2vh,30px);left:clamp(16px,3.6vw,40px);z-index:3;
+/* ⚠️⚠️ z-index 必须**高过大厅层 `.kshall`(4)** —— 否则「← 回到目录」被它盖住：
+   视觉上还看得见（大厅没背景色），但**点击全被大厅吃掉**（实测 elementFromPoint 命中 #ksHall、
+   Playwright 真实点击直接超时）。2026-09-22 用户反馈"回到目录我没办法取消"就是它。 */
+.ks-bar{position:fixed;top:clamp(16px,3.2vh,30px);left:clamp(16px,3.6vw,40px);z-index:6;
   display:flex;align-items:center;gap:14px;transition:opacity .26s ease,visibility .26s}
 /* ⚠️ 独立页（`.kspage`）打开时把「← 回到目录」收走 —— 否则它和页内的「← 回到大厅」
    落在同一个角上，两层按钮叠在一起（2026-09-22 实测截图看见）。
@@ -1462,16 +1465,28 @@ img{display:block}
   text-shadow:0 1px 0 rgba(255,253,246,.7)}
 .kst-sub{font-size:12.5px;color:#54472a;margin:2px 0 18px;
   text-shadow:0 1px 0 rgba(255,253,246,.7)}
-.kst-map{display:flex;flex-direction:column;align-items:center;gap:8px;width:min(560px,92%)}
-.kst-mk{position:relative;width:100%;display:flex;align-items:center;gap:14px;
-  padding:13px 18px;cursor:pointer;font:inherit;text-align:left;
+/* 四间修习室（2026-09-22 加厚）：原来每间只有"序号＋名称＋状态"一行，整页空得很。
+   现在一张卡带五行：英文名 / 级段 / 这一间要做出什么 / 走过的点串 / 已带上的资料与工具数。 */
+.kst-map{display:flex;flex-direction:column;align-items:center;gap:7px;width:min(760px,100%)}
+.kst-mk{position:relative;width:100%;display:grid;
+  grid-template-columns:22px minmax(0,1fr) auto;gap:1px 12px;
+  padding:10px 15px;cursor:pointer;font:inherit;text-align:left;
   background:rgba(252,248,238,.72);border:1px solid rgba(140,116,70,.28);border-radius:2px;
   color:#40331a;transition:.25s;backdrop-filter:blur(6px)}
-.kst-mk:hover{background:rgba(255,252,244,.92);border-color:#c0563a;transform:translateX(2px)}
-.kst-mk b{font-size:14px;letter-spacing:.08em;font-weight:600}
-.kst-mk i{font-style:normal;font-size:11px;color:#9a8355;margin-left:auto;letter-spacing:.1em}
-.kst-mk-u{width:2px;height:14px;margin:0 auto;background:rgba(176,140,84,.5)}
-.kst-mk-no{font-size:10px;letter-spacing:.2em;color:#a08a5c;width:20px}
+.kst-mk:hover{background:rgba(255,252,244,.94);border-color:#c0563a;transform:translateX(2px)}
+.kst-mk-no{grid-area:1/1;font-size:10px;letter-spacing:.2em;color:#a08a5c;padding-top:2px}
+.kst-mk-b{grid-area:1/2;min-width:0}
+.kst-mk-b b{font-size:13.5px;letter-spacing:.06em;font-weight:600}
+.kst-mk-b i{margin-left:8px;font-style:normal;font-size:9.5px;letter-spacing:.16em;color:#b3a184}
+.kst-mk-st{grid-area:1/3;font-size:10.5px;letter-spacing:.1em;color:#b4462a;white-space:nowrap;
+  padding-top:2px}
+.kst-mk-r{grid-area:2/2/3/4;font-size:11px;line-height:1.5;color:#7a6640;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kst-mk-d{grid-area:3/2/4/4;display:flex;align-items:center;gap:4px;margin-top:3px}
+.kst-mk-d u{display:block;width:15px;height:4px;border-radius:2px;background:#ded0b4}
+.kst-mk-d u.on{background:#ff461f}
+.kst-mk-d em{margin-left:8px;font-style:normal;font-size:10px;letter-spacing:.04em;color:#a08a5c}
+.kst-mk-u{width:2px;height:12px;margin:0 auto;background:rgba(176,140,84,.5)}
 
 /* ══ 三 · 实际修习轨迹（2026-09-22 重做）══════════════════════════════════
    单列 14 行太单薄 → 改成**两道环梯并列**（左 01–07 / 右 08–14），与大厅那幅画的
@@ -1536,7 +1551,9 @@ img{display:block}
    ⚠️ z-index 必须**高过 `.kspage`（8）** —— 它是从"我的学习计划"那一页里点开的。 */
 .kst-file{position:absolute;top:0;right:0;bottom:0;z-index:12;
   width:min(440px,94vw);overflow-y:auto;overscroll-behavior:contain;
-  padding:30px 26px 44px;color:#3b2f1a;
+  /* ⚠️ 底部内边距放在 `.fbar` 上、这里给 0：否则 sticky 的底部工具条会**离底一条 padding 的
+     距离**，下面露出一截内容，看着像没钉住（2026-09-22 截图看见）。 */
+  padding:30px 26px 0;color:#3b2f1a;
   background:
     repeating-linear-gradient(0deg,rgba(150,124,78,.04) 0 1px,transparent 1px 4px),
     rgba(251,247,237,.975);
@@ -1560,18 +1577,31 @@ img{display:block}
   border-bottom:1px dashed rgba(140,116,70,.22);font-size:12.5px}
 .kst-file-b .fstep b{width:22px;flex:none;color:#a08a5c;font-weight:600}
 .kst-file-b .fstep.on b{color:#c2330f}
-.kst-file-b .fstep .fgo{margin-left:auto;font-size:11px;color:#9a8355}
+/* 每级右侧那枚：**已走过的可点＝撤回这一级**（原来只是个 ✓ 装饰，撤不回） */
+.kst-file-b .fstep .fgo{margin-left:auto;flex:none;font:inherit;font-size:11px;line-height:1;
+  color:#a08a5c;background:transparent;border:1px solid rgba(176,140,84,.4);border-radius:2px;
+  padding:3px 6px;cursor:pointer;transition:.2s}
+.kst-file-b .fstep .fgo:hover{color:#c2330f;border-color:#c2330f;background:rgba(255,70,31,.06)}
 .kst-file-b .fbtn{margin-top:16px;width:100%;padding:11px 16px;font:inherit;font-size:13px;
   letter-spacing:.08em;cursor:pointer;border-radius:2px;transition:.22s;
   color:#7a5a22;background:transparent;border:1px solid rgba(176,140,84,.6)}
 .kst-file-b .fbtn:hover{color:#c2330f;border-color:#c2330f;background:rgba(255,70,31,.05)}
 .kst-file-b .fbtn.re{color:#a82b0c;border-color:rgba(255,70,31,.4);background:rgba(255,70,31,.06)}
+/* 「退回一级」——比"点亮"弱一档：虚线边、灰字（记录可以改，但不该像主操作那样显眼） */
+.kst-file-b .fbtn.fbtn-un{margin-top:8px;font-size:12px;color:#8a7d62;
+  border-style:dashed;border-color:rgba(140,116,70,.45)}
+.kst-file-b .fbtn.fbtn-un:hover{color:#c2330f;border-color:#c2330f}
+/* 轨迹页每级右侧的撤回小按钮 */
+.kstu{margin-left:auto;flex:none;font:inherit;font-size:10px;line-height:1;color:#bcab8c;
+  background:transparent;border:1px solid rgba(176,140,84,.32);border-radius:2px;
+  padding:2px 5px;cursor:pointer;transition:.2s}
+.kstu:hover{color:#c2330f;border-color:#c2330f;background:rgba(255,70,31,.06)}
 /* ⚠️⚠️ 抽屉内容很长（每级还有一块"这一级的书与工具"）—— 「点亮这一级」必须**钉在底部**。
    实测过：不钉的话它在 **y≈1307**（屏高只有 820），用户要先把抽屉滚 500px 才点得到 →
    直接反馈"我没办法点击这一部分我有没有学完"（2026-09-22）。
    ⚠️ 条身必须**实底**：渐变半透明会让"走上下一级要能说出"那句与背后的内容叠在一起
       （截图一眼可见），渐隐改由条子上方那条 `::before` 负责。 */
-.kst-file-b .fbar{position:sticky;bottom:0;z-index:2;margin-top:20px;padding:14px 0 4px;
+.kst-file-b .fbar{position:sticky;bottom:0;z-index:2;margin-top:20px;padding:14px 0 24px;
   background:rgba(251,247,237,.99)}
 .kst-file-b .fbar::before{content:"";position:absolute;left:0;right:0;top:-24px;height:24px;
   background:linear-gradient(180deg,rgba(251,247,237,0),rgba(251,247,237,.99))}
@@ -1649,7 +1679,9 @@ img{display:block}
   background:rgba(38,26,10,.30);opacity:0;transition:opacity .28s ease}
 .kspage[hidden]{display:none}
 .kspage.on{opacity:1}
-.kspage-b{display:flex;flex-direction:column;width:min(1080px,100%);height:100%;overflow:hidden;
+/* ⚠️ 是 `max-height` 而**不是** `height:100%` —— 后者会让白纸永远满屏高，
+   内容少的那几页（如"我的学习计划"）下方就空掉一大片（2026-09-22 截图看见）。 */
+.kspage-b{display:flex;flex-direction:column;width:min(1080px,100%);max-height:100%;overflow:hidden;
   background:repeating-linear-gradient(0deg,rgba(150,124,78,.032) 0 1px,transparent 1px 4px),
     rgba(252,248,238,.965);
   border:1px solid rgba(140,116,70,.34);border-radius:2px;
@@ -1800,7 +1832,7 @@ img{display:block}
 @media (max-width:900px){
   .ksta{width:92%;padding:22px 18px}
   .kst-side{font-size:9.5px;letter-spacing:.3em;bottom:16px}
-  .kst-file{width:100%;padding:26px 20px 36px}
+  .kst-file{width:100%;padding:26px 20px 0}
   .kst-mk b{font-size:13px}
 }
 @media (max-width:900px){
@@ -3515,10 +3547,17 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
         </div>
       </div>
 
+      <!-- ⚠️⚠️ 「← 回到目录」必须留在 `.ks-wrap` **外面**：`.ks-wrap` 带
+           `position:relative; z-index:1` → **自成一个层叠上下文**，里面的元素 z-index 再高
+           也压不过外面的 `.ks-study`（z2）；而大厅层 `.kshall` 就在 `.ks-study` 里 →
+           **按钮被盖住、点击全被大厅吃掉**（2026-09-22 用户反馈"回到目录我没办法取消"，
+           实测 Playwright 点击直接超时、elementFromPoint 命中的是 #ksHall）。
+           挪到 `#knShelf` 的直接子级后，`.ks-bar` 的 z-index 才真的参与比较。 -->
+      <div class="ks-bar">
+        <button class="ks-back" id="ksBack" type="button">&#8592; 回到目录</button>
+      </div>
+
       <div class="ks-wrap">
-        <div class="ks-bar">
-          <button class="ks-back" id="ksBack" type="button">&#8592; 回到目录</button>
-        </div>
         <div class="ks-card">
           <span class="ks-eyebrow" id="ksEyebrow"></span>
           <h2 class="ks-title" id="ksTitle"></h2>
@@ -3983,6 +4022,6 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 <script src="study-plan.js?v=20260922c"></script>
 <script src="docs.js?v=20260921b"></script>
 <script src="app.js?v=20260920f"></script>
-<script src="knowledge.js?v=20260922d"></script>
+<script src="knowledge.js?v=20260922f"></script>
 </body>
 </html>
