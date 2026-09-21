@@ -616,6 +616,18 @@ img{display:block}
         要更大只能同时上移整件（会牺牲刚拉开的"不拥挤"间距）。
       · 生成参数（`scripts\wheat_cross_asset.py --crop .90 --angle 62 --display-w 140`），
         改显示宽要**重跑脚本**并同步这里的 `width`。
+   ⭐⭐ 批十四（用户："麦穗位置再往下调整一点点，而且你看能不能再补充一点让其更像一个徽章的
+      底座感觉"）—— 两件一起做：
+      · **补"底座"**：在**交叉点叠一枚雕版缎带结**（源图 `assets-src\ribbon-bow.png`，
+        与麦穗同一风格的一次 AI 出图）→ 两枝麦穗被"扎成一束"，这才是徽章／勋章底座的形制
+        （原来只有两枝交叉，下部是空的 → 看着"飘"）。
+        ⚠️ 结的 alpha 压到 **.84**：它是**扎带**，视觉重量必须**低于**麦穗，否则喧宾夺主；
+        ⚠️ 结宽 ＝ 合成总宽的 **.28**、中轴略沉 **.005**（沉下去飘尾才不会翘到穗秆上）。
+        ⚠️⚠️ **别为了"更像"再去手画横托杆**：试过把源图的秆横过来当托底，源图那段是
+            **雕刻排线**，横过来是一束平行线（像扫帚），又重又假 —— 两次都被否掉了。
+      · **下移一点点**：`top` **.0111 → .019**（文字顶往下 3.6px → **6.2px**），
+        文字更明显地"坐在底座上"。图因此变高：显示 **140×50**（原 140×34.5），
+        底缘到 y≈**29.1%** envH —— 仍让开中央场景（y≥32.4%）与左右骑士（x9~23%/77~91%）。
    ⭐⭐ 批十二的另一半 —— **治"拥挤"**（用户："我画的蓝框里这些信息太拥挤了"）：
       `.gperm` 的 `top` **10.2% → 11.8%** ⇒ 与 `WELCOME` 的间距 4.5px → **9.7px**，
       再叠上麦穗收窄（130 → 97px）→ 上部三件（WELCOME／ADMITTED／麦穗）之间的净空从
@@ -632,7 +644,7 @@ img{display:block}
   font-size:clamp(6.4px,calc(var(--envH) * .027),9.8px);line-height:1;
   letter-spacing:.3em;text-indent:.3em;text-transform:uppercase;white-space:nowrap;
   color:rgba(158,122,52,.85)}
-#knowledgeGate .ge-base{position:absolute;left:50%;top:calc(var(--envH) * .0111);
+#knowledgeGate .ge-base{position:absolute;left:50%;top:calc(var(--envH) * .019);
   width:calc(var(--envH) * .43);height:auto;transform:translateX(-50%);
   display:block;opacity:.9}
 
@@ -2937,7 +2949,7 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
                     `.env-front` 自身 z:3 是 stacking context —— 挂进去会被三角整个盖掉。 -->
 
             <p class="gperm" aria-hidden="true"><em>Admitted</em><img class="ge-base"
-               src="assets/wheat-base.webp?v=20260921h" alt="" width="194" height="77"
+               src="assets/wheat-base.webp?v=20260921i" alt="" width="280" height="99"
                loading="lazy" decoding="async"></p>
             <!-- 封口：内嵌 SVG 画这个三角（**不用 clip-path** —— 它会把两条斜边上的描边整条切掉，
                  所以之前那两条边是"硬切"的、很假）。
