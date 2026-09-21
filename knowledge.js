@@ -766,6 +766,7 @@ function knOpenShelf(shelf) {
   var kd = document.getElementById("knowledgeDetail");
   if (kd) kd.style.display = "none";
   sh.hidden = false;
+  sh.classList.remove("ks-behind");   // 兜底：清掉"让位给阅读页"的残留状态
   sh.classList.remove("ks-in");
   void sh.offsetWidth;                                        // 强制重排 → 入场过渡才会跑
   requestAnimationFrame(function () { sh.classList.add("ks-in"); });
@@ -840,7 +841,11 @@ function knBackToHome() {
   if (kd) kd.style.display = "none";
   // ⭐ 批十七：如果这篇是从某个「分类空间」里点开的，返回时**回到那个空间**，
   //    而不是弹回目录 —— 否则每次读完一篇都要重新进一遍房间。
-  if (knInShelf()) { knPortalClock(false); return; }
+  if (knInShelf()) {
+    var _sh = document.getElementById("knShelf");
+    if (_sh) _sh.classList.remove("ks-behind");   // 把刚才让位给阅读页的房间露回来
+    knPortalClock(false); return;
+  }
   var kh = document.getElementById("knowledgeHome");
   if (kh) kh.hidden = false;
   var st = document.getElementById("knowledgeStage");
@@ -859,6 +864,11 @@ function knowledgeDocs() {
 function openKnowledge(d) {
   var kh = document.getElementById("knowledgeHome");
   if (kh) kh.hidden = true;
+  // ⭐ 这篇若是从某个分类空间点开的，把空间层**收走** —— 否则它的背景会透到阅读页上
+  //   （2026-09-21 用户指出：从「年度修习」进文档，阅读页顶部还露出大厅）。
+  //   用 class 而非 hidden：hidden 会骗过 knInShelf()，把"从哪个空间来"的信息弄丢。
+  var _sh = document.getElementById("knShelf");
+  if (_sh) _sh.classList.add("ks-behind");
   var st = document.getElementById("knowledgeStage");
   if (st) st.classList.remove("kn-home-on");   // 阅读页是深底，顶栏切回深色
   knPortalClock(false);

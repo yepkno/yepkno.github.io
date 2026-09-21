@@ -1255,6 +1255,11 @@ img{display:block}
 @keyframes ksDust{0%{opacity:0;transform:translateY(0)}12%{opacity:.55}
   80%{opacity:.28}100%{opacity:0;transform:translateY(-190px)}}
 .kn-shelf[data-shelf="tech"] .ks-dust,.kn-shelf[data-shelf="humanities"] .ks-dust{display:none}
+/* ⚠️ 进文档阅读页时把**整个空间层收走** —— 否则该房间的背景（如大厅 hall-great）会从
+   阅读页顶部露出来（2026-09-21 用户截图指出；阅读页自身的背景是透明的）。
+   **不能**用 hidden 属性：返回链靠 `knInShelf()`＝"#knShelf 是否 hidden" 判断"这篇是从
+   哪个空间点开的"。故用 visibility 收走视觉、把状态留在原地。 */
+.kn-shelf.ks-behind{visibility:hidden;pointer-events:none}
 
 .ks-wrap{position:relative;z-index:1;height:100%;display:flex;flex-direction:column;
   padding:clamp(18px,3.4vh,34px) clamp(18px,4vw,54px) clamp(28px,6vh,64px);
@@ -3428,6 +3433,6 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 
 <script src="docs.js?v=20260921b"></script>
 <script src="app.js?v=20260920f"></script>
-<script src="knowledge.js?v=20260921j"></script>
+<script src="knowledge.js?v=20260921k"></script>
 </body>
 </html>
