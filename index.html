@@ -1274,7 +1274,11 @@ img{display:block}
 .ks-wrap{position:relative;z-index:1;height:100%;display:flex;flex-direction:column;
   padding:clamp(18px,3.4vh,34px) clamp(18px,4vw,54px) clamp(28px,6vh,64px);
   max-width:1000px;margin:0 auto;width:100%;overflow-y:auto;overscroll-behavior:contain}
-.ks-bar{display:flex;align-items:center;gap:14px;flex:none;margin-bottom:clamp(10px,2vh,20px)}
+/* 「← 回到目录」贴到**画面左上角**（用户 2026-09-21）。原来它落在 `.ks-wrap` 里，而 `.ks-wrap`
+   是 `max-width:1000px; margin:0 auto` 的居中容器 → 按钮只到内容容器左边缘，不是画面角上。
+   改用 fixed 相对视口（舞台本身也是 `fixed; inset:0`，两者等价），内容滚动时仍常驻角上。 */
+.ks-bar{position:fixed;top:clamp(16px,3.2vh,30px);left:clamp(16px,3.6vw,40px);z-index:3;
+  display:flex;align-items:center;gap:14px}
 .ks-back{font:inherit;font-size:13px;padding:8px 15px;border-radius:999px;cursor:pointer;
   color:var(--ks-ink);background:rgba(255,255,255,.62);border:1px solid var(--ks-card-line);
   backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);transition:.22s}
