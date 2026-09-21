@@ -577,41 +577,74 @@ img{display:block}
 #knowledgeGate .gknight img{width:100%;height:auto;display:block}
 /* ⭐ 批九：用户"这两尊骑士雕像往中间挪一点啊，别把线都压盖了"。
    ⚠️ 原来 3.4%（＝17.68px）正好压住**内层那条细线**（`.env-border` inset 9px ＋ `::before` inset 8px
-   ＝ x17px ≈ 3.27%）—— 光看外层 9px 那条会以为没压到。现在 5.5%＝28.6px，余量 11.6px。 */
-#knowledgeGate .gk-l{left:5.5%}
-#knowledgeGate .gk-r{right:5.5%}
+   ＝ x17px ≈ 3.27%）—— 光看外层 9px 那条会以为没压到。
+   ⭐⭐ 批十：用户"骑士雕像往中间去点嘛，没发现都太靠边边上了嘛" → 5.5% → **9%**（46.8px），
+      离内层细线 29.8px、离信封外沿 46.8px，肉眼一看就是"站在纸面中间偏内"。
+   ⚠️⚠️ **尺寸不能再放大了**（批十实测）：骑士上方 4.9px 外就是左上徽章的包围盒
+      （徽章批七放大到 80px 后到 y≈89.7px），下方 3px 外是左下收件区（y≈232px）——
+      当前 14% 宽＝132px 高已经把这条竖缝占满；要"更清楚"只能**加深墨色**（见资产重制），
+      不能靠放大。
+   ⚠️ 清晰度另一半在资产本身：原图是**白底扫描线稿、墨色极淡**（亮度 p5=223，乘在米纸上几乎
+      看不见），批十已把两张图重制成**透明底 ＋ 深墨**（`alpha = f(亮度)`、白底彻底透明），
+      CSS 里的 `mix-blend-mode:multiply` 保留（深墨 × 米纸＝印上去的凹版线刻）。 */
+#knowledgeGate .gk-l{left:9%}
+#knowledgeGate .gk-r{right:9%}
 #knowledgeGate.unlocked .gknight{opacity:1}
 
-/* ⭐ 批九：用户"这个位置（信封上沿偏右）太空洞了，可以加一些要素上去"。
-   加**一小段探进来的细枝 ＋ 一只小栖鸟**（都复用站内现成资产，零出图）——
-   与正中那只大猫头鹰形成"一大一小、一近一远"的呼应，也让上沿右半边不再是空白。
-   ⚠️ 净空：`.gwel`（WELCOME）在 x30~70%/y3.4~7.1% ｜ 右骑士 x80.5~94.5%/y29.6% 起
-      → 本件占 x67~89% / y5~19%，都不相交。⚠️ 远山（x22~88%/y7~28%）会与它叠，但那是最淡的一层。 */
-#knowledgeGate .gperch2{position:absolute;left:67%;top:5%;width:26%;z-index:5;
-  opacity:0;pointer-events:none;transition:opacity 1s ease 1.05s}
-#knowledgeGate.unlocked .gperch2{opacity:1}
-#knowledgeGate .gperch2 .gb2{display:block;width:100%;height:auto;
-  transform:scaleX(-1) rotate(-4deg);opacity:.5}
-/* 鸟的落脚点用**枝图自身实测的落脚线**（52.2%，和中央场景同一张图同一套数）→ bottom 47.8%。 */
-#knowledgeGate .gperch2 .kohx{position:absolute;bottom:47.8%;left:34%;width:13%;
-  transform:translateX(-50%)}
-#knowledgeGate .gperch2 .kohx img{display:block;width:100%;height:auto}
+/* ⭐⭐ 批十：信封上沿**偏右那支"细枝＋小栖鸟"整件删除**（批九加的）。
+   用户："把这个猫头鹰挂树梢的要素去掉，在 welcome……下加一个装饰性要素，
+   可以是英文的允许通行啊，或者像政府公文上的麦穗啊等等"。
+   → 两个建议一起用：**一对金色麦穗**（公文风的对称双穗）＋ 居中一行 **`ADMITTED`**
+     （＝允许通行），压在 `.gwel` 正下方。
+   ⭐ 麦穗是**内联 SVG**：零外部资产、零出图、无 `?v=` 要跟；右侧那支用 `scaleX(-1)`
+     镜像 → **只写一份几何**，两支严格对称。
+   ⚠️ 层级：必须 `z-index ≥ 5` 且挂 `.mail-env` 下 —— 它落在封口 V（z:4）之内，
+      挂在 `.env-front`（自身 z:3）里会被整个盖掉（`.gwel` 与批九那支枝是同一个坑）。
+   ⚠️ 尺寸全走 `--envH` 的百分比（信封宽高随视口变）→ 窄屏自动缩，**不需要媒体查询**。
+      麦穗 11.5% envH ≈ 桌面 40px：再小到 20px 以下时麦粒会落到 1px 内、读不出"穗"。
+   ⚠️ 净空（信封坐标，桌面 520×324）：`.`gwel` y3.4~7.1% ｜ 左上徽章 x2.3~17.8%/y2.8~27.7%
+      ｜ 右上抬头 x≈70~93%/y3~17% ｜ 左右骑士 y≥29.6% ｜ 中央场景 y≥32.4%
+      → 本件占 **x38~62% / y10.2~22.5%**，四者全不相交；封口 V 在 y22.5% 处仍宽 x28.5~71.5%。 */
+#knowledgeGate .gperm{position:absolute;left:50%;top:10.2%;margin:0;z-index:5;
+  transform:translateX(-50%);display:flex;align-items:center;
+  gap:calc(var(--envH) * .026);color:rgba(158,122,52,.68);
+  opacity:0;pointer-events:none;transition:opacity .9s ease 2.3s}
+#knowledgeGate.unlocked .gperm{opacity:1}
+#knowledgeGate .gperm em{font-style:normal;font-family:var(--serif);
+  font-size:clamp(6.4px,calc(var(--envH) * .027),9.8px);letter-spacing:.3em;text-indent:.3em;
+  text-transform:uppercase;white-space:nowrap}
+#knowledgeGate .ge-wheat{display:block;height:calc(var(--envH) * .115);width:auto;
+  fill:currentColor;color:rgba(176,138,62,.62)}
+#knowledgeGate .ge-wheat.ge-mirror{transform:scaleX(-1)}
 
 /* ⭐⭐ 批九：把**"衔住信封"的大猫头鹰**接回来（用户："我猫头鹰怎么不见了？"
    —— 指信封上沿正中那块）。它是第九轮被**整只删除**的 `.perchowl`（当时为了让位给左右骑士），
-   资产 `knowledge-owl.webp` 一直留在仓库里没删，所以这次是**原图回归**、不是重画。
+   资产 `knowledge-owl.webp` 一直留在仓库里没删，所以这是**原图回归**、不是重画。
    ⭐ 几何沿用当年实测出来的"衔住"做法：容器**底边压在信封上沿**（`bottom:100%`），
    再整体下沉一段（`translateY`）→ 图的下半截落在信封纸面上，看上去像**用喙衔着信封**。
    ⚠️ `--owlSink` 是"下沉比例"，与图片自身的"喙尖占比"直接相关：换图必须重核，
       不能照抄（当年 `1 − 0.644` 就是这么实测出来的）。
-   ⚠️ 只在**解锁后**淡入：密封前信纸要抽出、会路过这块，猫头鹰若在场会把密码表单挡掉。
+   ⚠️ 只在**解锁后**出现：密封前信纸要抽出、会路过这块，猫头鹰若在场会把密码表单挡掉。
    ⚠️⚠️ 层级方向与直觉相反：**它要挂在信纸之前（z 更低）**，让 `.env-front`（不透明纸、z:3）
       去遮住它的下半截 —— "从信封里探出来"的味道全在这道遮挡上。挂进 `.env-front` 会变成
-      整只浮在纸面上。 */
-#knowledgeGate .perchowl{position:absolute;left:50%;bottom:100%;width:19%;
+      整只浮在纸面上。
+   ⭐⭐ 批十（用户："太小了，并且要增加一个从信封背后缓缓升起的动效"）：
+      ① 尺寸 19% → **26%**（可见的探头从 52px 长到 88px；上方净空充足 —— 信封上沿到门顶
+         还有 ~300px，见下方"信封上沿之上"的净空账）；
+      ② 出现方式从"原地淡入"改为**关键帧升起** `knOwlRise`：起点比终点**再低 45%**（＝几乎
+         整只缩在信封后面，只露一对耳羽）→ 缓缓升到 `--owlSink`，1.6s、两端都慢
+         （`cubic-bezier(.4,.02,.28,1)`，不是弹跳）。
+   ⚠️ 关键帧只写 **from/to 两帧**：`animation-timing-function` 是**逐段**生效的，
+      多写一个中间帧＝把一条缓动切成两段，段与段之间会出现速度台阶（批五是这么踩的）。
+   ⚠️ `both` 不能省：延迟期间要停在 `from`（否则会先闪一下原位的猫头鹰）。 */
+#knowledgeGate .perchowl{position:absolute;left:50%;bottom:100%;width:26%;
   transform:translateX(-50%) translateY(var(--owlSink,44%));
-  opacity:0;pointer-events:none;transition:opacity 1s ease .95s}
-#knowledgeGate.unlocked .perchowl{opacity:1}
+  opacity:0;pointer-events:none}
+@keyframes knOwlRise{
+  from{opacity:0;transform:translateX(-50%) translateY(calc(var(--owlSink,44%) + 45%))}
+  to  {opacity:1;transform:translateX(-50%) translateY(var(--owlSink,44%))}}
+#knowledgeGate.unlocked .perchowl{
+  animation:knOwlRise 1.6s cubic-bezier(.4,.02,.28,1) .95s both}
 #knowledgeGate .perchowl img{width:100%;height:auto;display:block}
 
 /* ⭐ 第十轮：用户要把 WELCOME **挪到信封上部**（原来浮在信封上沿之外）。
@@ -837,13 +870,13 @@ img{display:block}
   transform-origin:center;transform:rotate(-7deg) translateY(0) scale(.94);
   filter:drop-shadow(0 2px 5px rgba(74,32,20,.26))}
 #knowledgeGate .postmark svg{width:100%;height:100%;display:block}
-/* ⚠️⚠️ **大猫头鹰（`.perchowl`）第九轮整块删除** —— 用户："为什么我要让合上信封的草图
-   变成左右两个骑士，就是为了**不产生压盖**"。那只"从信封背后探出的大头"正是压盖的来源：
-   它的胸口与斗篷横切封口 V 与蜡封（用户截图实锤）。现在改为**信封两侧的骑士雕像**
-   （`.gknight`，站在信封盒之外），"猫头鹰"这件事交给中央场景里的**四只小鸟**。
-   演进史留档：SVG 简绘 → 写实插画 → 绿漫画 → 棕漫画 → 写实精修 → 绘本插画 → **删除**。
-   ⚠️ 资产 `assets/knowledge-owl.webp` 仍留在仓库里（已不再引用）：那几版重画很费额度，
-      留着比删掉划算 —— **别因为它"没被引用"就顺手删掉**。 */
+/* ⚠️ 演进史留档（**别照这段去删猫头鹰**）：大猫头鹰（`.perchowl`）在**第九轮**曾被整块删除
+   —— 用户当时的理由是"让合上信封的草图变成左右两个骑士，就是为了**不产生压盖**"。
+   ⭐ 但**批九用户又把它要回来了**（"我猫头鹰怎么不见了？"，指信封上沿正中那块），
+      做法是"缩小到只探出一个头 ＋ 挂到信纸之前让 `.env-front` 去遮下半截"→ 压盖问题自然消失。
+      **它现在是常驻要素**（见上面 `.perchowl` 那段），别再按这条注释把它删掉。
+   演进史：SVG 简绘 → 写实插画 → 绿漫画 → 棕漫画 → 写实精修 → 绘本插画 → 删除（第九轮）
+           → **原图回归（批九）→ 放大 26% ＋ 关键帧升起（批十）**。 */
 
 /* 抽出态：封口翻起 + 信纸升起（并把前片提到信纸之上，留在信封里的那段才藏得住）
    ⚠️ 封口翻起时加投影：不然它和背景纸色几乎同色，"信封开了"这件事看不见
@@ -1040,6 +1073,11 @@ img{display:block}
      4:1 的山脉放进去只有 30% 宽（一条 95px 的小土丘，读不出"远山"）。
      ⚠️ 别为了"窄屏也要有"去把山压扁或裁断：那两头都吃过亏。 */
   #knowledgeGate .ghill{display:none}
+  /* ⚠️ 批十：`ADMITTED` 印记在窄屏要**左移并收一档**。居中放会与右上抬头相交 8.3px
+       （窄屏抬头横得更宽：x61.3~92.8%）—— 收到 74px 宽、中心左移到 44% 后，
+       左右各留 35px / 18px 余量，与左上徽章（右缘 x68px）也不相交。 */
+  #knowledgeGate .gperm{left:44%;gap:4px}
+  #knowledgeGate .ge-wheat{height:calc(var(--envH) * .085)}
 }
 /* ⚠️ 矮屏但不算窄屏（例如 1440×720）：信封矮了，可**蜡封是定尺的**（不随 vh 缩）——
    矮屏把蜡封收一档，免得它相对信封显得过大（第七轮桌面 104 → 矮屏 88）。 */
@@ -2820,11 +2858,11 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
                    所以它们被放在信封盒**之外**（left/right 负值），只并肩站岗，不遮信封。
                    ⚠️ 与它一起被删掉的是原来的大猫头鹰 `.perchowl`（那只才是压盖的来源）。 -->
               <span class="gknight gk-l" aria-hidden="true">
-                <img src="assets/knight-l.webp?v=20260920a" alt="" loading="lazy" decoding="async"
+                <img src="assets/knight-l.webp?v=20260921f" alt="" loading="lazy" decoding="async"
                      width="400" height="707">
               </span>
               <span class="gknight gk-r" aria-hidden="true">
-                <img src="assets/knight-r.webp?v=20260920a" alt="" loading="lazy" decoding="async"
+                <img src="assets/knight-r.webp?v=20260921f" alt="" loading="lazy" decoding="async"
                      width="400" height="707">
               </span>
               <!-- ⚠️ 月桂线稿（`.env-leaf`）第七轮**整块删除** —— 用户："保留简洁学院风，
@@ -2866,18 +2904,17 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
                  ⚠️ 必须挂在这里（`.mail-env` 的子级、与封口同级）并给 z-index:5：
                     它正好落在封口 V 覆盖的范围内，封口是 z:4 —— 放 `.env-front` 里
                     会被整个盖掉（父级 z:3 的子元素压不过兄弟层）。 -->
-            <!-- ⭐ 批九：上沿偏右 —— 一小段探进来的细枝 ＋ 一只小栖鸟。
-                 ⚠️⚠️ **必须挂在这里（`.mail-env` 下）＋ z-index ≥ 5**：封口 V 是 z:4，
-                    而 `.env-front` 自身 z:3 是个 stacking context —— 挂在它里面的话，
-                    子树里 z-index 再高也压不过封口，整件会被那个三角盖得看不见（实测过）。
-                    这和 `.gwel` 当年踩的坑是同一个。 -->
-            <span class="gperch2" aria-hidden="true">
-              <img class="gb2" src="assets/branch-fade.webp?v=20260921e" alt=""
-                   loading="lazy" decoding="async">
-              <span class="kohx"><img src="assets/owl-line.webp?v=20260921b" alt=""
-                   loading="lazy" decoding="async"></span>
-            </span>
             <p class="gwel">WELCOME TO KNOWLEDGE&#39;S SEA</p>
+            <!-- ⭐⭐ 批十：`.gwel` 正下方的**通行印记**＝一对金色麦穗 ＋ 居中 `ADMITTED`。
+                 用户："把这个猫头鹰挂树梢的要素去掉，在 welcome……下加一个装饰性要素，
+                 可以是英文的允许通行啊，或者像政府公文上的麦穗啊等等"。
+                 ⚠️ 麦穗是**手写内联 SVG**（非图片资产）：`path` 是主秆、13 个 `ellipse` 是麦粒
+                    （7 对 ±30° 外倾 ＋ 1 枚顶粒），右侧那支靠 CSS `scaleX(-1)` 镜像取得对称。
+                 ⚠️⚠️ 必须挂在这里（`.mail-env` 下）＋ z-index ≥ 5：它落在封口 V（z:4）之内，
+                    `.env-front` 自身 z:3 是 stacking context —— 挂进去会被三角整个盖掉。
+                 ⚠️ `ADMITTED` 是"允许通行"的英文写法，与上一行的 WELCOME 连成一句
+                    "欢迎来到知识之海 · 准予通行"；**解锁后**才浮现（延迟 2.3s，接在 WELCOME 之后）。 -->
+            <p class="gperm" aria-hidden="true"><svg class="ge-wheat" viewBox="0 0 20 44" aria-hidden="true"><path d="M7.4 41.5C7.2 33 9.4 18 12.0 6.4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><ellipse cx="4.87" cy="36.74" rx="1.32" ry="3.02" transform="rotate(-35 4.87 36.74)"/><ellipse cx="8.97" cy="36.74" rx="1.32" ry="3.02" transform="rotate(25 8.97 36.74)"/><ellipse cx="5.09" cy="32.18" rx="1.32" ry="3.02" transform="rotate(-35 5.09 32.18)"/><ellipse cx="9.19" cy="32.18" rx="1.32" ry="3.02" transform="rotate(25 9.19 32.18)"/><ellipse cx="5.51" cy="27.61" rx="1.32" ry="3.02" transform="rotate(-35 5.51 27.61)"/><ellipse cx="9.61" cy="27.61" rx="1.32" ry="3.02" transform="rotate(25 9.61 27.61)"/><ellipse cx="6.10" cy="23.05" rx="1.32" ry="3.02" transform="rotate(-35 6.10 23.05)"/><ellipse cx="10.20" cy="23.05" rx="1.32" ry="3.02" transform="rotate(25 10.20 23.05)"/><ellipse cx="6.83" cy="18.49" rx="1.32" ry="3.02" transform="rotate(-35 6.83 18.49)"/><ellipse cx="10.93" cy="18.49" rx="1.32" ry="3.02" transform="rotate(25 10.93 18.49)"/><ellipse cx="7.67" cy="13.92" rx="1.32" ry="3.02" transform="rotate(-35 7.67 13.92)"/><ellipse cx="11.77" cy="13.92" rx="1.32" ry="3.02" transform="rotate(25 11.77 13.92)"/><ellipse cx="8.61" cy="9.36" rx="1.32" ry="3.02" transform="rotate(-35 8.61 9.36)"/><ellipse cx="12.71" cy="9.36" rx="1.32" ry="3.02" transform="rotate(25 12.71 9.36)"/><ellipse cx="12.00" cy="5.80" rx="1.39" ry="3.56" transform="rotate(5 12.00 5.80)"/></svg><em>Admitted</em><svg class="ge-wheat ge-mirror" viewBox="0 0 20 44" aria-hidden="true"><path d="M7.4 41.5C7.2 33 9.4 18 12.0 6.4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><ellipse cx="4.87" cy="36.74" rx="1.32" ry="3.02" transform="rotate(-35 4.87 36.74)"/><ellipse cx="8.97" cy="36.74" rx="1.32" ry="3.02" transform="rotate(25 8.97 36.74)"/><ellipse cx="5.09" cy="32.18" rx="1.32" ry="3.02" transform="rotate(-35 5.09 32.18)"/><ellipse cx="9.19" cy="32.18" rx="1.32" ry="3.02" transform="rotate(25 9.19 32.18)"/><ellipse cx="5.51" cy="27.61" rx="1.32" ry="3.02" transform="rotate(-35 5.51 27.61)"/><ellipse cx="9.61" cy="27.61" rx="1.32" ry="3.02" transform="rotate(25 9.61 27.61)"/><ellipse cx="6.10" cy="23.05" rx="1.32" ry="3.02" transform="rotate(-35 6.10 23.05)"/><ellipse cx="10.20" cy="23.05" rx="1.32" ry="3.02" transform="rotate(25 10.20 23.05)"/><ellipse cx="6.83" cy="18.49" rx="1.32" ry="3.02" transform="rotate(-35 6.83 18.49)"/><ellipse cx="10.93" cy="18.49" rx="1.32" ry="3.02" transform="rotate(25 10.93 18.49)"/><ellipse cx="7.67" cy="13.92" rx="1.32" ry="3.02" transform="rotate(-35 7.67 13.92)"/><ellipse cx="11.77" cy="13.92" rx="1.32" ry="3.02" transform="rotate(25 11.77 13.92)"/><ellipse cx="8.61" cy="9.36" rx="1.32" ry="3.02" transform="rotate(-35 8.61 9.36)"/><ellipse cx="12.71" cy="9.36" rx="1.32" ry="3.02" transform="rotate(25 12.71 9.36)"/><ellipse cx="12.00" cy="5.80" rx="1.39" ry="3.56" transform="rotate(5 12.00 5.80)"/></svg></p>
             <!-- 封口：内嵌 SVG 画这个三角（**不用 clip-path** —— 它会把两条斜边上的描边整条切掉，
                  所以之前那两条边是"硬切"的、很假）。
                  ⚠️ 第二版把三条边从**直线改成微微内凹的曲线**（2026-09-20 用户："上部分还是太违和了"）：
@@ -3139,6 +3176,6 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 
 <script src="docs.js?v=20260920c"></script>
 <script src="app.js?v=20260920f"></script>
-<script src="knowledge.js?v=20260921e"></script>
+<script src="knowledge.js?v=20260921f"></script>
 </body>
 </html>
