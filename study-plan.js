@@ -32,7 +32,7 @@ window.STUDY_PLAN = {
       gate: "能够把一个模糊需求拆成：目标、上下文、约束、输出格式、验收标准"
     },
     {
-      n: 2, key: "AI调用与工具", x: 12.0, y: 84.0,
+      n: 2, key: "AI调用与工具", x: 7.0, y: 78.0,
       tech: "API；SDK；Function/Tool Calling；Webhook；REST；权限；批处理；Token 成本",
       why: "把「聊天」升级成「让 AI 调用工具做事」",
       level: "能调用至少 1 个模型 API；能理解工具调用链；会看日志和费用",
@@ -40,7 +40,7 @@ window.STUDY_PLAN = {
       gate: "能解释一次 AI 调用从输入到输出发生了什么"
     },
     {
-      n: 3, key: "RAG与知识库", x: 7.0, y: 78.0,
+      n: 3, key: "RAG与知识库", x: 4.5, y: 62.0,
       tech: "Embedding；Chunking；Vector DB；Retrieval；Rerank；Hybrid Search；RAG 评估",
       why: "让 AI 能够基于你的资料回答，适合文档、规范、业务知识库",
       level: "能搭出简单 RAG；知道召回、重排、上下文拼接各自负责什么",
@@ -48,7 +48,7 @@ window.STUDY_PLAN = {
       gate: "能解释「为什么检索到了错误资料、怎么改进」"
     },
     {
-      n: 4, key: "Agent与Workflow", x: 4.5, y: 70.0,
+      n: 4, key: "Agent与Workflow", x: 9.5, y: 48.5,
       tech: "Agent；Planning；Memory；Multi-Agent；Workflow；Human-in-the-loop；Evaluation",
       why: "让 AI 从「回答」走向「执行多步骤任务」",
       level: "能使用 Agent 平台搭工作流；知道什么时候用 Workflow、什么时候用 Agent",
@@ -56,7 +56,7 @@ window.STUDY_PLAN = {
       gate: "能把一个业务任务拆成节点、工具、状态与人工确认点"
     },
     {
-      n: 5, key: "MCP与工具生态", x: 4.5, y: 62.0,
+      n: 5, key: "MCP与工具生态", x: 15.5, y: 40.5,
       tech: "MCP；MCP Client/Server；Resources；Tools；权限；连接外部系统",
       why: "未来把 GIS、CAD、数据库、文件系统暴露给 AI 的重要连接层",
       level: "会配置 MCP；理解 Client/Server；能接入至少 1 个现成 MCP",
@@ -64,7 +64,7 @@ window.STUDY_PLAN = {
       gate: "能说清 AI 为什么需要 MCP 以及它与普通 API 的区别"
     },
     {
-      n: 6, key: "Python与自动化", x: 6.5, y: 55.0,
+      n: 6, key: "Python与自动化", x: 15.5, y: 28.5,
       tech: "Python 语法；函数/类；异常；文件；JSON；requests；pandas/numpy；Excel；SQLite；ArcPy",
       why: "第一门核心开发语言，也是 GIS 自动化与 AI 应用的高性价比语言",
       level: "能读懂 AI 写的 Python；能独立修改、调试；能做脚本自动化",
@@ -72,7 +72,7 @@ window.STUDY_PLAN = {
       gate: "能独立完成一个 500 行以内的实用脚本并调试"
     },
     {
-      n: 7, key: "Web前端", x: 9.5, y: 48.5,
+      n: 7, key: "Web前端", x: 8.0, y: 15.0,
       tech: "HTML；CSS；JavaScript；DOM；Promise；async/await；Fetch；TypeScript；React；Vite；组件化",
       why: "为 Web GIS、后台管理、可视化界面打基础",
       level: "能读懂 React 项目；能让 AI 辅助完成页面、表单、接口联调",
@@ -80,7 +80,7 @@ window.STUDY_PLAN = {
       gate: "能完成列表、表单、路由、API 请求与基本状态管理"
     },
     {
-      n: 8, key: "C#与.NET", x: 13.0, y: 44.0,
+      n: 8, key: "C#与.NET", x: 84.0, y: 86.5,
       tech: "C# 语法；OOP；接口；集合；LINQ；泛型；委托/事件；async/await；Task；.NET；NuGet；Debugger",
       why: "你的第二核心语言，连接 WPF、ArcGIS Pro SDK、AutoCAD .NET",
       level: "能读懂 AI 写的 C#；能自己改、调试和组织中小型项目",
@@ -88,7 +88,7 @@ window.STUDY_PLAN = {
       gate: "能独立修复一个中小型 C# 项目中的 Bug 并理解调用链"
     },
     {
-      n: 9, key: "WPF与MVVM", x: 15.5, y: 40.5,
+      n: 9, key: "WPF与MVVM", x: 93.0, y: 78.0,
       tech: "XAML；布局；Binding；Command；DataGrid；TreeView；UserControl；MVVM；ICommand；ObservableCollection",
       why: "用于构建 Windows 桌面软件与 ArcGIS Pro 相关 UI",
       level: "能做规范的多页 / 多区域桌面界面；知道 UI 与业务逻辑如何分离",
@@ -96,7 +96,7 @@ window.STUDY_PLAN = {
       gate: "能做出可操作界面并把业务逻辑从 View 分离"
     },
     {
-      n: 10, key: "GIS开发基础", x: 17.0, y: 35.0,
+      n: 10, key: "GIS开发基础", x: 95.5, y: 62.0,
       tech: "空间数据模型；SHP/GDB/GeoJSON/Raster；Feature/Layer/Geometry；坐标系；WKID/EPSG；投影；Buffer/Clip/Intersect/Dissolve/Spatial Join",
       why: "把你的编程能力与 GIS 专业能力真正接起来",
       level: "能看懂 GIS 数据结构；能写基础空间处理程序；能定位常见坐标 / 几何问题",
@@ -104,7 +104,7 @@ window.STUDY_PLAN = {
       gate: "能解释一个 GIS 数据从文件到图层再到空间分析的完整链路"
     },
     {
-      n: 11, key: "ArcGIS Pro插件", x: 15.5, y: 28.5,
+      n: 11, key: "ArcGIS Pro插件", x: 90.5, y: 48.5,
       tech: "ArcGIS Pro SDK for .NET；Add-in；DAML；Map/Layer/Feature；Geometry；Geodatabase；EditOperation；Geoprocessing；DockPane；QueuedTask；MVVM",
       why: "这是你的核心专业开发方向之一",
       level: "能独立做简单到中等复杂度 Pro Add-in；能看官方 Sample 并改造成自己的功能",
@@ -112,7 +112,7 @@ window.STUDY_PLAN = {
       gate: "能完成 Ribbon / 按钮 / DockPane / 查询 / 编辑 / 日志 / 部署"
     },
     {
-      n: 12, key: "AutoCAD插件", x: 12.5, y: 21.5,
+      n: 12, key: "AutoCAD插件", x: 84.5, y: 40.5,
       tech: "AutoCAD .NET API；Database；Document；Editor；Transaction；Entity；Layer；Block；Selection；Command；AutoLISP 基础",
       why: "满足 CAD 自动化、质检和插件开发目标",
       level: "能制作实用 CAD 插件；能批量处理图层、文字、块和图形",
@@ -120,7 +120,7 @@ window.STUDY_PLAN = {
       gate: "能做至少 3 个自定义命令并完成批量处理"
     },
     {
-      n: 13, key: "独立GIS桌面软件", x: 8.0, y: 15.0,
+      n: 13, key: "独立GIS桌面软件", x: 84.5, y: 28.5,
       tech: "ArcGIS Maps SDK for .NET；WPF；MVVM；地图/图层/查询/编辑/空间分析；数据层；部署",
       why: "从「插件」升级为真正可独立运行的软件产品",
       level: "能设计软件结构并完成可运行 MVP",
@@ -128,7 +128,7 @@ window.STUDY_PLAN = {
       gate: "能打包运行；界面、业务、GIS 能力分层清晰"
     },
     {
-      n: 14, key: "AI与GIS/CAD整合", x: 8.5, y: 12.0,
+      n: 14, key: "AI与GIS/CAD整合", x: 92.0, y: 15.0,
       tech: "LLM API；Tool Calling；MCP；Agent；GIS/CAD Tools；Evaluation；日志；成本；权限；Fallback",
       why: "把前面的全部能力汇聚成你的最终竞争力",
       level: "AI 可以调用你的 GIS/CAD 工具；你能控制、验证、审计 AI 执行结果",

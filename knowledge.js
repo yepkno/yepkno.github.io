@@ -1033,7 +1033,7 @@ function warmGateImages() {
     "assets/knowledge-bg.jpg?v=20260920a",
     "assets/knight-l.webp?v=20260921f",
     "assets/knight-r.webp?v=20260921f",
-    "assets/hall-great.webp?v=20260921a",
+    "assets/hall-great.webp?v=20260921b",
     "assets/hall-shelf.webp?v=20260921a"
   ];
   list.forEach(function (u) {
