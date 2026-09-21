@@ -1383,134 +1383,153 @@ img{display:block}
 .kn-shelf[data-shelf="archive"] .ks-item:hover{padding-left:32px}
 
 /* ══════════════════════════════════════════════════════════════════════════
-   「年度修习」：大厅图上的 14 级环梯（用户 2026-09-21 设计）
-   —— 只在这一个分类下启用（[data-shelf="rule"]）；另外三个分类照旧走 `.ks-card` 列表。
-   ⚠️ 图必须落在**严格宽高比**的容器里（`.kst-shot`），台阶用 % 坐标才能与画面环梯对齐。
-   ⚠️ 台阶三态：已走过 `.done`（实心朱红）／当前 `.cur`（描边＋光晕，阶段名常显）／
-     未抵达（默认：虚化）。**没有打卡、没有百分比** —— 点亮由用户自己判断（见 knowledge.js）。
+   「年度修习」＝ 学院大厅（用户 2026-09-21 重设方向）
+   ⚠️ 上一版把 14 级台阶挂在环梯上、还做了书架亮起 —— 用户判定"太丑"并推翻：
+      **楼梯上不放 UI**，背景保持完整（两道环梯 + 拱顶 + 图书馆），
+      只在两侧各留一个很淡的 PLAN / REVIEW，信息全在中央那张"档案纸"里。
+   ⚠️ 视觉基调（用户指定）：**纸张、线稿、金色细线**；不是大圆角卡片 ——
+      档案纸要"轻纸纹 ＋ 很细的边 ＋ 几乎没有阴影 ＋ 四角极淡的装饰 ＋ 半透明"。
+   ⚠️ 动效（用户指定）：慢、轻、连续。背景 scale(1.02)→1；档案纸从下方 12px 归位；文字分层淡入；
+      **楼梯完全不动**。不要弹窗、不要打卡、不要进度百分比。
    ══════════════════════════════════════════════════════════════════════════ */
 .kn-shelf .ks-study{display:none}
 .kn-shelf[data-shelf="rule"] .ks-study{display:block;position:absolute;inset:0;z-index:2}
-.kn-shelf[data-shelf="rule"] .ks-scene,
+/* ⚠️ 只让**卡片列表**退位 —— 背景必须留着：这一版的"大厅"就是它。
+   上一版把 `.ks-scene` 也藏了（那版台阶自带一张图），结果大厅整个黑掉。 */
 .kn-shelf[data-shelf="rule"] .ks-card{display:none}
+.kn-shelf[data-shelf="rule"] .ks-far{background-position:center 46%}
+/* 背景：严格宽高比，进场时极轻地缩放一次（"走进大厅"） */
+.kn-shelf[data-shelf="rule"] .ks-far{animation:kstBreath 2.4s cubic-bezier(.2,.7,.2,1) both}
+@keyframes kstBreath{from{transform:scale(1.02)}to{transform:scale(1)}}
 
-.kst-shot{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
-  aspect-ratio:1438/864;width:min(100%,calc(100vh * 1438 / 864));max-height:100%}
-.kst-img{position:absolute;inset:0;width:100%;height:100%;object-fit:fill}
-.kst-steps{position:absolute;inset:0}
+/* 左右两个很淡的概念：左边"我原本想走哪里"，右边"我最后走到了哪里" */
+.kst-side{position:absolute;bottom:26px;z-index:3;pointer-events:none;
+  font-size:10.5px;letter-spacing:.44em;color:rgba(122,98,56,.42);
+  font-variant-numeric:tabular-nums}
+.kst-side-l{left:clamp(18px,4vw,54px)}
+.kst-side-r{right:clamp(18px,4vw,54px)}
 
-/* 一级台阶：编号是"踏板"，阶段名平时收起（14 个同时展开会糊成一片），hover / 当前才浮出 */
-.kst{position:absolute;left:var(--x);top:var(--y);transform:translate(-50%,-50%);
-  display:flex;align-items:center;gap:6px;padding:0;border:0;background:none;
-  font:inherit;cursor:pointer;white-space:nowrap;
-  opacity:.55;transition:opacity .25s ease}
-.kst i{font-style:normal;font-size:10px;font-variant-numeric:tabular-nums;
-  width:23px;height:23px;border-radius:50%;display:grid;place-items:center;
-  background:rgba(255,253,246,.88);border:1px solid rgba(120,96,54,.46);
-  box-shadow:0 1px 3px rgba(60,40,10,.20);color:#5b4a2e;transition:.25s}
-.kst b{font-size:11.5px;font-weight:600;color:#3d3016;
-  text-shadow:0 1px 0 rgba(255,255,255,.85);opacity:0;transform:translateX(-5px);
-  transition:opacity .2s ease,transform .2s ease}
-.kst:hover{opacity:1}
-.kst:hover b{opacity:1;transform:none}
-.kst.done{opacity:1}
-.kst.done i{background:#ff461f;border-color:#ff461f;color:#fff}
-.kst.cur{opacity:1}
-.kst.cur b{opacity:1;transform:none}
-.kst.cur i{background:#fffdf7;border:2px solid #ff461f;color:#c2330f;
-  box-shadow:0 0 0 5px rgba(255,70,31,.16),0 0 20px rgba(255,70,31,.42)}
+/* 内容层：可滚动，背景固定不动 */
+.kst-scroll{position:absolute;inset:0;z-index:4;overflow-y:auto;overscroll-behavior:contain;
+  scroll-behavior:smooth;padding:0 clamp(18px,4vw,54px)}
+.kst-sc{min-height:100%;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;padding:clamp(40px,7vh,90px) 0;gap:14px}
 
-/* 前台（中央长桌）＝ 馆训：一句题记，不是使用说明 */
-.kst-plaque{position:absolute;left:50%;bottom:4.5%;transform:translateX(-50%);
-  width:min(560px,74%);display:flex;flex-direction:column;gap:5px;text-align:left;
-  font:inherit;color:#41331a;cursor:default;
-  padding:13px 20px;border-radius:12px;
-  background:rgba(255,252,244,.86);border:1px solid rgba(120,96,54,.34);
-  box-shadow:0 12px 34px rgba(60,40,10,.18);backdrop-filter:blur(10px)}
-.kst-plaque-t{font-size:10px;letter-spacing:.34em;color:#8a6d2b}
-.kst-plaque-x{font-size:12.5px;line-height:1.72}
+/* 档案纸：轻纸纹 ＋ 细边 ＋ 几乎无阴影 ＋ 四角极淡装饰 ＋ 半透明 */
+.ksta{position:relative;width:min(520px,88%);
+  padding:clamp(24px,4vw,40px) clamp(22px,3.6vw,38px);
+  background:
+    repeating-linear-gradient(0deg,rgba(150,124,78,.035) 0 1px,transparent 1px 4px),
+    rgba(252,248,238,.80);
+  border:1px solid rgba(140,116,70,.30);border-radius:2px;
+  box-shadow:0 1px 10px rgba(60,40,10,.07);
+  backdrop-filter:blur(7px) saturate(1.02);-webkit-backdrop-filter:blur(7px) saturate(1.02);
+  text-align:center;color:#40331a;
+  animation:kstRise .9s cubic-bezier(.2,.72,.2,1) both}
+@keyframes kstRise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.ksta-c{position:absolute;width:14px;height:14px;border:1px solid rgba(176,140,84,.55);opacity:.5}
+.ksta-c.tl{left:7px;top:7px;border-right:0;border-bottom:0}
+.ksta-c.tr{right:7px;top:7px;border-left:0;border-bottom:0}
+.ksta-c.bl{left:7px;bottom:7px;border-right:0;border-top:0}
+.ksta-c.br{right:7px;bottom:7px;border-left:0;border-top:0}
+.ksta-y{font-size:12px;letter-spacing:.5em;color:#8a6d2b;margin:0 0 2px}
+.ksta-en{font-size:9.5px;letter-spacing:.42em;text-transform:uppercase;
+  color:rgba(138,109,43,.72);margin:0 0 12px}
+.ksta-t{font-size:clamp(22px,3vw,27px);font-weight:700;letter-spacing:.24em;
+  margin:0 0 14px;color:#33280f}
+.ksta-q{font-size:13px;line-height:1.95;color:#5c4b28;margin:0;
+  font-family:Georgia,"Songti SC",serif}
+.ksta-div{height:1px;margin:18px auto;width:64%;
+  background:linear-gradient(90deg,transparent,rgba(176,140,84,.5),transparent)}
+.ksta-fields{list-style:none;margin:0;padding:0;text-align:left}
+.ksta-fields li{display:flex;align-items:baseline;gap:10px;padding:7px 2px;font-size:13px}
+.ksta-fields b{flex:1;font-weight:600;color:#40331a;letter-spacing:.04em}
+.ksta-fields i{font-style:normal;font-size:11px;color:#9a8355;letter-spacing:.1em}
+.ksta-fields li.on i{color:#b4462a}
+.ksta-stat{font-size:11.5px;letter-spacing:.14em;color:#8a7a55;margin:0}
+.ksta-go{margin-top:16px;font:inherit;font-size:12.5px;letter-spacing:.16em;cursor:pointer;
+  padding:10px 22px;color:#7a5a22;background:transparent;border-radius:2px;
+  border:1px solid rgba(176,140,84,.6);transition:.25s}
+.ksta-go:hover{color:#c2330f;border-color:#c2330f;background:rgba(255,70,31,.05)}
+.kst-hint{font-size:13px;color:rgba(122,98,56,.6);margin:0;animation:kstBob 2.6s ease-in-out infinite}
+@keyframes kstBob{0%,100%{transform:translateY(0);opacity:.5}50%{transform:translateY(5px);opacity:1}}
 
-/* 右侧抽屉：某一级的详情（五列 + 关联资料）。抽屉而非弹窗 —— 不动画面里的楼梯 */
-.kst-sheet{position:absolute;top:0;right:0;bottom:0;z-index:6;
-  width:min(430px,94vw);overflow-y:auto;overscroll-behavior:contain;
-  padding:28px 26px 40px;color:#3b2f1a;
-  background:rgba(250,246,236,.975);border-left:1px solid rgba(120,96,54,.32);
-  box-shadow:-18px 0 46px rgba(40,26,6,.26);
-  transform:translateX(103%);transition:transform .36s cubic-bezier(.22,.72,.2,1)}
-.kst-sheet[hidden]{display:none}
-.kst-sheet.on{transform:none}
-.kst-close{position:absolute;top:13px;right:15px;width:30px;height:30px;border-radius:50%;
+/* 二 · 学院总图 */
+.kst-h{font-size:11px;letter-spacing:.34em;text-transform:uppercase;color:#8a6d2b;margin:0}
+.kst-sub{font-size:12.5px;color:#6d5c38;margin:2px 0 18px}
+.kst-map{display:flex;flex-direction:column;align-items:center;gap:8px;width:min(560px,92%)}
+.kst-mk{position:relative;width:100%;display:flex;align-items:center;gap:14px;
+  padding:13px 18px;cursor:pointer;font:inherit;text-align:left;
+  background:rgba(252,248,238,.72);border:1px solid rgba(140,116,70,.28);border-radius:2px;
+  color:#40331a;transition:.25s;backdrop-filter:blur(6px)}
+.kst-mk:hover{background:rgba(255,252,244,.92);border-color:#c0563a;transform:translateX(2px)}
+.kst-mk b{font-size:14px;letter-spacing:.08em;font-weight:600}
+.kst-mk i{font-style:normal;font-size:11px;color:#9a8355;margin-left:auto;letter-spacing:.1em}
+.kst-mk-u{width:2px;height:14px;margin:0 auto;background:rgba(176,140,84,.5)}
+.kst-mk-no{font-size:10px;letter-spacing:.2em;color:#a08a5c;width:20px}
+
+/* 三 · 修习轨迹 */
+.kst-trail{list-style:none;margin:0;padding:0;width:min(520px,92%);text-align:left}
+.kst-trail li{position:relative;padding:0 0 16px 22px;font-size:13px;color:#4a3b1d}
+.kst-trail li::before{content:"";position:absolute;left:0;top:6px;width:7px;height:7px;
+  border-radius:50%;background:rgba(176,140,84,.55)}
+.kst-trail li.on::before{background:#ff461f;box-shadow:0 0 8px rgba(255,70,31,.5)}
+.kst-trail li::after{content:"";position:absolute;left:3px;top:16px;bottom:0;width:1px;
+  background:rgba(176,140,84,.32)}
+.kst-trail li:last-child::after{display:none}
+.kst-trail b{font-weight:600}
+.kst-trail em{font-style:normal;color:#9a8355;font-size:11.5px;display:block;margin-top:2px}
+
+/* 四 · 年度总结 */
+.ksta-sum{text-align:left;width:min(560px,92%)}
+.ksta-sum p{margin:0 0 10px;font-size:13.5px;line-height:1.95;color:#4a3b1d}
+.ksta-sum b{color:#b4462a}
+.ksta-sum em{font-style:normal;color:#8a6d2b;font-size:12px}
+.ksta-sum .ksta-div{margin:14px auto}
+.ksta-sum ul{list-style:none;margin:0;padding:0}
+.ksta-sum li{padding:5px 0;font-size:13px;color:#40331a}
+.ksta-sum li span{color:#9a8355;font-size:11.5px;margin-left:8px}
+
+/* 修习项目档案：纸页向左滑开，右侧落下档案 */
+.kst-file{position:absolute;top:0;right:0;bottom:0;z-index:7;
+  width:min(440px,94vw);overflow-y:auto;overscroll-behavior:contain;
+  padding:30px 26px 44px;color:#3b2f1a;
+  background:
+    repeating-linear-gradient(0deg,rgba(150,124,78,.04) 0 1px,transparent 1px 4px),
+    rgba(251,247,237,.975);
+  border-left:1px solid rgba(140,116,70,.32);
+  box-shadow:-16px 0 44px rgba(40,26,6,.22);
+  transform:translateX(102%);transition:transform .42s cubic-bezier(.22,.72,.2,1)}
+.kst-file[hidden]{display:none}
+.kst-file.on{transform:none}
+.kst-file-x{position:absolute;top:13px;right:15px;width:30px;height:30px;border-radius:50%;
   display:grid;place-items:center;font:inherit;font-size:17px;line-height:1;cursor:pointer;
-  color:#6b5730;background:rgba(255,255,255,.7);border:1px solid rgba(120,96,54,.28)}
-.kst-close:hover{background:#fff;color:#ff461f;border-color:#ff461f}
-.kst-n{font-size:11px;letter-spacing:.28em;color:#8a6d2b}
-.kst-name{font-size:20px;font-weight:700;margin:5px 0 3px}
-.kst-tech{font-size:12px;line-height:1.7;color:#7a6640;margin:0 0 16px;
-  padding-bottom:14px;border-bottom:1px solid rgba(120,96,54,.22)}
-.kst-row{margin:0 0 15px}
-.kst-row h4{margin:0 0 4px;font-size:11px;letter-spacing:.2em;color:#8a6d2b;font-weight:600}
-.kst-row p{margin:0;font-size:13.5px;line-height:1.8}
-.kst-gate{padding:13px 15px;border-radius:10px;background:rgba(255,70,31,.06);
-  border:1px solid rgba(255,70,31,.24)}
-.kst-gate p{font-size:14px;font-weight:600;color:#a82b0c}
-.kst-lit{margin-top:18px;width:100%;padding:12px 16px;border-radius:999px;font:inherit;
-  font-size:13.5px;font-weight:600;cursor:pointer;
-  color:#fff;background:#ff461f;border:1px solid #ff461f;transition:.22s}
-.kst-lit:hover{background:#e63a15;border-color:#e63a15}
-.kst-lit.re{color:#a82b0c;background:rgba(255,70,31,.07);border-color:rgba(255,70,31,.4)}
-.kst-sec{margin-top:20px;padding-top:16px;border-top:1px solid rgba(120,96,54,.22)}
-.kst-sec h4{margin:0 0 9px;font-size:11px;letter-spacing:.2em;color:#8a6d2b}
-.kst-it{display:block;padding:9px 12px;margin-bottom:7px;border-radius:9px;font-size:12.5px;
-  line-height:1.6;text-decoration:none;color:#4a3b1d;
-  background:rgba(255,255,255,.6);border:1px solid rgba(120,96,54,.2)}
-.kst-it:hover{background:#fff;border-color:#ff461f;color:#a82b0c}
-.kst-it b{display:block;font-size:13px;margin-bottom:2px}
-.kst-it span{color:#8a7a58;font-size:11.5px}
+  color:#6b5730;background:rgba(255,255,255,.7);border:1px solid rgba(140,116,70,.3)}
+.kst-file-x:hover{color:#c2330f;border-color:#c2330f}
+.kst-file-b h3{margin:6px 0 4px;font-size:19px;letter-spacing:.06em}
+.kst-file-b .fk{font-size:10.5px;letter-spacing:.3em;color:#8a6d2b}
+.kst-file-b .fs{font-size:12px;line-height:1.75;color:#7a6640;margin:0 0 16px;
+  padding-bottom:14px;border-bottom:1px solid rgba(140,116,70,.22)}
+.kst-file-b .fr{margin:0 0 14px}
+.kst-file-b .fr h4{margin:0 0 4px;font-size:10.5px;letter-spacing:.2em;color:#8a6d2b;font-weight:600}
+.kst-file-b .fr p{margin:0;font-size:13px;line-height:1.85}
+.kst-file-b .fstep{display:flex;gap:10px;padding:8px 0;
+  border-bottom:1px dashed rgba(140,116,70,.22);font-size:12.5px}
+.kst-file-b .fstep b{width:22px;flex:none;color:#a08a5c;font-weight:600}
+.kst-file-b .fstep.on b{color:#c2330f}
+.kst-file-b .fstep .fgo{margin-left:auto;font-size:11px;color:#9a8355}
+.kst-file-b .fbtn{margin-top:16px;width:100%;padding:11px 16px;font:inherit;font-size:13px;
+  letter-spacing:.08em;cursor:pointer;border-radius:2px;transition:.22s;
+  color:#7a5a22;background:transparent;border:1px solid rgba(176,140,84,.6)}
+.kst-file-b .fbtn:hover{color:#c2330f;border-color:#c2330f;background:rgba(255,70,31,.05)}
+.kst-file-b .fbtn.re{color:#a82b0c;border-color:rgba(255,70,31,.4);background:rgba(255,70,31,.06)}
 
-/* ── 两侧书架：每侧 7 段，自下而上对应 01–07 / 08–14 ──────────────────────
-   段 = 那一级"这一路带的工具"，书脊高低/根数按该级工具数生成，颜色随状态走。
-   它和台阶共用同一份 state（走到的级数），所以只是**同一件事的另一种呈现**。 */
-.kst-shelves{position:absolute;inset:0;pointer-events:none;transition:opacity .45s ease}
-/* ⚠️ 别把书架做成"一排实心色块" —— 第一版画成书脊阵列，结果是画面左侧一堵红墙，把大厅压死了。
-   图里本来就有一排书架，这里只需**把对应那一段照亮**：一层柔光 ＋ 左侧一道细竖线。 */
-.kstsh{position:absolute;left:var(--x);top:var(--y);width:var(--w);height:var(--h);
-  border-radius:8px;color:rgba(176,86,50,.55);opacity:0;
-  background:linear-gradient(90deg,rgba(255,186,124,.30),rgba(255,208,152,.10));
-  transition:opacity .4s ease,box-shadow .4s ease,color .4s ease}
-.kstsh::before{content:"";position:absolute;left:0;top:10%;bottom:10%;width:2px;
-  border-radius:2px;background:currentColor;opacity:.7}
-.kstsh.done{opacity:.85;color:#bf5a3a;box-shadow:0 0 20px rgba(255,168,92,.26)}
-.kstsh.cur{opacity:1;color:#ff461f;
-  background:linear-gradient(90deg,rgba(255,126,62,.36),rgba(255,186,116,.12));
-  box-shadow:0 0 26px rgba(255,92,40,.32)}
-
-/* ── 年度回望：把已点亮的台阶连成一条路径 ＋ 一句总结 ────────────────────
-   平时不出现、也不提醒；只有主动点「回望这一年」才切过来。 */
-.kst-path{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;
-  opacity:0;transition:opacity .5s ease}
-.kst-path polyline{fill:none;stroke:#ff461f;stroke-width:2.5;stroke-linecap:round;
-  stroke-linejoin:round;vector-effect:non-scaling-stroke;
-  filter:drop-shadow(0 0 5px rgba(255,70,31,.55))}
-.ks-study.recap .kst-path{opacity:1}
-.ks-study.recap .kst{opacity:.20}
-.ks-study.recap .kst.done,.ks-study.recap .kst.cur{opacity:1}
-.ks-study.recap .kst-shelves{opacity:.22}
-.ks-study.recap .kst-plaque{opacity:.30}
-
-.kst-view{position:absolute;right:clamp(16px,3.6vw,40px);bottom:clamp(15px,3vh,28px);z-index:4;
-  font:inherit;font-size:12.5px;padding:9px 16px;border-radius:999px;cursor:pointer;
-  color:#5b4a2e;background:rgba(255,252,244,.88);border:1px solid rgba(120,96,54,.34);
-  box-shadow:0 5px 16px rgba(60,40,10,.16);backdrop-filter:blur(8px);transition:.22s}
-.kst-view:hover{background:#fff;border-color:#ff461f;color:#c2330f}
-.kst-recap{position:absolute;left:50%;bottom:15%;transform:translateX(-50%);z-index:5;
-  width:min(640px,86%);padding:20px 26px;border-radius:14px;
-  background:rgba(255,252,244,.96);border:1px solid rgba(255,70,31,.30);
-  box-shadow:0 18px 52px rgba(60,40,10,.28);backdrop-filter:blur(14px);
-  color:#41331a;font-size:14px;line-height:1.95}
-.kst-recap p{margin:0}
-.kst-recap b{color:#c2330f}
-.kst-recap em{font-style:normal;color:#8a6d2b;font-size:12px}
-
+@media (max-width:900px){
+  .ksta{width:92%;padding:22px 18px}
+  .kst-side{font-size:9.5px;letter-spacing:.3em;bottom:16px}
+  .kst-file{width:100%;padding:26px 20px 36px}
+  .kst-mk b{font-size:13px}
+}
 @media (max-width:900px){
   .kst i{width:19px;height:19px;font-size:9px}
   .kst b{font-size:10px}
@@ -3119,32 +3138,64 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
         <div class="ks-warm"></div>
         <div class="ks-dust"><i></i><i></i><i></i><i></i></div>
       </div>
-      <!-- ⭐ 「年度修习」专用：大厅图上的**14 级环梯**（用户 2026-09-21 的设计）。
-           数据在 `study-plan.js`（STUDY_PLAN.stages，x/y 是占图的百分比），台阶由 JS 渲染。
-           ⚠️ 图必须放在**严格宽高比的容器**里（aspect-ratio），台阶才能与画面里的环梯严丝合缝 ——
-              原来 `.ks-far` 用 `cover` 铺满，图与视口的关系不固定，坐标会漂。
-           ⚠️ 本层只在 `[data-shelf="rule"]` 显示（见 CSS），其余三个分类仍走 `.ks-card` 列表。 -->
+      <!-- ⭐ 「年度修习」＝ **学院大厅**（用户 2026-09-21 重设方向，推翻"环梯挂节点"那版）：
+           它不是学习管理后台，而是一座大厅 —— 进来是"查看自己这一年的计划、轨迹与成果"。
+           ⚠️ **楼梯上不放 UI**（用户明确）：背景保持完整，只在两侧各留一个很淡的概念
+              （左 PLAN / 右 REVIEW），信息全在中央那张"档案纸"里。
+           ⚠️ 页面上**绝不出现**：本月该学什么 / 今日任务 / 逾期 / 连续打卡 / 剩余天数。
+              设计原则（用户原话）：**计划由我制定，修习由我完成，年度只负责记录。** -->
       <div class="ks-study" id="ksStudy">
-        <div class="kst-shot">
-          <img class="kst-img" src="assets/hall-great.webp?v=20260921b" alt="" decoding="async">
-          <div class="kst-steps" id="kstSteps"></div>
-          <!-- 两侧书架：走到哪一级，对应那一段就亮起 —— 与台阶是**同一份数据**的两种呈现
-               （台阶答"走到哪"，书架答"这一路带了什么"），所以视觉呼应、功能不叠加。 -->
-          <div class="kst-shelves" id="kstShelves" aria-hidden="true"></div>
-          <!-- 年度回望：把已点亮的台阶连成一条路径 ＋ 一句自动总结。平时它只是一条路径记录，
-               不提醒、不催促；只有主动点「回望这一年」才切换到这个视角。 -->
-          <svg class="kst-path" id="kstPath" viewBox="0 0 1440 865" preserveAspectRatio="none"
-               aria-hidden="true"></svg>
-          <button class="kst-view" id="kstView" type="button">回望这一年</button>
-          <div class="kst-recap" id="kstRecap" hidden><p id="kstRecapX"></p></div>
+        <span class="kst-side kst-side-l" aria-hidden="true">PLAN</span>
+        <span class="kst-side kst-side-r" aria-hidden="true">REVIEW</span>
+
+        <div class="kst-scroll" id="kstScroll">
+          <!-- 一 · 大厅中央的修习台（＝一张漂浮的学院档案纸，不是卡片） -->
+          <section class="kst-sc">
+            <div class="ksta" id="ksta">
+              <span class="ksta-c tl"></span><span class="ksta-c tr"></span>
+              <span class="ksta-c bl"></span><span class="ksta-c br"></span>
+              <p class="ksta-y" id="kstaY"></p>
+              <p class="ksta-en">Annual Studia</p>
+              <h3 class="ksta-t">年度修习</h3>
+              <p class="ksta-q" id="kstaQ"></p>
+              <div class="ksta-div"></div>
+              <ul class="ksta-fields" id="kstaFields"></ul>
+              <div class="ksta-div"></div>
+              <p class="ksta-stat" id="kstaStat"></p>
+              <button class="ksta-go" id="kstaGo" type="button">查看年度计划</button>
+            </div>
+            <p class="kst-hint" aria-hidden="true">↓</p>
+          </section>
+
+          <!-- 二 · 学院总图：四个修习室，依次相扣 -->
+          <section class="kst-sc">
+            <h4 class="kst-h">Learning Plan · 我的学习计划</h4>
+            <p class="kst-sub">四个方向依次相扣。点开任何一间，进入它自己的档案。</p>
+            <div class="kst-map" id="kstMap"></div>
+          </section>
+
+          <!-- 三 · 实际修习轨迹（只记录，不安排） -->
+          <section class="kst-sc">
+            <h4 class="kst-h">Trail · 实际修习轨迹</h4>
+            <p class="kst-sub">这里的顺序是你自己走出来的 —— 不是日程表。</p>
+            <ol class="kst-trail" id="kstTrail"></ol>
+          </section>
+
+          <!-- 四 · 年度总结 -->
+          <section class="kst-sc">
+            <h4 class="kst-h" id="kstSumH"></h4>
+            <div class="ksta ksta-sum" id="kstSum">
+              <span class="ksta-c tl"></span><span class="ksta-c tr"></span>
+              <span class="ksta-c bl"></span><span class="ksta-c br"></span>
+              <div id="kstSumB"></div>
+            </div>
+          </section>
         </div>
-        <button class="kst-plaque" id="kstPlaque" type="button">
-          <span class="kst-plaque-t">馆训</span>
-          <span class="kst-plaque-x" id="kstPlaqueX"></span>
-        </button>
-        <aside class="kst-sheet" id="kstSheet" hidden>
-          <button class="kst-close" id="kstClose" type="button" aria-label="收起">&#215;</button>
-          <div class="kst-body" id="kstBody"></div>
+
+        <!-- 修习项目档案：纸页向左滑开，右侧落下一份档案 -->
+        <aside class="kst-file" id="kstFile" hidden>
+          <button class="kst-file-x" id="kstFileX" type="button" aria-label="归档">&#215;</button>
+          <div class="kst-file-b" id="kstFileB"></div>
         </aside>
       </div>
 
@@ -3616,6 +3667,6 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 <script src="study-plan.js?v=20260921a"></script>
 <script src="docs.js?v=20260921b"></script>
 <script src="app.js?v=20260920f"></script>
-<script src="knowledge.js?v=20260921n"></script>
+<script src="knowledge.js?v=20260921o"></script>
 </body>
 </html>
