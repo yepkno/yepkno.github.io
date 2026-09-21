@@ -1338,25 +1338,22 @@ img{display:block}
   background-image:url(assets/hall-great.webp?v=20260921b);background-position:center 44%}
 .kn-shelf[data-shelf="rule"] .ks-card{margin-top:auto;margin-bottom:0}
 
-/* ---------- 主题 tech：冷静 · 客观 · 缜密（蓝）---------- */
-.kn-shelf[data-shelf="tech"]{--ks-ink:#eaf2fb;--ks-dim:#9db6cf;--ks-accent:#6fb3ea;
-  --ks-card:rgba(12,24,40,.72);--ks-card-line:rgba(111,179,234,.24);
-  --ks-shadow:0 18px 44px rgba(0,10,22,.5);--ks-radius:3px;--ks-track:.04em;
-  --ks-glow:rgba(90,160,230,.20);--ks-top:rgba(10,20,34,.86);--ks-bot:rgba(4,10,18,.9)}
-.kn-shelf[data-shelf="tech"] .ks-far{background-image:
-  linear-gradient(rgba(111,179,234,.14) 1px,transparent 1px),
-  linear-gradient(90deg,rgba(111,179,234,.14) 1px,transparent 1px);
-  background-size:46px 46px;inset:0}
+/* ---------- 主题 tech：学院阅览厅（**白色系**，2026-09-22 四版定）----------
+   ⚠️ 这一格从"冷静缜密的蓝 · 深色空间"改成**白纸学院风** —— 用户："算了星际风太丑了，
+   还是你自己参考一下学院风的白色系为主风格"。变量必须跟着换成浅色，
+   否则沿用变量的 `.ks-back` 等元素会变成"浅字压白底"，直接看不见。 */
+.kn-shelf[data-shelf="tech"]{--ks-ink:#2b2419;--ks-dim:#8a8371;--ks-accent:#b4462a;
+  --ks-card:rgba(255,254,250,.86);--ks-card-line:rgba(150,124,80,.30);
+  --ks-shadow:0 10px 30px rgba(90,66,24,.12);--ks-radius:2px;--ks-track:.06em;
+  --ks-glow:rgba(176,140,84,.16);--ks-top:rgba(252,250,245,.92);--ks-bot:rgba(246,242,234,.95)}
+/* 底：白纸（`.kthwall` 会整幅盖住，这里只兜底 —— 别留蓝色，切换瞬间会露） */
+.kn-shelf[data-shelf="tech"] .ks-far{background-image:none;background:#f7f4ee;inset:0}
 .kn-shelf[data-shelf="tech"] .ks-warm{background:
-  radial-gradient(70% 50% at 22% 12%,rgba(78,150,225,.22),transparent 66%),
-  linear-gradient(to bottom,rgba(10,20,34,.82),rgba(4,10,18,.9))}
-.kn-shelf[data-shelf="tech"] .ks-back{background:rgba(20,40,64,.6);color:#dceaf8}
-.kn-shelf[data-shelf="tech"] .ks-back:hover{background:rgba(30,60,96,.8);color:#fff}
-.kn-shelf[data-shelf="tech"] .ks-item{background:rgba(14,30,50,.6)}
-.kn-shelf[data-shelf="tech"] .ks-item:hover{background:rgba(20,44,72,.86);
-  box-shadow:0 10px 26px rgba(0,12,26,.5)}
-.kn-shelf[data-shelf="tech"] .ks-item .ks-tx b{font-family:ui-monospace,Consolas,monospace;
-  font-weight:500;letter-spacing:.01em}
+  radial-gradient(70% 50% at 26% 10%,rgba(214,196,158,.20),transparent 68%),
+  linear-gradient(to bottom,#fbf9f4,#f2eee6)}
+.kn-shelf[data-shelf="tech"] .ks-back{background:rgba(255,254,250,.88);color:#3a2f1c;
+  border-color:rgba(150,124,80,.34)}
+.kn-shelf[data-shelf="tech"] .ks-back:hover{background:#fff;color:#c2330f;border-color:#c2330f}
 
 /* ---------- 主题 humanities：关怀 · 博爱 · 哲思（红）---------- */
 .kn-shelf[data-shelf="humanities"]{--ks-ink:#fdf1ec;--ks-dim:#d3a99e;--ks-accent:#f0947c;
@@ -1548,211 +1545,208 @@ img{display:block}
   border-top:1px solid rgba(176,140,84,.32)}
 
 /* ══════════════════════════════════════════════════════════════════════════
-   技术文库 · 星海 ＝ **学院星图**（2026-09-22 三版）
-   用户看过二版后："像十几年前的低价动画，要高级感、适合学院风、符合 2026 审美"。
-   取向（当晚拍板）：**星图刻线式**画法 ／ **墨蓝夜空** ／ 仪器感元素
-   （坐标网格 · 星表式标注 · 环形刻度 · 星芒）／ 动态再慢一档 ＋ 星尘缓慢自转。
-   ⚠️⚠️ 高级感来自**克制**：低饱和、1px 细线、靠透明度分层、纸感颗粒 ——
-      **不靠加颜色、不靠大光斑**。二版那套（白点串成旋臂 ＋ 高光球核 ＋ 糖果色星云）
-      就是因此显廉价的，**别再退回去**。
+   技术文库 · 学院阅览厅（2026-09-22 **四版**：推倒星际风 → 白色系学院风）
+   用户原话："算了星际风太丑了，还是你自己参考一下学院风的白色系为主风格，
+   自己创造一个 ui 界面，最好生成一个动态的背景图，按我说的五个部分设置五个入口，
+   入口点进去就是对应的部分。"
+   ⚠️⚠️ 三条底线：
+     ① 结构只有两级：**大厅（五个入口）→ 部分页（该部分的文档目录）→ 阅读页**（原有）。
+        **不再有星系 / 星团 / 拖拽 / canvas 星点** —— 那套是"星际风"，用户已否决四版。
+     ② 高级感来自**克制**：1px 细线、低饱和、大面积留白、慢动效。
+     ③ 引入的是「**仪器感 ＋ 书卷气**」（罗马数字 · 四角细直角 · 小字距西文 · 纸卡），
+        点缀**只用站点主色朱红 `#ff461f`**（罗马数字、悬停线、计数）。
+   ⚠️ 背景是**生成的插画** `assets/tech-hall.webp`（白纸细线描的阅览厅）＋ 三组 CSS 动态层
+      （极慢推近 / 光柱横移 / 浮尘上升）—— **图换了必须升 URL 上的 `?v=`**。
+   ⚠️ 类名一律 `kth` 前缀：`ksgrid` 撞车事故已经两次（`kn-inner` / `ksgrid`），加类名先 Grep。
+   ⚠️ 层序：`.ks-wrap`(1) < **`.kthwall`(3)** < `.ks-bar`(6) < `.kspage`(8) ——
+      必须低于 `.ks-bar`，否则「← 回到目录」又被盖住（2026-09-22 踩过）。
    ══════════════════════════════════════════════════════════════════════════ */
-.ksspace{position:absolute;inset:0;z-index:3;overflow:hidden;
-  background:radial-gradient(ellipse at 32% 20%,#111d35 0%,#0a1221 46%,#05080f 100%)}
-.ksspace[hidden]{display:none}
-/* 四角压暗（**放 stage 之下**，别压到星系与文字） */
-.ksspace::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
-  background:radial-gradient(ellipse at 50% 46%,rgba(0,0,0,0) 42%,rgba(2,4,9,.72) 100%)}
-/* 技术文库这一格：星海取代原来的"说明卡 ＋ 文档列表" */
+.kthwall{position:absolute;inset:0;z-index:3;overflow:hidden;color:#2b2419;
+  font-variant-numeric:tabular-nums;opacity:0;transition:opacity .46s ease}
+.kthwall[hidden]{display:none}
+.kthwall.in{opacity:1}
+/* 技术文库这一格：阅览厅取代原来的"说明卡 ＋ 文档列表"（列表仍在 DOM 里、被下面这条隐藏） */
 .kn-shelf[data-shelf="tech"] .ks-wrap{display:none}
-/* 胶片颗粒：一张 128×128 噪声图平铺（JS 生成 dataURL）—— 专治"数字渐变"的塑料感 */
-.ksgrain{position:absolute;inset:0;z-index:1;pointer-events:none;opacity:.42;
-  background-repeat:repeat;mix-blend-mode:soft-light}
-.kncv,.kscv{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;
-  transition:transform 1.1s cubic-bezier(.2,.72,.2,1)}
-/* 聚焦时背景轻微推近 ＝ 视差 */
-.ksspace.focusing .kscv{transform:scale(1.05)}
 
-.ksstage{position:absolute;inset:0;z-index:2;transform-origin:0 0;
-  transition:transform .9s cubic-bezier(.2,.72,.2,1)}
-/* 坐标网格：比视口大得多（`inset:-60%`），聚焦平移后仍铺满 —— 星图的"底纸"
-   ⚠️⚠️ 类名**必须带独有前缀**：初版叫 `.ksgrid`，撞上了年度修习列表页的 `.ksgrid`
-      （那是列表网格容器），我这条 `position:absolute;inset:-60%` 把它整个拍成 0 高 ——
-      表现是「学习资料 / 工具台 / 修习条目」三页**只剩页眉、列表全空**（2026-09-22 踩到，
-      第二次类名撞车了，上一次是 `kn-inner`）。**加新类名之前先 Grep 全站。** */
-.ksspacegrid{position:absolute;inset:-60%;pointer-events:none;
-  background-image:
-    /* ⚠️ 用户第五条："弱化背景网格，或者直接去掉" —— 细密网格整层去掉，
-       只留每 480px 一道的粗网格且降到 .042（够当"底纸"，不再噪）。 */
-    repeating-linear-gradient(0deg,rgba(146,172,212,.042) 0 1px,transparent 1px 480px),
-    repeating-linear-gradient(90deg,rgba(146,172,212,.042) 0 1px,transparent 1px 480px)}
-
-/* ⚠️ 这些是全屏容器 —— 必须 `pointer-events:none`，否则空容器会拦住下层
-   （2026-09-22 实测：`.ksdocs` 空着也拦住了 `#ksParts` 的星系点击）。
-   ⚠️ 星系容器**不做 `clip-path`** —— 那会把引线与标注裁掉；改为"容器不吃事件、
-      只有中间那个圆 `.kspart-hit` 吃"。 */
-/* 隐性浏览路径：一条极淡的折线串起五个星系（像星图上的连线）——
-   用户第四条："按阅读顺序做弧形排布……给用户一条隐性浏览路径"。 */
-.ksarc{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
-.ksarc path{fill:none;stroke:#9db9dd;stroke-width:1;opacity:.085;
-  vector-effect:non-scaling-stroke}
-
-.ksparts,.ksclumps,.ksdocs{position:absolute;inset:0;pointer-events:none}
-.ksparts .kspart{pointer-events:none}
-.ksparts .kspart-hit,.ksdocs .ksdoc{pointer-events:auto}
-.ksclumps{pointer-events:none}
-
-/* ── 星系：星图刻线式 ＝ 小核 ＋ 同心细环 ＋ 环形刻度 ＋ 随机星尘 ＋ 星芒 ＋ 引线标注 ── */
-.kspart{position:absolute;left:var(--x);top:var(--y);transform:translate(-50%,-50%);
-  width:440px;height:300px;padding:0;border:0;background:transparent;cursor:pointer;
-  font:inherit;text-align:left;transition:opacity .55s ease}
-/* ⚠️ **别在 `.kspart` 上挂 `filter`**：会新建层叠上下文、改掉子元素混合基准。
-   要"变暗/变亮"一律改 opacity 或子元素属性。 */
-.kspart-in{position:absolute;left:50%;top:50%;width:0;height:0;
-  /* ⚠️ 两层缩放：`--k` 是窄屏整组缩放；`--sc` 是**按篇数算的体量**（内容多的星系更大，
-     用户 2026-09-22 第四条："用大小表达信息量"）。 */
-  transform:scale(calc(var(--k,1) * var(--sc,1)))}
-.kspart-hit{position:absolute;left:-122px;top:-122px;width:244px;height:244px;border-radius:50%;
-  border:1px solid rgba(152,186,226,0);transition:border-color .35s ease}
-.kspart-ring,.kspart-dial,.kspart-core,.kspart-flare,.kspart-dust{
-  position:absolute;left:0;top:0}
-.kspart-ring{border-radius:50%;border:1px solid var(--c);transform:translate(-50%,-50%)}
-/* ⚠️ 环**只留一层**（＋刻度环 ＋行星轨道线）—— 三版初稿给了三层同心环，
-   截图里看过去就是"一堆歪掉的圈"。**线越多越廉价**，宁可少。 */
-.kspart-ring.r2{width:244px;height:88px;opacity:.10;transform:translate(-50%,-50%) rotate(-14deg)}
-/* 环形刻度：一圈极细刻线（每 7.5° 一道）—— "仪器感"的主要来源 */
-.kspart-dial{width:236px;height:236px;transform:translate(-50%,-50%);border-radius:50%;
-  background:repeating-conic-gradient(from 0deg,var(--c) 0 .7deg,rgba(255,255,255,0) .7deg 7.5deg);
-  opacity:.5;
-  -webkit-mask:radial-gradient(circle,transparent 0 88%,#000 89% 100%);
-  mask:radial-gradient(circle,transparent 0 88%,#000 89% 100%)}
-/* 主刻度：每 30° 一道更长 —— 初稿只有细密刻度，太淡**根本看不见**，"仪器感"要能被看见才算 */
-.kspart-dial::after{content:"";position:absolute;inset:0;border-radius:50%;
-  background:repeating-conic-gradient(from 0deg,var(--c) 0 1.1deg,rgba(255,255,255,0) 1.1deg 30deg);
-  -webkit-mask:radial-gradient(circle,transparent 0 84%,#000 85% 100%);
-  mask:radial-gradient(circle,transparent 0 84%,#000 85% 100%)}
-/* 星尘：随机散点（不是等距点串），整层极缓慢自转 */
-.kspart-dust{width:0;height:0;animation:ksSpin var(--sd,240s) linear infinite var(--sdir,normal)}
-.kspart-dust i{position:absolute;left:var(--dx);top:var(--dy);
-  width:var(--ds);height:var(--ds);border-radius:50%;background:var(--c);
-  opacity:var(--do);transform:translate(-50%,-50%)}
-/* 公转轨道：一条轨道一颗行星（`--r` 半径 px 数 ｜ `--t` 周期 s ｜ `--d` 起始相位）
-   ⚠️ 定位基准是 `.kspart-in`（0×0 位于星系中心）→ 用 `left:0;top:0` ＋ 负 margin 居中。
-   ⚠️ 轨道线极淡（.07）—— 三版比二版更克制，别调亮。 */
-.ksorb{position:absolute;left:0;top:0;pointer-events:none;
-  width:calc(var(--r) * 2px);height:calc(var(--r) * 2px);
-  margin:calc(var(--r) * -1px) 0 0 calc(var(--r) * -1px);
-  animation:ksSpin var(--t) linear infinite;animation-delay:var(--d,0s)}
-/* ⚠️ 行星轨道线**不画**（用户第四条：轨道线条简化、减少同心圆层数）——
-   圈数从 4 层降到 2 层（只留刻度环 ＋ 椭圆环）。要恢复只把 opacity 调回来。 */
-.ksorb::before{content:"";position:absolute;inset:0;border-radius:50%;
-  border:1px solid var(--c);opacity:0}
-/* ⚠️ 行星是**暗球**（不是白点）：亮面偏一侧、暗面压深 —— 体积感来自明暗，不来自光晕 */
-.kspl{position:absolute;left:50%;top:0;width:var(--s);height:var(--s);border-radius:50%;
-  transform:translate(-50%,-50%);
-  background:radial-gradient(circle at 34% 30%,#e6eefb 0%,var(--pc) 40%,#0b1120 84%);
-  box-shadow:0 0 4px rgba(200,220,255,.22)}
-/* 核：**小**（14px），不是大光球 */
-/* 核：**小、有色温、不刺眼** —— 14px 纯白点就是"白炽灯"，一眼廉价 */
-.kspart-core{width:12px;height:12px;transform:translate(-50%,-50%);border-radius:50%;
-  background:radial-gradient(circle,#f4f8ff 0%,#dbe6f8 30%,var(--c) 76%,rgba(18,28,46,.85) 100%);
-  box-shadow:0 0 6px rgba(206,224,252,.42),0 0 20px -8px var(--c)}
-/* 星芒：极细的十字（衍射），只给天体核 */
-.kspart-flare{width:72px;height:72px;transform:translate(-50%,-50%);opacity:.42;
+/* ── 背景四层：插画 / 白纱 / 中央提亮 / 光柱（＋浮尘）─────────────────── */
+/* `center 20%`：把画面上移，让长桌压到下方当"前景"，中上部留出干净空间放五个入口 */
+.kth-bg{position:absolute;inset:-4%;
+  background:url("assets/tech-hall.webp?v=20260922a") center 20%/cover no-repeat;
+  animation:kthPush 58s ease-in-out infinite alternate}
+@keyframes kthPush{
+  from{transform:scale(1.015) translate3d(0,0,0)}
+  to{transform:scale(1.075) translate3d(-1.1%,-1.6%,0)}}
+.kth-veil{position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(253,251,246,.66) 0%,rgba(253,251,246,.36) 30%,
+    rgba(253,251,246,.24) 58%,rgba(253,251,246,.06) 100%)}
+.kth-lift{position:absolute;inset:0;
+  background:radial-gradient(ellipse 56% 34% at 50% 33%,rgba(255,254,250,.82),rgba(255,254,250,0) 74%)}
+.kth-ray{position:absolute;inset:-26% -48%;pointer-events:none;opacity:.9;
   background:
-    linear-gradient(90deg,rgba(255,255,255,0) 0%,var(--c) 46%,#eaf1ff 50%,var(--c) 54%,rgba(255,255,255,0) 100%) center/100% 1px no-repeat,
-    linear-gradient(0deg,rgba(255,255,255,0) 0%,var(--c) 46%,#eaf1ff 50%,var(--c) 54%,rgba(255,255,255,0) 100%) center/1px 100% no-repeat}
-/* 引线 ＋ 星表式标注（细斜线折出、末端一小段水平线，接编号与名字） */
-.kspart-lead{position:absolute;left:50%;top:50%;width:96px;height:56px;
-  overflow:visible;pointer-events:none;color:var(--c);opacity:.42}
-.kspart.lead-l .kspart-lead{transform:translateX(-96px) scaleX(-1)}
-.kspart-tag{position:absolute;left:calc(50% + 102px);top:calc(50% + 30px);
-  transform:translateY(-50%);pointer-events:none;display:flex;flex-direction:column;gap:3px;
-  white-space:nowrap;transition:opacity .4s ease}
-.kspart.lead-l .kspart-tag{left:auto;right:calc(50% + 102px);align-items:flex-end;text-align:right}
-.kspart-tag b{font-size:13px;font-weight:500;letter-spacing:.08em;color:#e9f1fd}
-.kspart-tag b em{font-style:normal;color:var(--c);letter-spacing:.12em;margin-right:7px}
-/* 篇数＝**醒目标签**（"篇数用更醒目的标签"，用户第四条） */
-.kspart-tag i{font-style:normal;font-size:12px;font-weight:500;letter-spacing:.1em;
-  color:#d3e2f6;padding:1px 8px 2px;border-radius:999px;
-  border:1px solid rgba(150,185,225,.34);background:rgba(120,155,205,.14)}
-.kspart:hover .kspart-tag b{color:#fff}
-.kspart:hover .kspart-tag i{color:#fff;border-color:rgba(190,215,245,.6);
-  background:rgba(140,180,230,.22)}
-.kspart:hover .kspart-flare{opacity:.85}
-.kspart:hover .kspart-ring.r2{opacity:.22}
-/* hover：核**脉冲**（"这是能点的"）＋ 可点范围显出一圈极淡虚线圈（"明确可点击区域"） */
-.kspart:hover .kspart-core{animation:ksPulse 1.7s ease-in-out infinite}
-.kspart:hover .kspart-hit{border-color:rgba(152,186,226,.32)}
-@keyframes ksPulse{
-  0%,100%{box-shadow:0 0 6px rgba(206,224,252,.45),0 0 20px -8px var(--c)}
-  50%{box-shadow:0 0 16px rgba(232,242,255,.72),0 0 46px -6px var(--c)}}
-/* 聚焦时：选中的星系被点亮，其余退到后面变暗。
-   ⚠️⚠️ 必须写成 `.ksspace.focusing .kspart.on`（**三个 class**）——
-   `.ksspace.focusing .kspart` 的优先级(0,3,0) 高于 `.kspart.on`(0,2,0)，
-   写成后者根本压不住：选中星系会被一并压到 20%（"聚焦后核心发灰"）。 */
-.ksspace.focusing .kspart{opacity:.20}
-.ksspace.focusing .kspart.on{opacity:1}
-/* 聚焦时**其它星系的标注与引线一起收掉**（只留光点）—— 否则画面里飘着三四组文字，
-   和文档星的标题抢注意力（三版初稿在桌面就是这个问题） */
-.ksspace.focusing .kspart:not(.on) .kspart-tag,
-.ksspace.focusing .kspart:not(.on) .kspart-lead{opacity:0}
-.kspart.on .kspart-flare{opacity:.72}
-.kspart.on .kspart-ring.r2{opacity:.26}
-.kspart.on .kspart-dial{opacity:.5}
-/* ⚠️ 聚焦后文档星就绕着它摆 —— 星系上的标注要收掉，避免压字 */
-.kspart.on .kspart-tag,.kspart.on .kspart-lead{opacity:0}
-@keyframes ksSpin{to{transform:rotate(360deg)}}
+    linear-gradient(103deg,transparent 23%,rgba(255,251,238,.60) 32%,transparent 39%),
+    linear-gradient(103deg,transparent 51%,rgba(255,251,238,.42) 60%,transparent 67%),
+    linear-gradient(103deg,transparent 77%,rgba(255,250,232,.28) 84%,transparent 90%);
+  animation:kthRay 46s ease-in-out infinite alternate}
+@keyframes kthRay{from{transform:translate3d(-2.6%,0,0)}to{transform:translate3d(2.6%,0,0)}}
+/* 浮尘：只是"空气里有光"的感觉，非常轻 */
+.kth-motes{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.kth-motes i{position:absolute;left:var(--x);top:var(--y);width:var(--s);height:var(--s);
+  border-radius:50%;background:rgba(152,122,68,.40);
+  animation:kthMote var(--dd) linear infinite;animation-delay:var(--dl)}
+@keyframes kthMote{
+  0%{transform:translate3d(0,0,0);opacity:0}
+  14%{opacity:.72}
+  86%{opacity:.46}
+  100%{transform:translate3d(16px,-132px,0);opacity:0}}
+@media (prefers-reduced-motion:reduce){
+  .kth-bg,.kth-ray,.kth-motes i,.kthwall.in .kth-card{animation:none}
+}
 
-/* ── 文档星：一篇文档一颗（聚焦后才出现，也是唯一可拖的）── 也按星表条目做 ── */
-.ksdoc{position:absolute;left:var(--x);top:var(--y);transform:translate(-50%,-50%);
-  width:156px;padding:0;border:0;background:transparent;cursor:pointer;font:inherit;
-  display:flex;flex-direction:column;align-items:center;gap:7px;
-  opacity:0;transition:opacity .6s ease;touch-action:none}
-.ksdoc.on{opacity:1}
-.ksdoc i{display:block;width:9px;height:9px;border-radius:50%;
-  background:radial-gradient(circle at 36% 32%,#fff 0%,#dbe6f7 30%,var(--c) 100%);
-  box-shadow:0 0 7px rgba(200,220,255,.4),0 0 16px -6px var(--c);
-  transition:transform .2s ease}
-.ksdoc b{font-size:11.5px;font-weight:500;line-height:1.55;text-align:center;color:#c9d9ee;
-  letter-spacing:.02em}
-.ksdoc:hover i{transform:scale(1.3)}
-.ksdoc:hover b{color:#e8eefa}
-.ksdoc.drag{z-index:9}
-.ksdoc.drag i{transform:scale(1.45)}
-.ksdoc.drag b{color:#fff}
+/* ── 顶行：左侧「← 回到文库」（只在部分页出现）＋ 右侧库名 ─────────────── */
+/* 与 `.ks-bar` 用同一组 top/left，所以它在部分页里**正好替换掉**「← 回到目录」 */
+.kth-top{position:absolute;top:clamp(16px,3.2vh,30px);left:clamp(16px,3.6vw,40px);
+  right:clamp(16px,3.6vw,40px);z-index:4;display:flex;align-items:center;gap:14px;
+  pointer-events:none}
+.kth-top > *{pointer-events:auto}
+.kth-back{font:inherit;font-size:13px;padding:8px 15px;border-radius:999px;cursor:pointer;
+  color:#3a2f1c;background:rgba(255,254,250,.88);border:1px solid rgba(150,124,80,.34);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);transition:.22s}
+.kth-back[hidden]{display:none}
+.kth-back:hover{background:#fff;color:#c2330f;border-color:#c2330f}
+.kth-t{margin-left:auto;font-size:10px;letter-spacing:.42em;text-transform:uppercase;
+  color:#7a6435}
 
-/* ── 星团：把几颗星合到一起（细虚线圈，别抢戏） ── */
-.ksclump{position:absolute;left:var(--x);top:var(--y);transform:translate(-50%,-50%);
-  width:124px;height:124px;border-radius:50%;border:1px dashed rgba(150,180,220,.30);
-  background:radial-gradient(circle,rgba(140,170,215,.10),rgba(0,0,0,0) 72%)}
-.ksclump em{position:absolute;left:-24px;right:-24px;bottom:-19px;font-style:normal;font-size:10px;
-  letter-spacing:.14em;color:#7c8ba3;text-align:center}
+/* ── 一 · 大厅：题头 ＋ 五个入口 ───────────────────────────────────────── */
+.kth-hall{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;
+  /* 下内边距远大于上 —— 把整块**往上压**，给下面那张长桌留出画面 */
+  padding:clamp(62px,9.5vh,98px) clamp(18px,4vw,56px) clamp(150px,29vh,250px);
+  transition:opacity .42s ease,transform .54s cubic-bezier(.2,.72,.2,1)}
+.kth-hall.out{opacity:0;transform:scale(.984);pointer-events:none}
+.kth-eyebrow{margin:0;font-size:10px;letter-spacing:.46em;text-transform:uppercase;color:#a48f60}
+.kth-title{margin:9px 0 0;font-size:clamp(25px,3.2vw,38px);font-weight:700;letter-spacing:.2em;
+  color:#231c10}
+.kth-motto{margin:11px 0 0;font-size:12.5px;line-height:1.85;letter-spacing:.08em;color:#7a6d59}
+.kth-rule{display:block;width:min(520px,70%);height:1px;margin:20px 0 24px;
+  background:linear-gradient(90deg,transparent,rgba(150,120,70,.5),transparent)}
 
-/* ── 顶部与底部 ── */
-.ksspace-top{position:absolute;left:0;right:0;top:0;z-index:3;display:flex;align-items:center;
-  gap:14px;padding:clamp(14px,2.8vh,26px) clamp(16px,3.6vw,40px);pointer-events:none}
-.ksspace-back{pointer-events:auto;font:inherit;font-size:13px;font-weight:500;
-  letter-spacing:.1em;cursor:pointer;
-  padding:7px 15px;border-radius:2px;color:#c6d8ee;background:rgba(10,18,32,.66);
-  border:1px solid rgba(140,170,210,.28);transition:.22s}
-.ksspace-back:hover{color:#fff;border-color:rgba(190,212,240,.6);background:rgba(16,26,44,.9)}
-.ksspace-t{margin-left:auto;font-size:11px;letter-spacing:.34em;text-transform:uppercase;
-  color:#7f95b5}
-.ksspace-hint{position:absolute;left:0;right:0;bottom:clamp(14px,3vh,30px);z-index:3;margin:0;
-  padding:0 clamp(16px,4vw,40px);text-align:center;font-size:13px;line-height:1.8;
-  letter-spacing:.06em;font-weight:500;color:#9ab1cf;pointer-events:none}
+.kth-cards{display:flex;width:100%;max-width:1080px;justify-content:center;align-items:stretch;
+  gap:clamp(8px,1.3vw,16px)}
+.kth-card{position:relative;flex:1 1 0;min-width:0;max-width:198px;
+  display:flex;flex-direction:column;align-items:center;
+  padding:20px 12px 17px;font:inherit;text-align:center;cursor:pointer;color:inherit;
+  background:rgba(255,254,250,.82);border:1px solid rgba(150,124,80,.30);border-radius:2px;
+  box-shadow:0 2px 12px rgba(90,66,24,.055),inset 0 1px 0 rgba(255,255,255,.72);
+  transition:transform .32s cubic-bezier(.2,.72,.2,1),box-shadow .32s,
+    border-color .32s,background .32s}
+/* 四角细直角 —— 学院装帧感（**只用两个伪元素**做对角，省 DOM） */
+.kth-card::before,.kth-card::after{content:"";position:absolute;width:9px;height:9px;
+  pointer-events:none;opacity:.5;transition:.32s}
+.kth-card::before{left:5px;top:5px;border-left:1px solid #9a7c4c;border-top:1px solid #9a7c4c}
+.kth-card::after{right:5px;bottom:5px;border-right:1px solid #9a7c4c;border-bottom:1px solid #9a7c4c}
+.kth-card:hover,.kth-card:focus-visible{transform:translateY(-5px);
+  background:rgba(255,255,252,.97);border-color:rgba(194,51,15,.46);
+  box-shadow:0 14px 30px rgba(90,66,24,.14)}
+.kth-card:hover::before,.kth-card:hover::after,
+.kth-card:focus-visible::before,.kth-card:focus-visible::after{opacity:1;border-color:#c2330f}
+.kth-card.off{opacity:.55}
+.kth-rn{position:absolute;left:11px;top:9px;font-size:10.5px;font-weight:600;
+  letter-spacing:.16em;color:#a48f60;transition:.32s}
+.kth-card:hover .kth-rn{color:#c2330f}
+.kth-em{display:block;width:32px;height:32px;margin:0 0 10px;color:#8a7442;transition:.32s}
+.kth-em svg{display:block;width:100%;height:100%}
+.kth-card:hover .kth-em{color:#b4462a}
+.kth-nm{display:block;font-size:15px;font-weight:700;letter-spacing:.1em;color:#2b2419}
+.kth-en{display:block;margin-top:4px;font-style:normal;font-size:9px;line-height:1.45;
+  letter-spacing:.2em;text-transform:uppercase;color:#a08d63}
+.kth-hr{display:block;width:28px;height:1px;margin:12px auto 9px;background:rgba(150,124,80,.4);
+  transition:width .32s,background .32s}
+.kth-card:hover .kth-hr{width:50px;background:rgba(194,51,15,.6)}
+.kth-ct{font-style:normal;font-size:11.5px;letter-spacing:.1em;color:#6f6250}
+.kth-ct b{font-size:13.5px;font-weight:700;color:#b4462a}
+.kth-go{display:block;margin-top:10px;font-size:10px;letter-spacing:.26em;color:#c2330f;
+  opacity:0;transform:translateY(3px);transition:.3s}
+.kth-card:hover .kth-go,.kth-card:focus-visible .kth-go{opacity:1;transform:none}
+/* 入场：五个入口依次浮现（`backwards` 让动画结束后**回到自然态**，
+   否则 `fill:forwards` 会锁住 transform，hover 的上浮就失效了） */
+.kthwall.in .kth-card{animation:kthCardIn .5s cubic-bezier(.2,.8,.3,1) backwards;
+  animation-delay:calc(var(--i) * 72ms + 110ms)}
+@keyframes kthCardIn{from{opacity:0;transform:translateY(16px) scale(.986)}to{opacity:1;transform:none}}
+
+.kth-hint{position:absolute;left:0;right:0;bottom:0;z-index:4;margin:0;
+  padding:30px clamp(16px,4vw,40px) clamp(15px,3vh,28px);text-align:center;
+  font-size:12.5px;line-height:1.8;letter-spacing:.08em;color:#7a6d59;pointer-events:none;
+  background:linear-gradient(180deg,rgba(253,251,246,0),rgba(253,251,246,.72) 44%)}
+
+/* ── 二 · 部分页：该部分的文档目录 ─────────────────────────────────────── */
+/* ⚠️ `align-items:center` ＋ `.kth-sec-in` **随内容收放**（不是 `flex:1` 撑满）——
+   初版让纸框 `flex:1` 拉满全高，只有 1 篇文档时就成了"一条窄内容 ＋ 一大片空白"，
+   正是用户最反感的那种"太空"。现在纸框只有内容那么高，居中浮在阅览厅里。 */
+.kth-sec{position:absolute;inset:0;z-index:3;display:flex;align-items:center;justify-content:center;
+  padding:clamp(62px,9.5vh,98px) clamp(18px,4vw,54px) clamp(48px,8vh,76px);
+  opacity:0;transform:translateY(12px);pointer-events:none;
+  transition:opacity .4s ease,transform .5s cubic-bezier(.2,.72,.2,1)}
+.kth-sec[hidden]{display:none}
+.kth-sec.on{opacity:1;transform:none;pointer-events:auto}
+.kth-sec-in{display:flex;flex-direction:column;min-height:0;max-height:100%;
+  width:min(1040px,100%);margin:0 auto;
+  background:rgba(255,254,250,.70);border:1px solid rgba(150,124,80,.26);border-radius:2px;
+  padding:clamp(16px,2.6vh,26px) clamp(16px,2.6vw,30px) clamp(14px,2.4vh,22px);
+  backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+.kth-sec-h{flex:none;display:flex;align-items:flex-end;gap:14px;
+  padding-bottom:12px;border-bottom:1px solid rgba(150,124,80,.34);margin-bottom:13px}
+.kth-sec-rn{flex:none;font-size:25px;font-weight:600;line-height:1;letter-spacing:.06em;
+  color:#c2330f}
+.kth-sec-hb{flex:1;min-width:0}
+.kth-sec-hb h3{margin:0;font-size:18.5px;font-weight:700;letter-spacing:.14em;color:#231c10}
+.kth-sec-hb p{margin:3px 0 0;font-size:9.5px;letter-spacing:.24em;text-transform:uppercase;
+  color:#a08d63}
+.kth-sec-c{flex:none;font-size:12px;letter-spacing:.1em;color:#7a6d59}
+.kth-rows{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;
+  display:flex;flex-direction:column;gap:7px;padding-right:4px}
+.kth-row{display:flex;align-items:center;gap:14px;width:100%;
+  padding:12px 15px;font:inherit;text-align:left;cursor:pointer;color:inherit;
+  background:rgba(255,255,252,.72);border:1px solid rgba(150,124,80,.26);border-radius:2px;
+  border-left:2px solid rgba(150,124,80,.36);
+  transition:background .24s,border-color .24s,transform .24s,box-shadow .24s}
+.kth-row:hover,.kth-row:focus-visible{background:rgba(255,255,253,.99);
+  border-left-color:#c2330f;transform:translateX(4px);box-shadow:0 8px 22px rgba(90,66,24,.10)}
+.kth-row-no{flex:none;font-size:11px;letter-spacing:.14em;color:#a48f60}
+.kth-row-b{flex:1;min-width:0}
+.kth-row-b b{display:block;font-size:14.5px;font-weight:600;letter-spacing:.03em;color:#2b2419}
+.kth-row-b i{display:block;margin-top:3px;font-style:normal;font-size:11.5px;color:#7f7159;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kth-row-m{flex:none;font-size:10.5px;letter-spacing:.1em;color:#a08d63}
+.kth-row-go{flex:none;font-size:13px;color:#c2330f;opacity:0;transform:translateX(-4px);
+  transition:.24s}
+.kth-row:hover .kth-row-go,.kth-row:focus-visible .kth-row-go{opacity:1;transform:none}
+.kth-empty{margin:30px 0;text-align:center;font-size:12.5px;letter-spacing:.08em;color:#8a7d62}
+
+/* 部分页打开时把「← 回到目录」收走 —— **一屏只留一个返回**（与 `.ks-page-on` 同理） */
+.kn-shelf.kth-part .ks-bar{opacity:0;visibility:hidden;pointer-events:none}
 
 @media (max-width:900px){
-  .kspart{--k:.6;width:300px;height:210px}
-  .kspart-tag{left:calc(50% + 92px);gap:2px}
-  .kspart.lead-l .kspart-tag{right:calc(50% + 92px);left:auto}
-  .kspart-tag b{font-size:11.5px}
-  .kspart-tag i{font-size:10px;letter-spacing:.14em}
-  .ksdoc{width:124px}
-  .ksdoc b{font-size:10.5px}
-  .ksclump{width:88px;height:88px}
-  .ksspace-hint{background:linear-gradient(180deg,rgba(4,6,14,0) 0%,rgba(4,6,14,.88) 58%);
-    padding-top:26px}
+  .kth-hall{padding-top:clamp(56px,8.5vh,88px);padding-bottom:clamp(96px,20vh,180px)}
+  .kth-cards{flex-wrap:wrap;max-width:520px;gap:8px}
+  .kth-card{flex:0 1 calc(50% - 4px);max-width:none;padding:17px 10px 15px}
+  .kth-em{width:28px;height:28px;margin-bottom:8px}
+  .kth-sec{padding-top:clamp(56px,8.5vh,88px)}
+  .kth-row{padding:11px 12px;gap:11px}
+  .kth-row-m{display:none}
+  .kth-rows{max-height:none}
+}
+@media (max-width:560px){
+  .kth-hall{padding-bottom:clamp(70px,15vh,140px)}
+  .kth-cards{flex-direction:column;gap:7px;max-width:420px}
+  .kth-card{flex:none;width:100%;flex-direction:row;align-items:center;gap:12px;
+    text-align:left;padding:13px 14px}
+  .kth-rn{position:static;flex:none;order:-1;font-size:10px}
+  .kth-em{flex:none;width:23px;height:23px;margin:0}
+  .kth-nm{flex:1;font-size:14px}
+  .kth-en,.kth-hr,.kth-go{display:none}
+  .kth-ct{flex:none;margin-left:auto}
+  .kth-title{font-size:23px}
+  .kth-motto{font-size:12px}
 }
 
 /* 修习项目档案：纸页向左滑开，右侧落下档案
@@ -3765,25 +3759,54 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
         <button class="ks-back" id="ksBack" type="button">&#8592; 回到目录</button>
       </div>
 
-      <!-- ⭐ 技术文库 · 星海（2026-09-22 用户构想）：五个部分＝五个星系，
-           点星系 → 视角移过去聚焦，该部分的**每篇文档＝一颗亮星**；
-           还能把两颗星**拖到一起合并成一个星团**（自定义的一簇）。
-           ⚠️ 层序：`.ks-wrap`(1) < **`.ksspace`(3)** < `.ks-bar`(6) < `.kspage`(8) ——
-              必须低于 `.ks-bar`，否则「← 回到目录」又被盖住（2026-09-22 刚踩过这个坑）。 -->
-      <div class="ksspace" id="ksSpace" hidden>
-        <canvas class="kscv" id="ksCv" aria-hidden="true"></canvas>
-        <div class="ksgrain" id="ksGrain" aria-hidden="true"></div>
-        <div class="ksstage" id="ksStage">
-          <div class="ksspacegrid" aria-hidden="true"></div>
-          <div class="ksparts" id="ksParts"></div>
-          <div class="ksclumps" id="ksClumps"></div>
-          <div class="ksdocs" id="ksDocs"></div>
+      <!-- ⭐ 技术文库 · 学院阅览厅（2026-09-22 **四版：推倒星际风**）
+           用户："算了星际风太丑了，还是你自己参考一下学院风的白色系为主风格，
+           自己创造一个 ui 界面，最好生成一个动态的背景图，按我说的五个部分设置五个入口，
+           入口点进去就是对应的部分。"
+           结构 ＝ **背景四层**（插画 ／ 白纱 ／ 中央提亮 ／ 光柱 ＋ 浮尘）
+                ＋ **大厅**（题头 ＋ 五个入口卡）
+                ＋ **部分页**（该部分的文档目录 → 点一行进原有的阅读页）。
+           ⚠️ 层序：`.ks-wrap`(1) < **`.kthwall`(3)** < `.ks-bar`(6) < `.kspage`(8) ——
+              必须低于 `.ks-bar`，否则「← 回到目录」又被盖住（2026-09-22 踩过）。
+           ⚠️ 进部分页时把 `.ks-bar` 收走（`#knShelf.kth-part`）—— **一屏只留一个返回**：
+              大厅里回目录 ／ 部分页里回文库 ／ 阅读页里回文库。 -->
+      <div class="kthwall" id="kthWall" hidden>
+        <div class="kth-bg" aria-hidden="true"></div>
+        <div class="kth-veil" aria-hidden="true"></div>
+        <div class="kth-lift" aria-hidden="true"></div>
+        <div class="kth-ray" aria-hidden="true"></div>
+        <div class="kth-motes" id="kthMotes" aria-hidden="true"></div>
+
+        <div class="kth-top">
+          <button class="kth-back" id="kthBack" type="button" hidden>&#8592; 回到文库</button>
+          <span class="kth-t" id="kthTopT">Technical Library</span>
         </div>
-        <div class="ksspace-top">
-          <button class="ksspace-back" id="ksSpaceBack" type="button" hidden>&#8592; 回到星海</button>
-          <span class="ksspace-t" id="ksSpaceT">Technical Library</span>
+
+        <!-- 一 · 大厅：五个入口 -->
+        <div class="kth-hall" id="kthHall">
+          <p class="kth-eyebrow">Technical Library &middot; 五个部分</p>
+          <h3 class="kth-title">技术文库</h3>
+          <p class="kth-motto" id="kthMotto"></p>
+          <span class="kth-rule" aria-hidden="true"></span>
+          <div class="kth-cards" id="kthCards"></div>
         </div>
-        <p class="ksspace-hint" id="ksSpaceHint"></p>
+
+        <!-- 二 · 部分页：该部分的文档目录 -->
+        <div class="kth-sec" id="kthSec" hidden>
+          <div class="kth-sec-in">
+            <header class="kth-sec-h">
+              <span class="kth-sec-rn" id="kthSecRn"></span>
+              <div class="kth-sec-hb">
+                <h3 id="kthSecN"></h3>
+                <p id="kthSecE"></p>
+              </div>
+              <span class="kth-sec-c" id="kthSecC"></span>
+            </header>
+            <div class="kth-rows" id="kthRows"></div>
+          </div>
+        </div>
+
+        <p class="kth-hint" id="kthHint"></p>
       </div>
 
       <div class="ks-wrap">
@@ -4251,6 +4274,6 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 <script src="study-plan.js?v=20260922c"></script>
 <script src="docs.js?v=20260921b"></script>
 <script src="app.js?v=20260920f"></script>
-<script src="knowledge.js?v=20260922j"></script>
+<script src="knowledge.js?v=20260922k"></script>
 </body>
 </html>
