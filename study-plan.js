@@ -376,6 +376,10 @@ window.STUDY_PLAN = {
     { name: "C#", cat: "编程语言", pri: "S", nature: "编程语言（不是独立软件）", inst: "🟢 需要安装 .NET SDK + IDE", url: "https://dotnet.microsoft.com/", why: "WPF、ArcGIS Pro SDK、AutoCAD .NET 的共同主力语言", learn: "OOP、LINQ、异步、集合、API、调试" },
     { name: "WPF", cat: "桌面UI框架", pri: "S", nature: ".NET UI框架（不是独立软件）", inst: "🔵 不单独下载安装；随 .NET/Visual Studio 开发", url: "https://learn.microsoft.com/dotnet/desktop/wpf/", why: "Windows 桌面 GIS/CAD 工具界面", learn: "XAML、布局、Binding、Command、MVVM" },
     { name: "ArcGIS Pro", cat: "GIS桌面软件", pri: "S", nature: "桌面GIS专业软件", inst: "🟢 需要下载安装", url: "https://www.esri.com/en-us/arcgis/products/arcgis-pro/overview", why: "专业 GIS 生产与插件运行平台", learn: "地图、图层、编辑、地理处理、属性、数据管理" },
+    /* 2026-09-22 用户要求补：存量项目与实际工作里还在用的经典桌面 GIS。
+       ⚠️ 退役时间已核（Esri 官方文档页原话）：**ArcGIS Desktop 已于 2026 年 3 月 1 日退役**，
+          10.8.2 是末版；官方同时说明"有有效许可仍可继续使用"。 */
+    { name: "ArcMap 10.8", cat: "GIS桌面软件", pri: "S", nature: "桌面GIS专业软件（ArcGIS Desktop 10.x，末代版本）", inst: "🟢 需要下载安装（在 My Esri 取安装包与授权码）", url: "https://desktop.arcgis.com/zh-cn/arcmap/latest/", why: "存量项目与实际工作里仍在大量使用的经典桌面 GIS —— 数据生产、成图出图、ArcPy 自动化都还在它上面（Esri 已于 2026-03-01 退役，有许可仍可继续用）", learn: "ArcMap / ArcCatalog 基本操作；数据框与图层；符号化与制图出图；ModelBuilder；ArcPy 自动化（⚠️ 10.8 的 ArcPy 跑在 Python 2.7 上，与 ArcGIS Pro 的 Python 3 是两套，不能混用）" },
     { name: "ArcGIS Pro SDK for .NET", cat: "GIS开发SDK", pri: "S", nature: "ArcGIS Pro 开发 SDK（不是独立业务软件）", inst: "🟢 需要安装匹配版本 SDK/开发环境", url: "https://developers.arcgis.com/documentation/arcgis-pro-sdk/", why: "开发 ArcGIS Pro 插件", learn: "Add-in、DAML、Map/Layer/Feature、DockPane、QueuedTask、Geodatabase" },
     { name: "ArcGIS Maps SDK for JavaScript", cat: "Web GIS SDK", pri: "A", nature: "Web 开发 SDK / npm 包", inst: "🔵 不单独下载桌面软件；项目内通过 npm 安装", url: "https://developers.arcgis.com/javascript/", why: "React Web GIS 与可视化应用", learn: "Map、View、Layer、Query、Graphic、Components" },
     { name: "ArcGIS Maps SDK for .NET", cat: "独立GIS SDK", pri: "S", nature: "桌面 GIS 开发 SDK / NuGet 包", inst: "🔵 不单独下载安装；在 .NET 项目中安装 SDK/NuGet", url: "https://developers.arcgis.com/net/", why: "构建不依赖 ArcGIS Pro 的 Windows GIS 软件", learn: "MapView、Layer、Query、Geometry、Geoprocessing、WPF 集成" },
@@ -400,7 +404,7 @@ window.STUDY_PLAN = {
     7:  ["VS Code", "Node.js + npm", "Git", "GitHub", "Figma"],
     8:  ["Visual Studio 2026", "C#", "Git", "GitHub"],
     9:  ["Visual Studio 2026", "WPF", "C#", "Figma"],
-    10: ["ArcGIS Pro", "Python", "VS Code", "SQLite"],
+    10: ["ArcGIS Pro", "ArcMap 10.8", "Python", "VS Code", "SQLite"],
     11: ["ArcGIS Pro", "ArcGIS Pro SDK for .NET", "Visual Studio 2026", "C#", "WPF"],
     12: ["AutoCAD", "AutoCAD .NET API", "AutoLISP", "Visual Studio 2026", "C#"],
     13: ["ArcGIS Maps SDK for .NET", "WPF", "Visual Studio 2026", "C#", "SQLite", "PostgreSQL + PostGIS"],
