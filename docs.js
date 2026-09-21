@@ -1621,6 +1621,7 @@ window.DOCS = [
     title: "OpenCode 使用教程（零基础版）",
     category: "知识文档",
     shelf: "tech",   // 知识文档门户里的"书架"归属：rule 年度修习 / tech 技术文库 / humanities 人文文库 / archive 馆藏原件
+    sub: "ai",       // 技术文库内部再分五片星域：ai / gis / cad / pl 编程语言 / etc 其他领域
     summary: "从零上手 OpenCode AI 编程代理：安装配置、常用指令、C/C++ 开发环境搭建、VSCode 配合、编译调试全流程与实战案例。",
     date: "2026-09-17",
     tags: ["OpenCode", "AI编程", "教程", "入门"],
@@ -1807,6 +1808,364 @@ which gcc               # 查看 gcc 所在位置</code></pre>
         <a href="downloads/kbx/opencode-tutorial.zip" download style="display:inline-block;padding:10px 22px;background:var(--accent);color:#fff;border-radius:8px;margin:4px 0;text-decoration:none">下载《OpenCode 使用教程》原件（PDF · 约 8.4 MB）</a>
       </p>
       <p><strong>解压说明</strong>：原件为普通压缩包，未设密码，下载后用 Windows 资源管理器或解压软件直接解压即可。</p>
+    `
+  },
+  {
+    title: "把 MCP Server 接到自己的文件与数据库上",
+    category: "知识文档",
+    shelf: "tech",
+    sub: "ai",
+    summary: "从「AI 只会聊天」到「AI 能动手」：写一个最小的 MCP Server，把本地目录和一张 SQLite 表暴露出去，再配进客户端。",
+    date: "2026-09-22",
+    tags: ["MCP", "AI", "工具调用", "SQLite"],
+    content: `
+      <div class="callout">📌 MCP 解决的问题很具体：<strong>让 AI 用一套统一的方式，安全地调用你本机的东西</strong>（文件、数据库、内部接口）。没有它，每接一个工具都要为每个 AI 客户端写一遍适配。</div>
+      <hr>
+      <h2>一 · 三个词先说明白</h2>
+      <table>
+        <tr><th>词</th><th>它的意思</th></tr>
+        <tr><td class="k">MCP Server</td><td>你写的那一端：把能力（读文件、查库）包装成标准接口</td></tr>
+        <tr><td class="k">MCP Client</td><td>用你的 AI 工具那一端（编辑器、桌面客户端），它负责发起调用</td></tr>
+        <tr><td class="k">Tool / Resource</td><td><strong>Tool</strong> 是"要执行的动作"，<strong>Resource</strong> 是"可以直接读的数据"</td></tr>
+      </table>
+      <h2>二 · 最小可用：只暴露两个能力</h2>
+      <p>先别贪多。<strong>第一个版本只做两件事</strong>：列出一个目录下的文件，和按关键词查一张表。</p>
+      <pre><code>from mcp.server.fastmcp import FastMCP
+import sqlite3, os
+
+mcp = FastMCP("my-kb")
+ROOT = "D:/知识库"          # 只暴露这一个目录，别给整个盘
+
+@mcp.tool()
+def list_files(sub: str = "") -> list:
+    """列出知识库某个子目录下的文件名"""
+    p = os.path.join(ROOT, sub)
+    if not os.path.abspath(p).startswith(os.path.abspath(ROOT)):
+        raise ValueError("越界了")
+    return sorted(os.listdir(p))
+
+@mcp.tool()
+def search_notes(keyword: str, limit: int = 10) -> list:
+    """在便签表里按关键词查标题"""
+    con = sqlite3.connect("D:/知识库/notes.db")
+    cur = con.execute(
+        "select title, updated from notes where title like ? limit ?",
+        ("%" + keyword + "%", limit))
+    rows = cur.fetchall()
+    con.close()
+    return rows
+
+if __name__ == "__main__":
+    mcp.run()</code></pre>
+      <p>两个 <code>@mcp.tool()</code> 就是两个可以被 AI 调用的动作。注意 <code>list_files</code> 里那句<strong>越界检查</strong> —— 见下面第五条。</p>
+      <h2>三 · 配进客户端</h2>
+      <p>客户端配置里要写清楚三件事：<strong>用什么命令启动、工作目录在哪、权限给到哪</strong>。不同客户端字段名不一样，但意思都一样：</p>
+      <pre><code>{
+  "mcpServers": {
+    "my-kb": {
+      "command": "python",
+      "args": ["D:/工具/my-kb/server.py"]
+    }
+  }
+}</code></pre>
+      <p>配完<strong>重启客户端</strong>，然后问它一句"列出知识库里有哪些文件"。它应该会调用你写的工具，而不是靠猜。</p>
+      <h2>四 · 先做只读，再加写入</h2>
+      <p>顺序很重要：<strong>只读 → 只读＋受限写入 → 放开</strong>。第一版永远不要给"删除"和"执行任意命令"这两个能力 —— 它们出错的代价不对等。</p>
+      <div class="callout"><strong>判断标准：</strong>如果 AI 误调用这个工具十次，你能接受吗？能，才可以放出去。</div>
+      <h2>五 · 三个必守的边界</h2>
+      <ul>
+        <li><strong>路径要夹住</strong>：任何来自 AI 的路径参数，都要拼成绝对路径后校验前缀（示例里那句 <code>startswith</code>），否则一句 <code>../../</code> 就跑到盘根去了。</li>
+        <li><strong>数据库连只读</strong>：查数据用 <code>mode=ro</code> 打开，物理上写不进去，比"记得别写"可靠。</li>
+        <li><strong>返回要短</strong>：工具返回的内容会进上下文。一个目录列几百个文件名，上下文直接爆掉 —— 加 <code>limit</code>，并在描述里写清"默认只返回 10 条"。</li>
+      </ul>
+      <p class="warn">⚠️ 不同版本的 MCP 规范与 SDK 接口在变，以你所用客户端与 SDK 的官方文档为准。</p>
+    `
+  },
+  {
+    title: "提示词与上下文：一份能长期用的模板",
+    category: "知识文档",
+    shelf: "tech",
+    sub: "ai",
+    summary: "把「每次都要重新解释一遍」变成一份可复用的五段模板：目标、上下文、约束、输出格式、验收标准 —— 顺手也说清什么时候该重开一段对话。",
+    date: "2026-09-22",
+    tags: ["提示词", "上下文", "AI", "模板"],
+    content: `
+      <div class="callout">📌 这份模板不追求"写得多漂亮"，只追求一件事：<strong>让 AI 一次就按你要的样子交付</strong>，而不是来回三轮才明白你要什么。</div>
+      <hr>
+      <h2>一 · 五段式：照着填</h2>
+      <table>
+        <tr><th>段落</th><th>回答的问题</th><th>反例</th></tr>
+        <tr><td class="k">目标</td><td>要它做出什么</td><td>"帮我看看这段代码"</td></tr>
+        <tr><td class="k">上下文</td><td>它该知道的前提</td><td>（什么都不给）</td></tr>
+        <tr><td class="k">约束</td><td>不许做什么</td><td>"别用第三方库"（不说就一定会用）</td></tr>
+        <tr><td class="k">输出格式</td><td>要什么形态</td><td>"给我代码"（要整文件还是片段？）</td></tr>
+        <tr><td class="k">验收标准</td><td>怎么算做对了</td><td>（不写，于是永远"再改一版"）</td></tr>
+      </table>
+      <h2>二 · 一个真实例子</h2>
+      <pre><code>目标：写一个 Python 脚本，把一个文件夹里所有 CSV 合并成一个 Excel。
+上下文：源目录 D:/数据/2026，约 30 个 CSV，列结构一致；
+        本机 Python 3.13，已装 pandas 和 openpyxl。
+约束：只用标准库 + pandas + openpyxl；不要联网；不要删除任何源文件。
+输出格式：一个完整的 .py 文件，带简短注释；
+          末尾写明运行方式。
+验收标准：在 30 个 CSV 的目录上跑一次，输出一个 xlsx，
+          每个 CSV 一个 sheet，且总量与源文件一致。</code></pre>
+      <p>同一个需求，直接说"帮我合并 CSV"会得到一段大概能用的代码；按上面写完，得到的是<strong>能当场跑、并且你知道怎么检查对不对</strong>的东西。</p>
+      <h2>三 · 上下文：给什么，不给什么</h2>
+      <ul>
+        <li><strong>给</strong>：报错原文、相关的那几个文件、你已经试过什么、环境版本。</li>
+        <li><strong>不给</strong>：整个项目目录（几百个文件）、你猜的可能原因（会把它带偏）、与问题无关的日志。</li>
+      </ul>
+      <p>判断标准：<strong>只给"缺了它就无法判断"的部分</strong>。给多了不只是浪费，还会让真正重要的信息被稀释。</p>
+      <h2>四 · 什么时候该重开一段对话</h2>
+      <p>三个信号，出现一个就重开：</p>
+      <ol>
+        <li>它开始<strong>重复</strong>之前已经否掉的方案；</li>
+        <li>话题已经换了两次以上（上下文里混着两件事）；</li>
+        <li>你发现自己要解释"我们之前说过……"。</li>
+      </ol>
+      <div class="callout"><strong>重开不是浪费：</strong>把上一段的结论压成五行写进新对话的"上下文"里，比拖着一长串历史继续问要准得多。</div>
+      <h2>五 · 把好用的模板存成文件</h2>
+      <p>这套五段式值得放成一个 <code>.md</code> 文件，跟代码一起进 git。理由很简单：<strong>写得好的提示词是资产，写在聊天框里的是消耗品</strong> —— 下周你还会想问同一类问题。</p>
+      <p>模板里留 <code>{{目标}}</code> 这类占位符，用的时候替换；改过三版之后，你会有一份真正贴合自己项目的东西。</p>
+    `
+  },
+  {
+    title: "ArcPy 批量处理：一次改完两百个图层的坐标系",
+    category: "知识文档",
+    shelf: "tech",
+    sub: "gis",
+    summary: "用 ArcPy 走一遍真实的批量活儿：遍历工作空间、筛选需要纠正的图层、统一定义坐标系、把结果写回并留一份处理日志。",
+    date: "2026-09-22",
+    tags: ["ArcPy", "批量处理", "坐标系", "GIS"],
+    content: `
+      <div class="callout">📌 这篇只讲一件事：<strong>把「一个个点开改」变成「跑一次脚本」</strong>。所有代码都在 ArcGIS Pro 自带的 Python 3 里跑（ArcMap 10.x 的 ArcPy 是 Python 2.7，见文末提醒）。</div>
+      <hr>
+      <h2>一 · 先想清楚要做什么</h2>
+      <p>拿到一批别人的数据，最常见的问题是：图层带着 <code>&lt;Unknown&gt;</code> 坐标系，或者坐标系定义错了（坐标值是投影坐标，却标成了地理坐标）。一件件改不现实，写成脚本则十行就够了。</p>
+      <p>判断标准很简单：<strong>这个动作要做超过三次，就值得写成脚本</strong>；要做超过三十次，就值得把日志也一起写进去。</p>
+      <h2>二 · 遍历：先列清楚有什么</h2>
+      <pre><code>import arcpy, os
+
+root = r"D:/数据/2026项目"
+arcpy.env.workspace = root
+arcpy.env.overwriteOutput = True
+
+for dirpath, dirs, files in os.walk(root):
+    for f in files:
+        if f.lower().endswith((".shp", ".gdb")):
+            print(os.path.join(dirpath, f))</code></pre>
+      <p>先只打印、不改动。这一步的目的是确认<strong>你清楚自己要碰哪些文件</strong> —— 批量脚本最危险的从来不是写错代码，而是遍历范围写大了。</p>
+      <h2>三 · 定义坐标系：三种写法</h2>
+      <table>
+        <tr><th>写法</th><th>用途</th></tr>
+        <tr><td class="k">EPSG 代号</td><td>最稳。如 <code>arcpy.SpatialReference(4490)</code>（CGCS2000 地理坐标）</td></tr>
+        <tr><td class="k">投影文件</td><td><code>arcpy.SpatialReference(r"D:/标准/CGCS2000.prj")</code>，适合院里的标准模板</td></tr>
+        <tr><td class="k">从已有数据继承</td><td><code>arcpy.Describe(标准图层).spatialReference</code>，最不容易写错</td></tr>
+      </table>
+      <div class="callout"><strong>建议：</strong>优先"从已有数据继承"。代号记错一位，出来的是另一个椭球，肉眼还看不出来。</div>
+      <h2>四 · 真正的批量：改定义 + 记日志</h2>
+      <pre><code>tgt = arcpy.SpatialReference(4490)
+log = []
+
+for dirpath, dirs, files in os.walk(root):
+    for f in files:
+        if not f.lower().endswith(".shp"):
+            continue
+        p = os.path.join(dirpath, f)
+        try:
+            old = arcpy.Describe(p).spatialReference.name
+            if old != tgt.name:
+                arcpy.management.DefineProjection(p, tgt)
+                log.append((p, old, tgt.name, "已改"))
+            else:
+                log.append((p, old, tgt.name, "跳过"))
+        except Exception as e:
+            log.append((p, "读取失败", str(e), "错误"))
+
+with open(r"D:/数据/处理日志.txt", "w", encoding="utf-8") as fp:
+    for row in log:
+        fp.write(" | ".join(str(x) for x in row) + os.linesep)
+
+print("完成：", len(log), "个")</code></pre>
+      <p>三个细节值得留着：<strong>写日志</strong>（出了问题能追溯）、<strong>跳过已正确的</strong>（重跑安全）、<strong>try 包住每一个</strong>（单个坏文件不该中断整批）。</p>
+      <h2>五 · 两个真会踩的坑</h2>
+      <ul>
+        <li><strong>DefendProjection 不是投影</strong>：它只改"定义"，不动坐标值。数据本来就该是另一个坐标系时，你要的是 <code>Project</code>（会新建数据）。用错这一个字，成果全是错的。</li>
+        <li><strong>文件被占用</strong>：ArcGIS Pro 里开着那个图层时改不了，报的还是个含糊的锁错误。跑批处理前先把工程里的图层关掉。</li>
+      </ul>
+      <p class="warn">⚠️ <strong>ArcMap 10.x 的 ArcPy 是 Python 2.7</strong>，和 ArcGIS Pro 的 Python 3 是两套环境：<code>print</code>、编码、路径写法都不一样，脚本不能直接互抄。混用是这一步最常见的翻车点。</p>
+    `
+  },
+  {
+    title: "AutoCAD .NET 插件：从零写一个能加载的 dll",
+    category: "知识文档",
+    shelf: "tech",
+    sub: "cad",
+    summary: "用 C# 写第一个 AutoCAD 插件：环境与引用配置、命令方法、NETLOAD 加载，以及那三个几乎人人都会踩的坑。",
+    date: "2026-09-22",
+    tags: ["AutoCAD", "C#", ".NET", "二次开发"],
+    content: `
+      <div class="callout">📌 目标很小也很具体：<strong>在自己的 AutoCAD 里敲一个命令，画出几条线</strong>。跑通这一遍，后面所有插件都是同一个骨架。</div>
+      <hr>
+      <h2>一 · 环境三件套要对上</h2>
+      <table>
+        <tr><th>要素</th><th>说明</th></tr>
+        <tr><td class="k">AutoCAD 版本</td><td>决定你引用哪个 SDK、能用到什么 API</td></tr>
+        <tr><td class="k">.NET Framework</td><td>与你 AutoCAD 版本对应（老版本多用 4.8）</td></tr>
+        <tr><td class="k">目标平台</td><td><strong>x64</strong>。AutoCAD 只有 64 位，选 Any CPU 会在加载时静默失败</td></tr>
+      </table>
+      <h2>二 · 工程与引用</h2>
+      <p>Visual Studio 里新建 <strong>类库（.NET Framework）</strong>，然后添加两个引用，它们就在 AutoCAD 的安装目录下：</p>
+      <ul>
+        <li><code>acdbmgd.dll</code> —— 图形数据库（实体、图层、块）</li>
+        <li><code>acmgd.dll</code> —— 应用程序层（命令、文档、编辑器）</li>
+      </ul>
+      <div class="callout"><strong>必做一步：</strong>把这两个引用的 <strong>「复制到本地 / Copy Local」设为 False</strong>。否则编译出来的 dll 会带着一份 AutoCAD 自己的库，加载时报类型冲突，而且报错信息完全看不出是这个原因。</div>
+      <h2>三 · 最小的一个命令</h2>
+      <pre><code>using Autodesk.AutoCAD.Runtime;
+using Autodesk.AutoCAD.ApplicationServices;
+using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.Geometry;
+
+[assembly: CommandClass(typeof(MyFirstPlugin.MyCommands))]
+
+namespace MyFirstPlugin
+{
+    public class MyCommands
+    {
+        [CommandMethod("HELLOCAD")]
+        public void HelloCad()
+        {
+            var doc = Application.DocumentManager.MdiActiveDocument;
+            var db  = doc.Database;
+            var ed  = doc.Editor;
+
+            using (var tr = db.TransactionManager.StartTransaction())
+            {
+                var bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+                var btr = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+
+                var line = new Line(new Point3d(0, 0, 0), new Point3d(100, 100, 0));
+                btr.AppendEntity(line);
+                tr.AddNewlyCreatedDBObject(line, true);
+
+                tr.Commit();
+            }
+
+            ed.WriteMessage("已经画好了。");
+        }
+    }
+}</code></pre>
+      <p>结构记住四步：<strong>拿文档 → 开事务 → 往模型空间加实体 → 提交</strong>。AutoCAD 里几乎所有"改动图形"的操作都在事务里完成，忘了 <code>Commit()</code> 就什么都不会发生。</p>
+      <h2>四 · 加载与调用</h2>
+      <p>AutoCAD 命令行输入 <code>NETLOAD</code> → 选中刚编译出的 dll → 再输入你的命令名 <code>HELLOCAD</code>。</p>
+      <p>每次改代码都要重新编译、重新 NETLOAD。嫌烦可以写一个 <code>.lsp</code> 或用注册表自动加载，但一开始别急着自动化 —— 先把"能加载"这件事确认下来。</p>
+      <h2>五 · 三个必踩的坑</h2>
+      <ul>
+        <li><strong>加载时报 "无法加载程序集"</strong>：九成是位宽（改 x64）或 SDK 版本与 AutoCAD 版本不匹配。</li>
+        <li><strong>命令敲了没反应</strong>：命令名大小写无所谓，但 <code>[CommandMethod]</code> 所在类必须在 <code>[assembly: CommandClass]</code> 里注册，且方法是 <code>public</code>。</li>
+        <li><strong>改完 dll 要重启 AutoCAD</strong>：已加载的程序集不会被覆盖替换，重新 NETLOAD 也没用。</li>
+      </ul>
+      <p class="warn">⚠️ 各版本的引用方式略有差别（新版本走 NuGet 包），以你手上 AutoCAD 的官方开发者文档为准。</p>
+    `
+  },
+  {
+    title: "Python 里那几个「看起来一样」的坑",
+    category: "知识文档",
+    shelf: "tech",
+    sub: "pl",
+    summary: "可变默认参数、闭包捕获、浅拷贝、is 与 ==：四组写法看着都正常，跑起来全不是你以为的结果 —— 每个都给出原因和正确写法。",
+    date: "2026-09-22",
+    tags: ["Python", "语法", "调试", "避坑"],
+    content: `
+      <div class="callout">📌 这篇不是语法入门，而是<strong>四组"写错了也不报错"的代码</strong>。它们的共同点是：看起来完全合理，结果不对，而且不对得很安静。</div>
+      <hr>
+      <h2>一 · 可变默认参数</h2>
+      <pre><code>def add(item, box=[]):
+    box.append(item)
+    return box
+
+print(add("a"))   # ['a']
+print(add("b"))   # ['a', 'b']    ← 期望是 ['b']</code></pre>
+      <p><strong>原因</strong>：默认值在函数<strong>定义时</strong>求值一次，之后所有调用共用同一个列表对象。</p>
+      <pre><code>def add(item, box=None):
+    if box is None:
+        box = []
+    box.append(item)
+    return box</code></pre>
+      <p>判据：<strong>默认值里出现 <code>[]</code>、<code>{}</code>、<code>set()</code>，就要警觉</strong>。</p>
+      <h2>二 · 闭包捕获的是变量，不是值</h2>
+      <pre><code>funcs = [lambda: i for i in range(3)]
+print([f() for f in funcs])   # [2, 2, 2]   ← 期望 [0, 1, 2]</code></pre>
+      <p><strong>原因</strong>：函数体里的 <code>i</code> 是"到时候去查"的名字，等真正调用时循环早就结束了，<code>i</code> 停在最后一个值。</p>
+      <pre><code>funcs = [lambda i=i: i for i in range(3)]</code></pre>
+      <p>用默认参数把当前值"钉"在定义的那一刻 —— 这正好用到了第一条的性质，所以两件事要连起来理解。</p>
+      <h2>三 · 浅拷贝只复制一层</h2>
+      <pre><code>a = [[1, 2], [3, 4]]
+b = a.copy()
+b[0].append(99)
+print(a)          # [[1, 2, 99], [3, 4]]   ← a 也被改了
+
+import copy
+c = copy.deepcopy(a)   # 需要彻底独立时用它</code></pre>
+      <p>回到真实场景：配置字典如果只 <code>copy()</code>，里面嵌套的那几层仍然是共享的；改一处，所有引用它的地方一起变。</p>
+      <h2>四 · <code>is</code> 比的是"是不是同一个对象"</h2>
+      <pre><code>a = [1, 2]
+b = [1, 2]
+print(a == b)   # True   值相等
+print(a is b)   # False  不是同一个对象
+
+x = 1000
+y = 1000
+print(x is y)   # 可能 True，也可能 False —— 别写这种代码</code></pre>
+      <p>小整数有缓存，行为看起来"像是对的"，换个大数字就变了。<strong>判断值相等永远用 <code>==</code>；<code>is</code> 只用于 <code>None</code>、<code>True</code>、<code>False</code> 这类单例。</strong></p>
+      <h2>五 · 一个排查习惯</h2>
+      <p>这四条的共同特征是"结果不对但不报错"。碰到这种，最快的办法不是盯着代码看，而是<strong>在改动前把对象的身世打印出来</strong>：</p>
+      <pre><code>print(id(box), box)      # 看是不是同一个对象
+print(type(x), repr(x))  # 看值到底是什么类型</code></pre>
+      <p>一行 <code>id()</code> 能省掉半小时的猜测。</p>
+    `
+  },
+  {
+    title: "把常用操作串成一条命令（Windows 速查）",
+    category: "知识文档",
+    shelf: "tech",
+    sub: "etc",
+    summary: "批量改名、找大文件、查端口占用、清理缓存、git 常用组合：每条都按「要做什么 → 命令 → 结果是什么」写清楚。",
+    date: "2026-09-22",
+    tags: ["命令行", "Windows", "效率", "速查"],
+    content: `
+      <div class="callout">📌 这一页收的是<strong>能抄下来直接用</strong>的命令。每条都按同一个格式：<strong>要做什么 → 命令 → 你会看到什么</strong>。路径里有空格时记得给整条加引号。</div>
+      <hr>
+      <h2>一 · 批量改名：给所有 jpg 加上前缀</h2>
+      <pre><code>for %f in (*.jpg) do ren "%f" "photo_%f"</code></pre>
+      <p>在 <strong>cmd</strong> 里直接用；写在 <strong>.bat 文件</strong>里要把 <code>%f</code> 写成 <code>%%f</code>。第二步永远是先拿一个备份文件夹试着跑一遍。</p>
+      <h2>二 · 找出占地方的大文件</h2>
+      <pre><code>forfiles /P "D:/下载" /S /M *.* /C "cmd /c if @fsize GTR 104857600 echo @path @fsize"</code></pre>
+      <p>列出 D 盘"下载"下所有大于 100 MB 的文件（104857600 字节 ＝ 100 MB）。<strong>只看不动</strong>，删什么自己再决定。</p>
+      <h2>三 · 端口被谁占了</h2>
+      <pre><code>netstat -ano | findstr :8080
+tasklist | findstr 7721</code></pre>
+      <p>第一条拿到占用 8080 的进程号（最后一列），第二条用进程号查出是谁。开发时最常遇到的就是"上次的进程没退干净"。</p>
+      <h2>四 · 目录里有多少文件、占多大</h2>
+      <pre><code>dir /s /-c | findstr "个文件"
+Get-ChildItem -Recurse | Measure-Object -Property Length -Sum</code></pre>
+      <p>第一条在 cmd（看这一层目录树的合计），第二条在 <strong>PowerShell</strong>（只看数值，方便对比）。</p>
+      <h2>五 · git 的四条日常组合</h2>
+      <table>
+        <tr><th>想做的事</th><th>命令</th></tr>
+        <tr><td class="k">只想提交改过的文件里的一部分</td><td><code>git add -p</code>（逐个 hunk 选）</td></tr>
+        <tr><td class="k">临时存一下手头的改动</td><td><code>git stash</code> → 之后 <code>git stash pop</code></td></tr>
+        <tr><td class="k">看看这次提交动了什么</td><td><code>git show --stat HEAD</code></td></tr>
+        <tr><td class="k">找出这行是谁改的</td><td><code>git blame -L 40,60 文件名</code></td></tr>
+      </table>
+      <div class="callout"><strong>推荐习惯：</strong>提交信息写"<strong>做了什么</strong>"而不是"改了xx"。半年后 <code>git log</code> 那一列才是你唯一还能看懂的记录。</div>
+      <h2>六 · 一条命令省一次手忙脚乱</h2>
+      <pre><code>ipconfig /flushdns          DNS 缓存清了，域名解析慢时先试这个
+sfc /scannow                系统文件自检（要管理员权限，耗时几分钟）
+powercfg /batteryreport     生成电池报告 HTML，看电池老化到什么程度</code></pre>
+      <p class="warn">⚠️ 带 <code>/scannow</code>、<code>/flushdns</code> 这类系统级命令，在改动前先确认你清楚它动了什么；不确定时查官方文档，不要照着网上抄。</p>
     `
   },
   {

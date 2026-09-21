@@ -1561,6 +1561,405 @@ function kstBind() {
   }
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   技术文库 · 星海（2026-09-22，用户构想）
+   五个部分 ＝ 五个星系；点星系 → 视角移过去聚焦，该部分**一篇文档 ＝ 一颗亮星**；
+   还能把两颗星**拖到一起合并成「星团」**（自己的一簇，存在本机）。
+   ⚠️ 动效刻意很轻：Canvas 星点缓慢漂移＋明暗闪烁、星系微微呼吸；不追鼠标、无流星。
+   ⚠️ Canvas 只在星海可见时跑 rAF（`ksCanvasStart/Stop`），切走就停。
+   ⚠️ 星团只记"谁和谁一组"，**不存坐标** —— 位置每次由排版算出来（窗口变了也不会乱）。
+   ══════════════════════════════════════════════════════════════════════════ */
+var KSPARTS = [
+  { k: "ai",  name: "AI 相关",  x: 26, y: 32, c: "#85b7eb" },
+  { k: "gis", name: "GIS 相关", x: 68, y: 26, c: "#5dcaa5" },
+  { k: "cad", name: "CAD 相关", x: 79, y: 62, c: "#ed93b1" },
+  { k: "pl",  name: "编程语言", x: 47, y: 55, c: "#afa9ec" },
+  { k: "etc", name: "其他领域", x: 19, y: 74, c: "#ef9f27" }
+];
+var KST_TECH_KEY = "tech_groups_v1";   // { 星团id: [文档标题, ...] }（本机）
+var ksPart = "";                        // 当前聚焦的星系 key（"" ＝ 星海首页）
+var ksScale = 1;
+var ksDrag = null, ksJustDrag = false, ksDragEnd = 0;
+var ksCvW = 0, ksCvH = 0, ksCtx = null, ksStars = [], ksRaf = 0, ksRun = false;
+
+function ksEsc(s) {
+  return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+function ksPartByK(k) {
+  for (var i = 0; i < KSPARTS.length; i++) if (KSPARTS[i].k === k) return KSPARTS[i];
+  return null;
+}
+/* tech 里的文档按 `sub` 归到五个部分（没写 sub 的落到"其他领域"） */
+function ksTechDocs() {
+  var out = {};
+  KSPARTS.forEach(function (p) { out[p.k] = []; });
+  knShelfDocs("tech").forEach(function (d) {
+    var k = d.sub && out[d.sub] ? d.sub : "etc";
+    out[k].push(d);
+  });
+  return out;
+}
+function ksFindDoc(title) {
+  var hit = null;
+  knShelfDocs("tech").forEach(function (d) { if (d.title === title) hit = d; });
+  return hit;
+}
+function ksTechGroups() {
+  try {
+    var g = JSON.parse(localStorage.getItem(KST_TECH_KEY) || "{}");
+    return (g && typeof g === "object") ? g : {};
+  } catch (e) { return {}; }
+}
+function ksTechGroupsSave(g) {
+  Object.keys(g).forEach(function (k) { if (!g[k] || g[k].length < 2) delete g[k]; });
+  try { localStorage.setItem(KST_TECH_KEY, JSON.stringify(g)); } catch (e) {}
+}
+function ksClumpOf(g, title) {
+  var ids = Object.keys(g);
+  for (var i = 0; i < ids.length; i++) if (g[ids[i]].indexOf(title) >= 0) return ids[i];
+  return null;
+}
+
+/* ── Canvas：星点（轻漂移 ＋ 明暗闪烁）─────────────────────────────────── */
+function ksCanvasSize() {
+  var cv = document.getElementById("ksCv");
+  if (!cv) return;
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  ksCvW = cv.clientWidth || 1;
+  ksCvH = cv.clientHeight || 1;
+  cv.width = Math.round(ksCvW * dpr);
+  cv.height = Math.round(ksCvH * dpr);
+  ksCtx = cv.getContext("2d");
+  if (ksCtx) ksCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+function ksStarsInit() {
+  var n = Math.round(ksCvW * ksCvH / 8600);
+  n = Math.max(70, Math.min(200, n));
+  ksStars = [];
+  for (var i = 0; i < n; i++) {
+    ksStars.push({
+      x: Math.random() * ksCvW, y: Math.random() * ksCvH,
+      r: 0.5 + Math.random() * 1.2,
+      vx: (Math.random() - 0.5) * 0.07, vy: (Math.random() - 0.5) * 0.07,
+      a: 0.22 + Math.random() * 0.6,
+      ph: Math.random() * 6.28, sp: 0.35 + Math.random() * 1.0
+    });
+  }
+}
+function ksTick(t) {
+  if (!ksRun || !ksCtx) return;
+  ksCtx.clearRect(0, 0, ksCvW, ksCvH);
+  for (var i = 0; i < ksStars.length; i++) {
+    var s = ksStars[i];
+    s.x += s.vx; s.y += s.vy;
+    if (s.x < 0) s.x += ksCvW; else if (s.x > ksCvW) s.x -= ksCvW;
+    if (s.y < 0) s.y += ksCvH; else if (s.y > ksCvH) s.y -= ksCvH;
+    var a = s.a * (0.6 + 0.4 * Math.sin(t / 1000 * s.sp + s.ph));
+    ksCtx.beginPath();
+    ksCtx.arc(s.x, s.y, s.r, 0, 6.2832);
+    ksCtx.fillStyle = "rgba(198,224,255," + a.toFixed(3) + ")";
+    ksCtx.fill();
+  }
+  ksRaf = requestAnimationFrame(ksTick);
+}
+function ksCanvasStart() {
+  if (ksRun) return;
+  ksRun = true;
+  ksCanvasSize();
+  ksStarsInit();
+  if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    ksTick(0);            // 只画一帧（静态星点），不跑循环
+    ksRun = false;
+    return;
+  }
+  ksRaf = requestAnimationFrame(ksTick);
+}
+function ksCanvasStop() {
+  ksRun = false;
+  if (ksRaf) { cancelAnimationFrame(ksRaf); ksRaf = 0; }
+}
+
+/* ── 渲染：五个星系 ───────────────────────────────────────────────────── */
+function ksPartsRender() {
+  var box = document.getElementById("ksParts");
+  if (!box) return;
+  var g = ksTechDocs();
+  box.innerHTML = KSPARTS.map(function (p) {
+    var n = (g[p.k] || []).length;
+    return '<button class="kspart" type="button" data-p="' + p.k + '" style="--x:' + p.x + "%;--y:" +
+      p.y + "%;--c:" + p.c + '">' +
+      '<span class="kspart-o"></span><span class="kspart-i"></span>' +
+      "<b>" + ksEsc(p.name) + "</b><em>" + (n ? n + " 篇" : "还空着") + "</em></button>";
+  }).join("");
+}
+
+/* ── 排版：文档星怎么摆（未分组＝绕星系一圈；星团＝成员紧聚在一团）────── */
+function ksLayout(part) {
+  var P = ksPartByK(part), list = (ksTechDocs()[part] || []);
+  var g = ksTechGroups(), clumpOf = {};
+  Object.keys(g).forEach(function (id) {
+    g[id].forEach(function (t) { clumpOf[t] = id; });
+  });
+  var n = list.length, R = Math.max(13, 9 + n * 0.8);
+  var nodes = list.map(function (d, i) {
+    var a = (-90 + i * 360 / Math.max(1, n)) * Math.PI / 180;
+    return { d: d, bx: P.x + Math.cos(a) * R, by: P.y + Math.sin(a) * R * 0.8 };
+  });
+  var centers = {};
+  Object.keys(g).forEach(function (id) {
+    var ms = nodes.filter(function (b) { return g[id].indexOf(b.d.title) >= 0; });
+    if (ms.length < 2) return;
+    centers[id] = {
+      x: ms.reduce(function (s, b) { return s + b.bx; }, 0) / ms.length,
+      y: ms.reduce(function (s, b) { return s + b.by; }, 0) / ms.length,
+      n: ms.length
+    };
+  });
+  var seq = {};
+  nodes.forEach(function (b) {
+    var id = clumpOf[b.d.title];
+    if (!id || !centers[id]) { b.x = b.bx; b.y = b.by; b.clump = ""; return; }
+    seq[id] = (seq[id] || 0) + 1;
+    var m = g[id].length, j = seq[id] - 1;
+    var a = (-90 + j * 360 / m) * Math.PI / 180;
+    b.x = centers[id].x + Math.cos(a) * 5.4;
+    b.y = centers[id].y + Math.sin(a) * 4.6;
+    b.clump = id;
+  });
+  return { nodes: nodes, centers: centers };
+}
+
+function ksDocsRender() {
+  var box = document.getElementById("ksDocs"), cbox = document.getElementById("ksClumps");
+  if (!box) return;
+  if (!ksPart) { box.innerHTML = ""; if (cbox) cbox.innerHTML = ""; return; }
+  var lay = ksLayout(ksPart), P = ksPartByK(ksPart);
+  if (cbox) {
+    cbox.innerHTML = Object.keys(lay.centers).map(function (id) {
+      var c = lay.centers[id];
+      return '<div class="ksclump" style="--x:' + c.x.toFixed(2) + "%;--y:" + c.y.toFixed(2) +
+        '%"><em>星团 · ' + c.n + " 颗</em></div>";
+    }).join("");
+  }
+  box.innerHTML = lay.nodes.map(function (b) {
+    return '<button class="ksdoc" type="button" data-t="' + ksEsc(b.d.title) + '" style="--x:' +
+      b.x.toFixed(2) + "%;--y:" + b.y.toFixed(2) + "%;--c:" + P.c + '">' +
+      '<i></i><b>' + ksEsc(b.d.title) + "</b></button>";
+  }).join("");
+  requestAnimationFrame(function () {
+    var ds = document.querySelectorAll("#ksDocs .ksdoc");
+    [].forEach.call(ds, function (d, i) {
+      window.setTimeout(function () { d.classList.add("on"); }, 45 * i);
+    });
+  });
+}
+
+function ksHintRender() {
+  var el = document.getElementById("ksSpaceHint");
+  if (!el) return;
+  var nc = Object.keys(ksTechGroups()).length;
+  if (!ksPart) {
+    el.textContent = "点一个星系进去 —— 五个部分，各自一片星域。";
+    return;
+  }
+  var n = (ksTechDocs()[ksPart] || []).length;
+  el.textContent = "每一颗星是一篇文档 · 点开就读 · 把两颗星拖到一起，可以合成一个星团" +
+    (nc ? "（已经有 " + nc + " 个）" : "");
+  if (!n) el.textContent = "这片星域还空着 —— 等有文档了，它们会在这里亮起来。";
+}
+
+/* ── 聚焦 / 回到星海 ─────────────────────────────────────────────────── */
+function ksSpaceFocus(part) {
+  var stage = document.getElementById("ksStage"), sp = document.getElementById("ksSpace");
+  var back = document.getElementById("ksSpaceBack"), P = ksPartByK(part);
+  if (!stage || !P) return;
+  ksPart = part;
+  ksScale = 1.34;
+  var W = stage.clientWidth, H = stage.clientHeight;
+  var px = P.x / 100 * W, py = P.y / 100 * H;
+  stage.style.transform = "translate(" + Math.round(W / 2 - ksScale * px) + "px," +
+    Math.round(H / 2 - ksScale * py) + "px) scale(" + ksScale + ")";
+  if (sp) sp.classList.add("focusing");
+  [].forEach.call(document.querySelectorAll("#ksParts .kspart"), function (b) {
+    b.classList.toggle("on", b.getAttribute("data-p") === part);
+  });
+  if (back) back.hidden = false;
+  /* 星系上的文字在聚焦时收掉了 → 名字与篇数显示到右上角那条 */
+  var tt = document.getElementById("ksSpaceT");
+  if (tt) tt.textContent = P.name + " · " + (ksTechDocs()[part] || []).length + " 篇";
+  ksDocsRender();
+  ksHintRender();
+}
+function ksSpaceHome() {
+  var stage = document.getElementById("ksStage"), sp = document.getElementById("ksSpace");
+  var back = document.getElementById("ksSpaceBack");
+  ksPart = "";
+  ksScale = 1;
+  if (stage) stage.style.transform = "translate(0px,0px) scale(1)";
+  if (sp) sp.classList.remove("focusing");
+  [].forEach.call(document.querySelectorAll("#ksParts .kspart"), function (b) {
+    b.classList.remove("on");
+  });
+  if (back) back.hidden = true;
+  var tt = document.getElementById("ksSpaceT");
+  if (tt) tt.textContent = "Technical Library";
+  ksDocsRender();
+  ksHintRender();
+}
+
+/* ── 拖拽：把两颗星拖到一起 ＝ 合成星团（拖离 ＝ 退出）────────────────── */
+function ksMove(e) {
+  if (!ksDrag) return;
+  var stage = document.getElementById("ksStage");
+  if (!stage) return;
+  var W = stage.clientWidth || 1, H = stage.clientHeight || 1;
+  var dx = (e.clientX - ksDrag.sx) / ksScale / W * 100;
+  var dy = (e.clientY - ksDrag.sy) / ksScale / H * 100;
+  if (!ksDrag.moved && (Math.abs(dx) + Math.abs(dy)) > 0.5) ksDrag.moved = true;
+  if (!ksDrag.moved) return;
+  ksDrag.x = ksDrag.ox + dx;
+  ksDrag.y = ksDrag.oy + dy;
+  ksDrag.el.style.setProperty("--x", ksDrag.x.toFixed(2) + "%");
+  ksDrag.el.style.setProperty("--y", ksDrag.y.toFixed(2) + "%");
+}
+function ksUp() {
+  window.removeEventListener("pointermove", ksMove);
+  window.removeEventListener("pointerup", ksUp);
+  window.removeEventListener("pointercancel", ksUp);
+  if (!ksDrag) return;
+  var d = ksDrag;
+  ksDrag = null;
+  d.el.classList.remove("drag");
+  /* ⚠️ 只有**真的拖动过**才设这两道"别当点击"的闸 —— 否则普通点击（按下即松开）
+       也会在 pointerup 后立刻被 `ksDragEnd` 拦掉，星星就永远点不开了（2026-09-22 实测）。 */
+  if (!d.moved) return;                   // 没挪动 → 交给 click 打开阅读页
+  ksDragEnd = Date.now();
+  ksJustDrag = true;
+  ksDrop(d);
+}
+function ksDrop(d) {
+  var stage = document.getElementById("ksStage");
+  if (!stage) return;
+  var W = stage.clientWidth || 1, H = stage.clientHeight || 1;
+  var g = ksTechGroups(), mine = ksClumpOf(g, d.t);
+  var best = "", bestDis = 1e9;
+  [].forEach.call(document.querySelectorAll("#ksDocs .ksdoc"), function (el) {
+    var t = el.getAttribute("data-t");
+    if (t === d.t) return;
+    if (mine && ksClumpOf(g, t) === mine) return;      // 同团的不算目标
+    var x = parseFloat(el.style.getPropertyValue("--x")) / 100 * W;
+    var y = parseFloat(el.style.getPropertyValue("--y")) / 100 * H;
+    var dis = Math.sqrt(Math.pow(x - d.x / 100 * W, 2) + Math.pow(y - d.y / 100 * H, 2));
+    if (dis < bestDis) { bestDis = dis; best = t; }
+  });
+  var snap = Math.min(W, H) * 0.12;
+  if (best && bestDis <= snap) {
+    var target = ksClumpOf(g, best);
+    if (!target) { target = "c" + Date.now().toString(36); g[target] = [best]; }
+    if (mine) g[mine] = g[mine].filter(function (t) { return t !== d.t; });
+    if (g[target].indexOf(d.t) < 0) g[target].push(d.t);
+    ksTechGroupsSave(g);
+  } else if (mine) {
+    var c = ksLayout(ksPart).centers[mine];
+    if (c) {
+      var dx = (d.x - c.x) / 100 * W, dy = (d.y - c.y) / 100 * H;
+      if (Math.sqrt(dx * dx + dy * dy) > Math.min(W, H) * 0.13) {
+        g[mine] = g[mine].filter(function (t) { return t !== d.t; });
+        ksTechGroupsSave(g);
+      }
+    }
+  }
+  ksDocsRender();
+  ksHintRender();
+}
+function ksStarBind() {
+  var backBtn = document.getElementById("ksSpaceBack");
+  if (backBtn && !backBtn.__ksBound) {
+    backBtn.__ksBound = true;
+    backBtn.addEventListener("click", function () { ksSpaceHome(); });
+  }
+  var sp = document.getElementById("ksSpace");
+  if (sp && !sp.__ksBound) {
+    sp.__ksBound = true;
+    sp.addEventListener("click", function (e) {
+      /* 点星系 → 视角移过去聚焦 */
+      var pt = e.target.closest(".kspart");
+      if (pt) { ksSpaceFocus(pt.getAttribute("data-p")); return; }
+      /* 点星海的**空白处** → 从聚焦退回五星系（点星星/顶部按钮都不算空白） */
+      if (!ksPart) return;
+      if (e.target.closest(".ksdoc") || e.target.closest(".ksspace-top")) return;
+      ksSpaceHome();
+    });
+  }
+  var stage = document.getElementById("ksStage");
+  if (!stage || stage.__ksBound) return;
+  stage.__ksBound = true;
+  stage.addEventListener("pointerdown", function (e) {
+    var el = e.target.closest(".ksdoc");
+    if (!el) return;
+    e.preventDefault();
+    ksJustDrag = false;
+    ksDrag = {
+      el: el, t: el.getAttribute("data-t"), sx: e.clientX, sy: e.clientY,
+      ox: parseFloat(el.style.getPropertyValue("--x")),
+      oy: parseFloat(el.style.getPropertyValue("--y")), moved: false
+    };
+    el.classList.add("drag");
+    /* ⚠️ move / up 一律挂到 **window**：拖到星星外面甚至星海外面也要跟，
+       靠元素上的 pointer capture ＋ 冒泡不可靠（2026-09-22 实测：`moved` 一直是 false，
+       于是拖完被当成"点击"，顺手把阅读页打开了）。 */
+    window.addEventListener("pointermove", ksMove);
+    window.addEventListener("pointerup", ksUp);
+    window.addEventListener("pointercancel", ksUp);
+  });
+  stage.addEventListener("click", function (e) {
+    var el = e.target.closest(".ksdoc");
+    if (!el) return;
+    /* 双保险：刚拖过（标志 或 350ms 内）都不算点击 */
+    if (ksJustDrag || (Date.now() - ksDragEnd) < 350) { ksJustDrag = false; return; }
+    var d = ksFindDoc(el.getAttribute("data-t"));
+    if (d) openKnowledge(d);
+  });
+}
+
+/* ── 开关 ─────────────────────────────────────────────────────────────── */
+function ksSpaceOpen() {
+  var sp = document.getElementById("ksSpace"), stage = document.getElementById("ksStage");
+  if (!sp) return;
+  sp.hidden = false;
+  sp.classList.remove("focusing");
+  ksPart = "";
+  ksScale = 1;
+  if (stage) stage.style.transform = "translate(0px,0px) scale(1)";
+  var back = document.getElementById("ksSpaceBack");
+  if (back) back.hidden = true;
+  ksPartsRender();
+  ksDocsRender();
+  ksHintRender();
+  ksStarBind();
+  ksCanvasStart();
+}
+function ksSpaceClose() {
+  var sp = document.getElementById("ksSpace");
+  if (sp) sp.hidden = true;
+  ksCanvasStop();
+  ksPart = "";
+  ksDrag = null;
+}
+
+var ksResizeT = 0;
+window.addEventListener("resize", function () {
+  var sp = document.getElementById("ksSpace");
+  if (!sp || sp.hidden) return;
+  window.clearTimeout(ksResizeT);
+  ksResizeT = window.setTimeout(function () {
+    ksCanvasSize();
+    ksStarsInit();
+    if (ksPart) ksSpaceFocus(ksPart); else ksSpaceHome();
+  }, 160);
+});
+
 function knOpenShelf(shelf) {
   var list = knShelfDocs(shelf);
   if (!list.length) return;
@@ -1594,6 +1993,8 @@ function knOpenShelf(shelf) {
   var st = document.getElementById("knowledgeStage");
   if (st) { st.classList.toggle("kn-home-on", bright); st.classList.add("kn-subpage"); }
   kstFileClose();                      // 换分类时，收起上一级留下的抽屉
+  ksSpaceClose();                       // 星海先收（幂等），下面按分类重新开
+  if (shelf === "tech") ksSpaceOpen();  // 技术文库 ＝ 星海（用户 2026-09-22 的构想）
   ksPageReset();                        // 以及可能开着的独立页 / 二级详情
   if (shelf === "rule") kstRender();    // 「年度修习」＝学院大厅 ＋ 六个入口（其余三格仍走卡片列表）
   knPortalClock(false);
@@ -1601,6 +2002,7 @@ function knOpenShelf(shelf) {
 
 // 分类空间 → 回门户目录
 function knShelfBack() {
+  ksSpaceClose();
   var sh = document.getElementById("knShelf");
   if (sh) { sh.classList.remove("ks-in"); sh.hidden = true; sh.setAttribute("data-shelf", ""); }
   knShelfList = [];

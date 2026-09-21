@@ -1547,6 +1547,106 @@ img{display:block}
 .kstsum-f{margin:13px 0 0;padding-top:11px;font-size:12px;text-align:center;color:#8a6d2b;
   border-top:1px solid rgba(176,140,84,.32)}
 
+/* ══════════════════════════════════════════════════════════════════════════
+   技术文库 · 星海（2026-09-22）
+   五个部分 ＝ 五个星系；聚焦后**一篇文档 ＝ 一颗亮星**，可拖拽合并成「星团」。
+   ⚠️ 动效刻意**很轻**（用户选定）：只有星点缓慢漂移＋明暗闪烁、星系微微呼吸，
+      不追鼠标、无流星。Canvas 只在星海可见时跑 rAF，切走就停（省电）。
+   ══════════════════════════════════════════════════════════════════════════ */
+.ksspace{position:absolute;inset:0;z-index:3;overflow:hidden;
+  background:radial-gradient(ellipse at 30% 18%,#0e1c36 0%,#080e1d 52%,#04060e 100%)}
+.ksspace[hidden]{display:none}
+/* 技术文库这一格：星海取代原来的"说明卡 ＋ 文档列表" */
+.kn-shelf[data-shelf="tech"] .ks-wrap{display:none}
+.kncv,.kscv{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+
+.ksstage{position:absolute;inset:0;transform-origin:0 0;
+  transition:transform .85s cubic-bezier(.2,.72,.2,1)}
+/* ⚠️ 这两个是全屏容器 —— 必须 `pointer-events:none`，只有里面的按钮收点击；
+   否则空容器会挡住下层（2026-09-22 实测：`.ksdocs` 空着也拦住了 `#ksParts` 的星系点击）。 */
+.ksparts,.ksclumps,.ksdocs{position:absolute;inset:0;pointer-events:none}
+.ksparts .kspart,.ksdocs .ksdoc{pointer-events:auto}
+.ksclumps{pointer-events:none}
+
+/* ── 星系：外壳光环 ＋ 内核光团 ＋ 名称篇数 ── */
+.kspart{position:absolute;left:var(--x);top:var(--y);transform:translate(-50%,-50%);
+  width:146px;height:130px;padding:0;border:0;background:transparent;cursor:pointer;
+  font:inherit;color:#cfe4fb;transition:opacity .5s ease,filter .5s ease}
+.kspart-o,.kspart-i{border-radius:50%;position:absolute;left:50%;top:64px;display:block}
+.kspart-o{width:86px;height:86px;margin:-43px 0 0 -43px;border:1px solid var(--c);opacity:.26}
+.kspart-o::after{content:"";position:absolute;inset:11px;border-radius:50%;
+  border:1px solid var(--c);opacity:.5}
+.kspart-i{width:34px;height:34px;margin:-17px 0 0 -17px;
+  background:radial-gradient(circle,var(--c) 10%,rgba(0,0,0,0) 74%);
+  box-shadow:0 0 26px var(--c);animation:ksBreath 5.2s ease-in-out infinite}
+.kspart b{position:absolute;left:-14px;right:-14px;top:88px;font-size:12.5px;font-weight:500;
+  letter-spacing:.04em;text-align:center;white-space:nowrap}
+.kspart em{position:absolute;left:-14px;right:-14px;top:108px;font-style:normal;font-size:10.5px;
+  color:#7f9dc0;text-align:center}
+.kspart:hover{filter:brightness(1.35)}
+/* 聚焦时：选中的星系被点亮放大，其余退到后面变暗 */
+.ksspace.focusing .kspart{opacity:.24;filter:grayscale(.4)}
+.kspart.on{opacity:1;filter:none}
+.kspart.on .kspart-o{opacity:.5}
+.kspart.on .kspart-o::after{opacity:.8}
+/* ⚠️ 聚焦时把星系上的文字**收掉** —— 文档星就绕着它摆，标题会压到名字上
+   （2026-09-22 截图看见）。名字改到右上角那条显示。 */
+.kspart.on b,.kspart.on em{opacity:0}
+@keyframes ksBreath{0%,100%{opacity:.52}50%{opacity:.96}}
+
+/* ── 文档星：一篇文档一颗 ── */
+.ksdoc{position:absolute;left:var(--x);top:var(--y);transform:translate(-50%,-50%);
+  width:154px;padding:0;border:0;background:transparent;cursor:pointer;font:inherit;
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  opacity:0;transition:opacity .55s ease;touch-action:none}
+.ksdoc.on{opacity:1}
+.ksdoc i{display:block;width:11px;height:11px;border-radius:50%;background:var(--c);
+  box-shadow:0 0 12px var(--c),0 0 30px var(--c);transition:transform .18s ease}
+.ksdoc b{font-size:11.5px;font-weight:400;line-height:1.45;text-align:center;color:#b9d3ee}
+.ksdoc:hover i{transform:scale(1.35)}
+.ksdoc:hover b{color:#fff}
+.ksdoc.drag{z-index:9}
+.ksdoc.drag i{transform:scale(1.5)}
+.ksdoc.drag b{color:#fff}
+
+/* ── 星团：把几颗星合到一起 ── */
+.ksclump{position:absolute;left:var(--x);top:var(--y);transform:translate(-50%,-50%);
+  width:104px;height:104px;border-radius:50%;border:1px dashed rgba(150,196,255,.4);
+  background:radial-gradient(circle,rgba(120,170,240,.14),rgba(0,0,0,0) 72%);
+  animation:ksBreath 6.5s ease-in-out infinite}
+.ksclump em{position:absolute;left:-20px;right:-20px;bottom:-16px;font-style:normal;font-size:10px;
+  letter-spacing:.08em;color:#7f9dc0;text-align:center}
+
+/* ── 顶部与底部 ── */
+.ksspace-top{position:absolute;left:0;right:0;top:0;z-index:2;display:flex;align-items:center;
+  gap:14px;padding:clamp(14px,2.8vh,26px) clamp(16px,3.6vw,40px);pointer-events:none}
+.ksspace-back{pointer-events:auto;font:inherit;font-size:12px;letter-spacing:.1em;cursor:pointer;
+  padding:7px 15px;border-radius:999px;color:#a9c6e6;background:rgba(12,22,40,.72);
+  border:1px solid rgba(120,170,240,.34);transition:.22s}
+.ksspace-back:hover{color:#fff;border-color:#85b7eb;background:rgba(20,38,66,.92)}
+.ksspace-t{margin-left:auto;font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;
+  color:#3f5f88}
+.ksspace-hint{position:absolute;left:0;right:0;bottom:clamp(14px,3vh,30px);z-index:2;margin:0;
+  padding:0 clamp(16px,4vw,40px);text-align:center;font-size:11.5px;line-height:1.7;
+  color:#5f83b3;pointer-events:none}
+
+@media (max-width:900px){
+  .kspart{width:118px;height:110px}
+  .kspart-o{width:68px;height:68px;margin:-34px 0 0 -34px;top:54px}
+  .kspart-i{top:54px}
+  .kspart b{top:74px;font-size:11.5px}
+  .kspart em{top:92px;font-size:10px}
+  .ksdoc{width:124px}
+  .ksdoc b{font-size:11px}
+  .ksclump{width:86px;height:86px}
+  /* 窄屏空间紧：聚焦后其余星系的文字会和文档星/提示句糊在一起（2026-09-22 截图看见）
+     → 只留光点；提示句给一条渐隐底，压在星星上也读得清。 */
+  .ksspace.focusing .kspart:not(.on) b,
+  .ksspace.focusing .kspart:not(.on) em{opacity:0}
+  .ksspace-hint{background:linear-gradient(180deg,rgba(4,6,14,0) 0%,rgba(4,6,14,.88) 58%);
+    padding-top:26px}
+}
+
 /* 修习项目档案：纸页向左滑开，右侧落下档案
    ⚠️ z-index 必须**高过 `.kspage`（8）** —— 它是从"我的学习计划"那一页里点开的。 */
 .kst-file{position:absolute;top:0;right:0;bottom:0;z-index:12;
@@ -3557,6 +3657,25 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
         <button class="ks-back" id="ksBack" type="button">&#8592; 回到目录</button>
       </div>
 
+      <!-- ⭐ 技术文库 · 星海（2026-09-22 用户构想）：五个部分＝五个星系，
+           点星系 → 视角移过去聚焦，该部分的**每篇文档＝一颗亮星**；
+           还能把两颗星**拖到一起合并成一个星团**（自定义的一簇）。
+           ⚠️ 层序：`.ks-wrap`(1) < **`.ksspace`(3)** < `.ks-bar`(6) < `.kspage`(8) ——
+              必须低于 `.ks-bar`，否则「← 回到目录」又被盖住（2026-09-22 刚踩过这个坑）。 -->
+      <div class="ksspace" id="ksSpace" hidden>
+        <canvas class="kscv" id="ksCv" aria-hidden="true"></canvas>
+        <div class="ksstage" id="ksStage">
+          <div class="ksparts" id="ksParts"></div>
+          <div class="ksclumps" id="ksClumps"></div>
+          <div class="ksdocs" id="ksDocs"></div>
+        </div>
+        <div class="ksspace-top">
+          <button class="ksspace-back" id="ksSpaceBack" type="button" hidden>&#8592; 回到星海</button>
+          <span class="ksspace-t" id="ksSpaceT">Technical Library</span>
+        </div>
+        <p class="ksspace-hint" id="ksSpaceHint"></p>
+      </div>
+
       <div class="ks-wrap">
         <div class="ks-card">
           <span class="ks-eyebrow" id="ksEyebrow"></span>
@@ -4022,6 +4141,6 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 <script src="study-plan.js?v=20260922c"></script>
 <script src="docs.js?v=20260921b"></script>
 <script src="app.js?v=20260920f"></script>
-<script src="knowledge.js?v=20260922f"></script>
+<script src="knowledge.js?v=20260922g"></script>
 </body>
 </html>
