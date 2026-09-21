@@ -794,6 +794,7 @@ function warmGateImages() {
     "assets/crest-post.webp?v=20260920d",
     
     "assets/owl-line.webp?v=20260921b",
+    "assets/knowledge-owl.webp?v=20260921e",
     "assets/hills-far.webp?v=20260921d",
     "assets/knowledge-bg.jpg?v=20260920a",
     "assets/knight-l.webp?v=20260920a",
