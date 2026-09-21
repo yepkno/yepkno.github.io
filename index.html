@@ -1278,7 +1278,11 @@ img{display:block}
    是 `max-width:1000px; margin:0 auto` 的居中容器 → 按钮只到内容容器左边缘，不是画面角上。
    改用 fixed 相对视口（舞台本身也是 `fixed; inset:0`，两者等价），内容滚动时仍常驻角上。 */
 .ks-bar{position:fixed;top:clamp(16px,3.2vh,30px);left:clamp(16px,3.6vw,40px);z-index:3;
-  display:flex;align-items:center;gap:14px}
+  display:flex;align-items:center;gap:14px;transition:opacity .26s ease,visibility .26s}
+/* ⚠️ 独立页（`.kspage`）打开时把「← 回到目录」收走 —— 否则它和页内的「← 回到大厅」
+   落在同一个角上，两层按钮叠在一起（2026-09-22 实测截图看见）。
+   层级语义：**一屏只留一个返回**（大厅里回目录 / 页里回大厅 / 详情里回页）。 */
+.kn-shelf.ks-page-on .ks-bar{opacity:0;visibility:hidden;pointer-events:none}
 .ks-back{font:inherit;font-size:13px;padding:8px 15px;border-radius:999px;cursor:pointer;
   color:var(--ks-ink);background:rgba(255,255,255,.62);border:1px solid var(--ks-card-line);
   backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);transition:.22s}
@@ -1539,7 +1543,7 @@ img{display:block}
 /* ══════════════════════════════════════════════════════════════════════════
    2026-09-21 一次追加四件（用户选定）—— 结构 ＝ **大厅 ＋ 分开入口 → 独立页面**：
      ① 学习理论 → 「法则纸」（题记 ＋ 目标 ＋ 使用方法 ＋ 三条判断规则，**不加编号**）
-     ② 要学什么 → 「书目」一页（17 条，行式列表，点一行 → `.ksleaf` 详情）
+     ② 要学什么 → 「学习资料」一页（17 条，行式列表，点一行 → `.ksleaf` 详情 ＋ 搜索关键词）
      ③ 用什么软件 → 「工具台」一页（29 项，🟢🟡🔵 三档，卡左沿＝档位色）
      ④ 学习任务清单 → 「修习条目」一页（**全局清单 60 条**，一次看一个方向）
    ⚠️⚠️ 用户当天又推翻"一页长滚动"："**不要用滚动条，最好是有分开入口然后弹出独立页面**"
@@ -1693,6 +1697,26 @@ img{display:block}
   padding:4px 9px;border-radius:2px;color:#a08a5c;background:transparent;
   border:1px dashed rgba(140,116,70,.42);transition:.2s}
 .kst-own:hover{color:#c2330f;border-color:#c2330f}
+/* ⭐ 搜索关键词（2026-09-22 用户："把数据表里的搜索关键词加到对应的条目里"）
+   —— 数据源 ＝ 表 02 第 4 列「B站/网页搜索词」（`courses[].search`）。
+   每个词一个词块，**点一下就跳 B 站搜索**（这列本来就是给人拿去搜的）；
+   右边一个"复制全部"，整串带走（去网页/知乎/Google 搜同一批词）。 */
+.kst-kws{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:11px;padding-top:10px;
+  border-top:1px dashed rgba(140,116,70,.32)}
+.kst-kws em{flex:0 0 100%;font-style:normal;font-size:10px;letter-spacing:.2em;color:#8a6d2b;
+  margin-bottom:1px}
+.kst-kw{font:inherit;font-size:11px;line-height:1.5;letter-spacing:.02em;text-decoration:none;
+  cursor:pointer;padding:3px 9px;border-radius:999px;color:#5a4a24;
+  background:rgba(255,252,245,.78);border:1px solid rgba(176,140,84,.42);transition:.2s}
+.kst-kw:hover{color:#c2330f;border-color:#c2330f;background:rgba(255,70,31,.06)}
+.kst-kw-cp{margin-left:auto;font:inherit;font-size:10px;letter-spacing:.08em;cursor:pointer;
+  padding:3px 8px;border-radius:2px;color:#a08a5c;background:transparent;
+  border:1px dashed rgba(140,116,70,.42);transition:.2s}
+.kst-kw-cp:hover{color:#c2330f;border-color:#c2330f}
+/* 列表行右侧的"这条附有搜索关键词"提示（非交互，只是标记 —— 点它仍是打开详情）。
+   ⚠️ 别用 U+2315 `⌕` 那类符号：字体会渲染成一个怪圈（2026-09-22 实测），中文"搜"最稳。 */
+.ksrow-kw{flex:none;font-size:10px;line-height:1;color:#bcab8c;margin-left:6px;
+  padding:2px 4px;border:1px solid rgba(176,140,84,.3);border-radius:2px}
 .kst-own.on{color:#b4462a;border-style:solid;border-color:rgba(255,70,31,.45);
   background:rgba(255,70,31,.07)}
 
@@ -3352,11 +3376,14 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
               （左 PLAN / 右 REVIEW），信息全在中央那张"档案纸"里。
            ⚠️ 页面上**绝不出现**：本月该学什么 / 今日任务 / 逾期 / 连续打卡 / 剩余天数。
               设计原则（用户原话）：**计划由我制定，修习由我完成，年度只负责记录。**
-           ⚠️ 2026-09-21 追加四件（用户选定）：① 学习理论＝法则纸 ② 要学什么＝书目
+           ⚠️ 2026-09-21 追加四件（用户选定）：① 学习理论＝法则纸 ② 要学什么＝学习资料
               ③ 用什么软件＝工具台 ④ 任务清单＝修习条目（60 条）。
+              ② 原叫「书目」，2026-09-22 用户改名为「学习资料」，并把表 02 的
+              「B站/网页搜索词」列（`courses[].search`）接进每条的详情：词块点一下跳 B 站搜、
+              右侧可「复制全部」；列表行尾留一个很淡的「搜」表示该条附有搜索关键词。
            ⚠️⚠️ 同日用户又推翻"六屏长滚动"："**不要用滚动条，最好是有分开入口然后弹出独立页面**"
               → 结构改成 **大厅（一屏，不滚动）＋ 六个分开入口 → 各自独立一页（`.kspage`）**：
-              我的学习计划 ／ 书目 ／ 工具台 ／ 修习条目 ／ 实际修习轨迹 ／ 年度修习录
+              我的学习计划 ／ 学习资料 ／ 工具台 ／ 修习条目 ／ 实际修习轨迹 ／ 年度修习录
               （外加档案纸下缘的「修习法则」）。**页内也按"一屏放得下"设计**，
               `.kspage-c` 的 overflow 只是矮窗时的安全网，不是常态滚动。
               点一行书 / 一件工具 → 二级详情（`.ksleaf` 一张浮起的小纸），也不滚动。
@@ -3915,6 +3942,6 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 <script src="study-plan.js?v=20260922c"></script>
 <script src="docs.js?v=20260921b"></script>
 <script src="app.js?v=20260920f"></script>
-<script src="knowledge.js?v=20260922b"></script>
+<script src="knowledge.js?v=20260922c"></script>
 </body>
 </html>

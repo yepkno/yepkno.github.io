@@ -802,7 +802,7 @@ function kstCount(key) { return kstIds(key).length; }
    ⚠️ **页内也按"一屏放得下"设计**；`.kspage-c` 的 overflow 只是矮窗时的安全网。 */
 var KST_MENU = [
   { k: "plan",    t: "我的学习计划", d: "四个方向依次相扣" },
-  { k: "books",   t: "书目",         d: "要读的课程与要买的书" },
+  { k: "books",   t: "学习资料",     d: "要学的课程、要买的书与搜索关键词" },
   { k: "tools",   t: "工具台",       d: "要装的软件，按三档分" },
   { k: "entries", t: "修习条目",     d: "一册登记簿，可以勾" },
   { k: "trail",   t: "实际修习轨迹", d: "只记录，不安排" },
@@ -816,9 +816,9 @@ var KST_PAGES = {
     r: function () { kstMapRender(); }
   },
   books: {
-    t: "Books · 书目",
+    t: "Materials · 学习资料",
     h: '<p class="kst-pg-s">表 02 原文照录 —— 课程怎么跟、书要不要买、学到什么程度算够。' +
-       '有书要买的那几条，左沿是朱红的；点开看详情。</p>' +
+       '有书要买的那几条，左沿是朱红的；点开还有一条<b>搜索关键词</b>可直接搜。</p>' +
        '<div class="ksgrid" id="kstBooks"></div>',
     r: function () { kstBooksRender(); }
   },
@@ -871,6 +871,9 @@ function ksPageOpen(key) {
   c.scrollTop = 0;
   box.hidden = false;
   requestAnimationFrame(function () { box.classList.add("on"); });
+  /* 独立页打开 → 把分类空间的「← 回到目录」收走（它和页内的「← 回到大厅」同角，会叠） */
+  var sh = document.getElementById("knShelf");
+  if (sh) sh.classList.add("ks-page-on");
   p.r();                 // 先建容器、再渲染内容
   kstBind();             // 新元素要重新挂事件
 }
@@ -878,6 +881,8 @@ function ksPageClose() {
   var box = document.getElementById("ksPage");
   if (!box || box.hidden) return;
   box.classList.remove("on");
+  var sh = document.getElementById("knShelf");
+  if (sh) sh.classList.remove("ks-page-on");   // 页面开始收 → 「回到目录」就淡回来
   kstFileClose();        // 从"我的学习计划"里点开的档案抽屉一并收走
   window.setTimeout(function () {
     if (box.classList.contains("on")) return;
@@ -890,6 +895,8 @@ function ksPageClose() {
 function ksPageReset() {
   var box = document.getElementById("ksPage");
   if (box) { box.classList.remove("on"); box.hidden = true; }
+  var sh = document.getElementById("knShelf");
+  if (sh) sh.classList.remove("ks-page-on");
   var c = document.getElementById("ksPageC");
   if (c) c.innerHTML = "";
   ksLeafReset();
@@ -1046,7 +1053,7 @@ function kstSumRender() {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   2026-09-21 追加四件（用户选定）：① 法则纸 ② 书目 ③ 工具台 ④ 全局清单
+   2026-09-21 追加四件（用户选定）：① 法则纸 ② 学习资料 ③ 工具台 ④ 全局清单
    ⚠️ 三道防线：**不出现**剩余条数 / 完成度百分比 / 逾期 / 连续打卡 / "今天该做"。
       勾选＝**记录**（"这一条我认了"），不是欠债；分组只报"已留 N 道"，**绝不报分母**。
    ⚠️ 勾选**不与台阶联动** —— 晋级仍然只能由用户自己按"点亮这一级"。
@@ -1080,12 +1087,53 @@ function kstLawClose() {
   window.setTimeout(function () { if (!b.classList.contains("on")) b.hidden = true; }, 320);
 }
 
-/* ② 书目：左页 —— 课程 / 书 / 怎么学 / 学到什么程度（表 02 原文照录） */
+/* ② 学习资料：一页 —— 课程 / 书 / 怎么学 / 学到什么程度（表 02 原文照录） */
 function kstLink(u, label) {
   if (!/^https?:/i.test(u || "")) return '<span class="kst-a" style="cursor:default">' + (u || "") + "</span>";
   return '<a class="kst-a" href="' + u + '" target="_blank" rel="noopener">' + label + "</a>";
 }
-/* ② 书目：一页**行式列表**（一屏放得下，不靠滚动）—— 点一行 → `.ksleaf` 详情 */
+/* ⭐ 搜索关键词：表 02 第 4 列「B站/网页搜索词」（`courses[].search`）。
+   —— 这一列本来就是给人**拿去搜的**，所以做成可点的词块（点一下跳 B 站搜索），
+      而不是当普通说明文字摆着；整串还能一键复制（去网页/知乎/Google 搜同一批词）。 */
+function kstKwHtml(raw) {
+  var s = (raw || "").trim();
+  if (!s) return "";
+  var parts = s.split(/[;；]/).map(function (x) { return x.trim(); }).filter(Boolean);
+  return '<div class="kst-kws"><em>搜索关键词 · 点一下去 B 站搜</em>' +
+    parts.map(function (p) {
+      return '<a class="kst-kw" href="https://search.bilibili.com/all?keyword=' +
+        encodeURIComponent(p) + '" target="_blank" rel="noopener">' + p + "</a>";
+    }).join("") +
+    '<button class="kst-kw-cp" type="button" data-kw="' + s.replace(/"/g, "&quot;") +
+    '">复制全部</button></div>';
+}
+/* 复制整串关键词：三级降级 —— clipboard → execCommand → 提示手动选中。
+   ⚠️ `clipboard.writeText` 在**文档未聚焦**时会 reject（headless / 切走标签时），
+      所以 rejected 也要**继续往下降**，别直接报失败（2026-09-22 实测踩到）。 */
+function kstCopy(txt, btn) {
+  var back = function (ok) {
+    if (!btn) return;
+    var old = btn.textContent;
+    btn.textContent = ok ? "\u2713 已复制" : "\u2717 选中后复制";
+    window.setTimeout(function () { btn.textContent = old; }, 1500);
+  };
+  var legacy = function () {
+    var ta = document.createElement("textarea");
+    ta.value = txt;
+    ta.style.position = "fixed"; ta.style.top = "-100px"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select();
+    var ok = false;
+    try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+    document.body.removeChild(ta);
+    back(ok);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(txt).then(function () { back(true); }, legacy);
+    return;
+  }
+  legacy();
+}
+/* ② 学习资料：一页**行式列表**（一屏放得下，不靠滚动）—— 点一行 → `.ksleaf` 详情 */
 function kstBookInfo(c) {
   var raw = c.book || "";
   var bk = (raw && raw !== "\u2014") ? raw : "";
@@ -1103,6 +1151,7 @@ function kstBooksRender() {
       '<span class="ksrow-no">' + c.order + "</span>" +
       '<span class="ksrow-b"><b>' + c.content + "</b><i>" + c.stage + " · " + c.how + "</i></span>" +
       '<span class="ksrow-m">' + (i.buy ? (on ? "&#10003; 已有书" : "要买书") : "") + "</span>" +
+      '<span class="ksrow-kw" title="附有搜索关键词">搜</span>' +
       "</button>";
   }).join("");
 }
@@ -1126,7 +1175,8 @@ function ksBookLeaf(order) {
       (i.buy ? '<button class="kst-own' + (on ? " on" : "") + '" type="button" data-own="bk' + c.order +
         '" data-on="&#10003; 已入手" data-off="&#9675; 未入手">' +
         (on ? "&#10003; 已入手" : "&#9675; 未入手") + "</button>" : "") +
-    "</div>"
+    "</div>" +
+    kstKwHtml(c.search)
   );
 }
 
@@ -1399,6 +1449,9 @@ function kstBind() {
     leaf.addEventListener("click", function (e) {
       if (e.target.closest("#ksLeafX")) { ksLeafClose(); return; }
       if (!e.target.closest(".ksleaf-b")) { ksLeafClose(); return; }
+      /* 搜索关键词的「复制全部」（词块本身是 <a>，浏览器自己开新窗口，不用管） */
+      var cp = e.target.closest("[data-kw]");
+      if (cp) { kstCopy(cp.getAttribute("data-kw"), cp); return; }
       var ob = e.target.closest("[data-own]");
       if (!ob) return;
       var gid = ob.getAttribute("data-own");
@@ -1621,7 +1674,7 @@ function warmGateImages() {
     if (d) openKnowledge(d);
   });
 
-  // 门户点击：书目条目 → 打开该分类第一篇；「随机一读」→ 随机翻一篇
+  // 门户点击：分类条目 → 打开该分类第一篇；「随机一读」→ 随机翻一篇
   if (kh) kh.addEventListener("click", function (e) {
     if (e.target.closest("#knRandom")) { knRandomRead(); return; }
     var item = e.target.closest(".pt-item");
