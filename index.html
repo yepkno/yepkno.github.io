@@ -1853,14 +1853,17 @@ img{display:block}
      ⚠️ 她画在图里、挂在舞台的**竖直中线附近**（头顶离中线只差 1.5% 舞台高），
         所以缩放对她的挂点几乎无影响（0.485 → 0.483，约 3px）。 */
   --ar-zoom:1.15;
-  --ar-head:calc(var(--ar-stage-h) * .483 - var(--ar-crop))}
+  /* 她头顶的高度（量自内厅图：五版 0.514 × 全高 → 离舞台底边 0.486）。
+     ⚠️ 换内厅图**必须重量**：取正中 9% 宽的一条做亮度剖面，找明显暗于石墙的第一格
+        （深色头发的最上沿），脚本在技能分卷里。 */
+  --ar-head:calc(var(--ar-stage-h) * .486 - var(--ar-crop))}
 
 /* ── ① 内厅（门背后那一层）─────────────────────────────────────────────── */
 .arc-scene{position:absolute;inset:0;z-index:0;transform:scale(var(--ar-zoom,1));
   transition:transform 2.6s cubic-bezier(.3,.02,.26,1)}
 .arcwall.push .arc-scene{transform:scale(calc(var(--ar-zoom,1) * 1.06))}
 .arc-hall{position:absolute;inset:0;
-  background:url("assets/archive-hall.webp?v=20260922d") center/100% 100% no-repeat}
+  background:url("assets/archive-hall.webp?v=20260922e") center/100% 100% no-repeat}
 .arc-hallv{position:absolute;inset:0;
   background:radial-gradient(ellipse 60% 44% at 50% 44%,rgba(255,252,244,.26),rgba(255,250,240,0) 72%),
     linear-gradient(180deg,rgba(58,42,24,.20),rgba(58,42,24,0) 24%,
@@ -4053,8 +4056,9 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
            ⚠️ 流程：门外（点画面）→ 门扇转开＋镜头推入 → 接待员淡入并问候 → **再点画面** → 调阅台
               → 报编号（回车或「调取」）→ 命中＝调阅单 → 回车＝阅读页；
                 未命中＝「抱歉，你输入的文档编号不存在」。
+           ⚠️ **卡纸开着时再点画面任意处＝把它缩回内厅**（用户 2026-09-22 要求；也是手机上唯一的退路）。
            ⚠️ 场景里**零按钮**（硬要求）：进门与报编号全靠"点画面 ＋ 键盘"。卡纸里只留文本式的
-              「调取 / 回到目录 / 开始阅读」（其中「回到目录」是用户 2026-09-22 明确要求加进对话选项的）。
+              「调取 / 回到目录 / 开始阅读 / 再报一个编号」（其中「回到目录」是用户 2026-09-22 明确要求加进对话选项的）。
            ⚠️ 层序：`.arc-scene`(0) < `.arc-ext`(2) < 卡纸(6) < `.ks-bar`(6，在本层之外)。
               舞台 `.arc-stage` 是恒定 1.5 的盒子（等价 cover）—— 三张图永不拉伸，门洞百分比恒定。 -->
       <div class="arcwall" id="arcWall" hidden>
@@ -4574,6 +4578,6 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 <script src="study-plan.js?v=20260922c"></script>
 <script src="docs.js?v=20260921c"></script>
 <script src="app.js?v=20260920f"></script>
-<script src="knowledge.js?v=20260922q"></script>
+<script src="knowledge.js?v=20260922r"></script>
 </body>
 </html>

@@ -2002,6 +2002,18 @@ function cardRestore() {
   var e = arcEl("arcErr"); if (e) { e.hidden = true; e.textContent = ""; }
   arcHit = null;
 }
+/* 收起卡纸（调阅台／调阅单）→ 回到内厅：问候语放回来、底部提示重新出现。
+   ⭐ **ESC 与"点画面任意处"共用这一条**（用户 2026-09-22：呼出对话框后，点任意地方也能缩回）；
+     两个入口只留一份实现，免得以后改一处漏一处。
+   ⚠️ 收卡纸**不清输入框** —— 缩回再打开时用户刚敲的编号还在（`arcReset` 才清）。 */
+function arcCardBack() {
+  if (arcState !== "ask" && arcState !== "slip") return false;
+  arcCloseCard();
+  arcState = "inside";
+  arcOn(arcEl("arcSay"), "on");      // 文字还在，不重打
+  arcHint("点一下画面 · 向接待员报出文档编号");
+  return true;
+}
 /* 提交编号：命中 → 调阅单；没命中（含格式不对）→ 同一句回话 */
 function arcSubmit() {
   if (arcState !== "ask") return;
@@ -2048,7 +2060,11 @@ function arcBind() {
       /* 卡纸内部的点击不算"点画面" —— 否则输入框刚弹出来就被自己关掉 */
       if (e.target.closest && e.target.closest(".arc-card")) return;
       if (arcState === "door") arcEnter();
-      else if (arcState === "inside" || arcState === "slip") arcAskOpen();
+      else if (arcState === "inside") arcAskOpen();
+      /* ⭐ 卡纸（调阅台／调阅单）已经开着 → **再点画面任意处就把它缩回内厅**
+         （用户 2026-09-22："呼出对话框后，点击任意地方还能缩回"）。
+         这一条是鼠标／触屏唯一的退路 —— 手机上根本没有 ESC 键。 */
+      else arcCardBack();
     });
     document.addEventListener("keydown", function (e) {
       if (e.key !== "Enter") return;
@@ -2271,7 +2287,7 @@ function warmGateImages() {
        门是进门第一眼（必须已经在缓存里），内厅在 760ms 后就要露出来；
        接待员（65 KB）要 2.4s 之后才淡入，留给她自己慢慢下。 */
     "assets/archive-door.webp?v=20260922a",
-    "assets/archive-hall.webp?v=20260922d"
+    "assets/archive-hall.webp?v=20260922e"
   ];
   list.forEach(function (u) {
     var im = new Image();
@@ -2350,13 +2366,7 @@ function warmGateImages() {
     if (ksRendered(kfile)) { kstFileClose(); return; }
     // 馆藏原件：调阅台/调阅单开着 → 先收卡纸（回到内厅）；否则退出这一格（回门户）
     if (arcActive()) {
-      if (arcState === "ask" || arcState === "slip") {
-        arcCloseCard();
-        arcState = "inside";
-        arcOn(arcEl("arcSay"), "on");      // 收卡纸 → 把问候语放回来（文字还在，不重打）
-        arcHint("点一下画面 · 向接待员报出文档编号");
-        return;
-      }
+      if (arcCardBack()) return;      // 与"点画面任意处缩回"共用同一条
       knShelfBack();
       return;
     }
