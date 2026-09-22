@@ -1845,14 +1845,16 @@ img{display:block}
   --ar-stage-h:max(100vh, calc(100vw / 1.5));
   --ar-crop:max(0px, calc((var(--ar-stage-h) - 100vh) / 2));
   --ar-foot:calc(var(--ar-crop) + 4vh);                       /* 她的脚离舞台底边 */
-  --ar-staff-h:min(calc(var(--ar-stage-h) * .64), 68vh)}       /* 身高：舞台 64%，扁窗口封顶 68vh */
+  --ar-staff-h:min(calc(var(--ar-stage-h) * .545), 68vh)}      /* 身高：舞台 54.5%，扁窗口封顶 68vh
+     ⚠️ 这个系数是**合成预演比出来的**（0.637 与 0.545 各出一版真画幅对比）：
+        大一点就像“贴在镜头前的巨型立牌”，小一点纵深才读得出来 —— 她是"站在馆里的人"。 */
 
 /* ── ① 内厅（门背后那一层）＋ 接待员 ───────────────────────────────────── */
 .arc-scene{position:absolute;inset:0;z-index:0;transform:scale(1);
   transition:transform 2.6s cubic-bezier(.3,.02,.26,1)}
 .arcwall.push .arc-scene{transform:scale(1.06)}
 .arc-hall{position:absolute;inset:0;
-  background:url("assets/archive-hall.webp?v=20260922a") center/100% 100% no-repeat}
+  background:url("assets/archive-hall.webp?v=20260922b") center/100% 100% no-repeat}
 .arc-hallv{position:absolute;inset:0;
   background:radial-gradient(ellipse 60% 44% at 50% 44%,rgba(255,252,244,.26),rgba(255,250,240,0) 72%),
     linear-gradient(180deg,rgba(58,42,24,.20),rgba(58,42,24,0) 24%,
@@ -1865,7 +1867,7 @@ img{display:block}
 .arc-staff{position:absolute;left:50%;bottom:var(--ar-foot);z-index:2;
   height:var(--ar-staff-h);aspect-ratio:368/1200;
   transform:translateX(-50%);opacity:0;pointer-events:none;
-  background:url("assets/archive-staff.webp?v=20260922a") center bottom/100% 100% no-repeat;
+  background:url("assets/archive-staff.webp?v=20260922b") center bottom/100% 100% no-repeat;
   transition:opacity .9s ease 1.15s}
 .arcwall.push .arc-sh,.arcwall.push .arc-staff{opacity:1}
 
@@ -4560,6 +4562,6 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 <script src="study-plan.js?v=20260922c"></script>
 <script src="docs.js?v=20260921c"></script>
 <script src="app.js?v=20260920f"></script>
-<script src="knowledge.js?v=20260922n"></script>
+<script src="knowledge.js?v=20260922o"></script>
 </body>
 </html>
