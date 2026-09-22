@@ -1853,11 +1853,11 @@ img{display:block}
      ⚠️ 她画在图里、挂在舞台的**竖直中线附近**（头顶离中线只差 1.5% 舞台高），
         所以缩放对她的挂点几乎无影响（0.485 → 0.483，约 3px）。 */
   --ar-zoom:1.15;
-  /* 她头顶的高度（量自内厅图：十一版 0.500 × 全高 → 离舞台底边 0.498，实测刚好对上）。
+  /* 她头顶的高度（量自内厅图：十二版 0.499 × 全高 → 离舞台底边 0.498，实测刚好对上）。
      ⚠️ 换内厅图**必须重量**。⚠️⚠️ 别用"第一条暗行／最陡下降行"这种全宽带判据 —— 穹顶的
         湿壁画、凹格与拱券轮廓都会在带子里制造假台阶（已连骗三次：0.396 / 0.424）。
      ✅ 唯一可靠：**把竖直带收窄到只压住她头发**（x 0.475–0.525），剖面会出现一条干净的大台阶
-        （十一版：195 → 163 → 125 → 99 → 88），落差就是发顶；再画线目视确认。 */
+        （十二版：184 → 159 → 135 → 122 → 104 → 87），落差就是发顶；再画线目视确认。 */
   --ar-head:calc(var(--ar-stage-h) * .498 - var(--ar-crop))}
 
 /* ── ① 内厅（门背后那一层）─────────────────────────────────────────────── */
@@ -1865,7 +1865,7 @@ img{display:block}
   transition:transform 2.6s cubic-bezier(.3,.02,.26,1)}
 .arcwall.push .arc-scene{transform:scale(calc(var(--ar-zoom,1) * 1.06))}
 .arc-hall{position:absolute;inset:0;
-  background:url("assets/archive-hall.webp?v=20260922i") center/100% 100% no-repeat}
+  background:url("assets/archive-hall.webp?v=20260922j") center/100% 100% no-repeat}
 .arc-hallv{position:absolute;inset:0;
   background:radial-gradient(ellipse 60% 44% at 50% 44%,rgba(255,252,244,.26),rgba(255,250,240,0) 72%),
     linear-gradient(180deg,rgba(58,42,24,.20),rgba(58,42,24,0) 24%,
@@ -4584,6 +4584,6 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 <script src="study-plan.js?v=20260922c"></script>
 <script src="docs.js?v=20260921c"></script>
 <script src="app.js?v=20260920f"></script>
-<script src="knowledge.js?v=20260922v"></script>
+<script src="knowledge.js?v=20260922w"></script>
 </body>
 </html>
