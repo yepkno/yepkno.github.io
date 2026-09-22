@@ -1355,23 +1355,25 @@ img{display:block}
   border-color:rgba(150,124,80,.34)}
 .kn-shelf[data-shelf="tech"] .ks-back:hover{background:#fff;color:#c2330f;border-color:#c2330f}
 
-/* ---------- 主题 humanities：关怀 · 博爱 · 哲思（红）---------- */
-.kn-shelf[data-shelf="humanities"]{--ks-ink:#fdf1ec;--ks-dim:#d3a99e;--ks-accent:#f0947c;
-  --ks-card:rgba(38,16,16,.70);--ks-card-line:rgba(240,148,124,.26);
-  --ks-shadow:0 18px 46px rgba(24,6,8,.52);--ks-radius:16px;--ks-track:.03em;
-  --ks-glow:rgba(230,120,96,.24);--ks-top:rgba(30,12,14,.86);--ks-bot:rgba(12,4,6,.92)}
-.kn-shelf[data-shelf="humanities"] .ks-far{background-image:
-  radial-gradient(120% 80% at 78% 8%,rgba(226,110,86,.22),transparent 62%),
-  radial-gradient(100% 70% at 8% 96%,rgba(180,70,60,.16),transparent 66%)}
+/* ---------- 主题 humanities：人文阅览室（**赭黄旧纸 ＋ 绛红**，2026-09-22 五版定）----------
+   ⚠️ 这一格也从"红 · 深色空间"改成**暖纸学院风**（用户："人文文库也一样"）——
+   变量必须同步换成浅色，否则 `.ks-back` 等沿用变量的元素会变成"浅字压白底"看不见。
+   真正的暖色区分在 `.kthwall[data-shelf="humanities"]` 那组变量里，这里只兜底。 */
+.kn-shelf[data-shelf="humanities"]{--ks-ink:#332619;--ks-dim:#75613f;--ks-accent:#a03418;
+  --ks-card:rgba(253,247,233,.88);--ks-card-line:rgba(150,110,60,.34);
+  --ks-shadow:0 10px 30px rgba(96,62,20,.14);--ks-radius:3px;--ks-track:.05em;
+  --ks-glow:rgba(178,132,72,.16);--ks-top:rgba(250,243,229,.92);--ks-bot:rgba(244,236,220,.95)}
+/* 底：暖纸（`.kthwall` 会整幅盖住，这里只兜底 —— 别留深红，切换瞬间会露） */
+.kn-shelf[data-shelf="humanities"] .ks-far{background-image:none;background:#f6efe0;inset:0}
 .kn-shelf[data-shelf="humanities"] .ks-warm{background:
-  linear-gradient(to bottom,rgba(30,12,14,.9),rgba(12,4,6,.95))}
-.kn-shelf[data-shelf="humanities"] .ks-back{background:rgba(60,24,24,.6);color:#fbe6df}
-.kn-shelf[data-shelf="humanities"] .ks-back:hover{background:rgba(86,34,32,.82);color:#fff}
-.kn-shelf[data-shelf="humanities"] .ks-item{background:rgba(50,20,20,.56)}
-.kn-shelf[data-shelf="humanities"] .ks-item:hover{background:rgba(66,26,26,.8);
-  box-shadow:0 12px 28px rgba(20,4,6,.5)}
-.kn-shelf[data-shelf="humanities"] .ks-sub,.kn-shelf[data-shelf="humanities"] .ks-item .ks-tx i{
-  line-height:1.95;letter-spacing:.03em}
+  radial-gradient(70% 50% at 24% 10%,rgba(200,160,96,.20),transparent 68%),
+  linear-gradient(to bottom,#faf5ea,#f2ebdb)}
+.kn-shelf[data-shelf="humanities"] .ks-back{background:rgba(253,247,233,.90);color:#3a2a16;
+  border-color:rgba(150,110,60,.38)}
+.kn-shelf[data-shelf="humanities"] .ks-back:hover{background:#fff;color:#a03418;border-color:#a03418}
+/* 人文的语气：衬线 ＋ 行高放宽（与技术文库的无衬线/等宽拉开） */
+.kn-shelf[data-shelf="humanities"] .ks-sub,
+.kn-shelf[data-shelf="humanities"] .ks-item .ks-tx i{line-height:1.95;letter-spacing:.03em}
 
 /* ---------- 主题 archive：魔法图书馆的书架区（暖褐 ＋ 档案卡）---------- */
 .kn-shelf[data-shelf="archive"]{--ks-ink:#3a2b1c;--ks-dim:#8a7154;--ks-accent:#a8763a;
@@ -1545,53 +1547,80 @@ img{display:block}
   border-top:1px solid rgba(176,140,84,.32)}
 
 /* ══════════════════════════════════════════════════════════════════════════
-   技术文库 · 学院阅览厅（2026-09-22 **四版**：推倒星际风 → 白色系学院风）
-   用户原话："算了星际风太丑了，还是你自己参考一下学院风的白色系为主风格，
+   知识文档 · 学院阅览厅（**技术文库 ／ 人文文库 共用**，2026-09-22 四·五版）
+   用户原话（技术文库）："算了星际风太丑了，还是你自己参考一下学院风的白色系为主风格，
    自己创造一个 ui 界面，最好生成一个动态的背景图，按我说的五个部分设置五个入口，
    入口点进去就是对应的部分。"
-   ⚠️⚠️ 三条底线：
-     ① 结构只有两级：**大厅（五个入口）→ 部分页（该部分的文档目录）→ 阅读页**（原有）。
-        **不再有星系 / 星团 / 拖拽 / canvas 星点** —— 那套是"星际风"，用户已否决四版。
-     ② 高级感来自**克制**：1px 细线、低饱和、大面积留白、慢动效。
-     ③ 引入的是「**仪器感 ＋ 书卷气**」（罗马数字 · 四角细直角 · 小字距西文 · 纸卡），
-        点缀**只用站点主色朱红 `#ff461f`**（罗马数字、悬停线、计数）。
-   ⚠️ 背景是**生成的插画** `assets/tech-hall.webp`（白纸细线描的阅览厅）＋ 三组 CSS 动态层
-      （极慢推近 / 光柱横移 / 浮尘上升）—— **图换了必须升 URL 上的 `?v=`**。
-   ⚠️ 类名一律 `kth` 前缀：`ksgrid` 撞车事故已经两次（`kn-inner` / `ksgrid`），加类名先 Grep。
+   用户原话（人文文库）："人文文库也一样，分五个部分，历史、社科、财经、文学、哲学。"
+   ⚠️⚠️ 两个分类**共用同一套结构与类名**（`.kth*`），只靠 `#kthWall[data-shelf]` 切
+      **配色变量**与**背景图** —— 所以下面**任何规则里都不许写死颜色**，一律用 `--kh-*`：
+        · `tech`       ＝ 白纸冷调 ＋ 朱红重点 ｜ `assets/tech-hall.webp`（阅览厅）
+        · `humanities` ＝ 赭黄旧纸 ＋ 绛红重点 ｜ `assets/hum-hall.webp`（同一座楼的老书房）
+      ⚠️ 人文文库额外换**衬线字体**（`--serif`）—— 与技术文库的等宽/无衬线拉开语气。
+   ⚠️ 结构只有两级：大厅（五个入口 `.kth-card`）→ 部分页 `.kth-sec`（该部分目录 `.kth-row`）
+      → 阅读页（原有 `openKnowledge`）。**星际那套（星系/星团/拖拽/canvas 星点）已整块删除**，
+      回归里有 `legacy == 0` 守着不许复活。
    ⚠️ 层序：`.ks-wrap`(1) < **`.kthwall`(3)** < `.ks-bar`(6) < `.kspage`(8) ——
       必须低于 `.ks-bar`，否则「← 回到目录」又被盖住（2026-09-22 踩过）。
+   ⚠️ 类名一律 `kth` 前缀（`ksgrid` / `kn-inner` 撞车两次了，加类名前先 Grep 全站）。
    ══════════════════════════════════════════════════════════════════════════ */
-.kthwall{position:absolute;inset:0;z-index:3;overflow:hidden;color:#2b2419;
+.kthwall{
+  /* ── 配色变量：默认＝ tech（白纸冷调）；humanities 在下面整块覆写 ────── */
+  --kh-ink:#2b2419;      --kh-ink2:#231c10;
+  --kh-dim:#6f6250;      --kh-dim2:#7a6d59;   --kh-dim3:#a08d63;
+  --kh-line:rgba(150,124,80,.30);
+  --kh-line2:rgba(150,124,80,.26);
+  --kh-line3:rgba(150,124,80,.34);
+  --kh-rule:rgba(150,120,70,.5);
+  --kh-corner:#9a7c4c;
+  --kh-paper:rgba(255,254,250,.82);
+  --kh-paper2:rgba(255,255,252,.97);
+  --kh-paper3:rgba(255,255,252,.72);
+  --kh-acc:#c2330f;      --kh-acc2:#b4462a;
+  --kh-acc-line:rgba(194,51,15,.46);
+  --kh-acc-line2:rgba(194,51,15,.6);
+  --kh-mote:rgba(152,122,68,.40);
+  --kh-veil1:rgba(253,251,246,.66); --kh-veil2:rgba(253,251,246,.36);
+  --kh-veil3:rgba(253,251,246,.24); --kh-veil4:rgba(253,251,246,.06);
+  --kh-lift:rgba(255,254,250,.82);
+  --kh-ray1:rgba(255,251,238,.60); --kh-ray2:rgba(255,251,238,.42); --kh-ray3:rgba(255,250,232,.28);
+  --kh-hint:rgba(253,251,246,.72);
+  --kh-shadow:rgba(90,66,24,.055); --kh-shadow2:rgba(90,66,24,.14);
+  --kh-back:#3a2f1c; --kh-back-bg:rgba(255,254,250,.88); --kh-back-line:rgba(150,124,80,.34);
+  --kh-nm-font:inherit;
+  position:absolute;inset:0;z-index:3;overflow:hidden;color:var(--kh-ink);
   font-variant-numeric:tabular-nums;opacity:0;transition:opacity .46s ease}
 .kthwall[hidden]{display:none}
 .kthwall.in{opacity:1}
-/* 技术文库这一格：阅览厅取代原来的"说明卡 ＋ 文档列表"（列表仍在 DOM 里、被下面这条隐藏） */
-.kn-shelf[data-shelf="tech"] .ks-wrap{display:none}
+/* 这两个分类都不走「说明卡 ＋ 文档列表」（列表仍在 DOM 里，被这条隐藏） */
+.kn-shelf[data-shelf="tech"] .ks-wrap,
+.kn-shelf[data-shelf="humanities"] .ks-wrap{display:none}
 
 /* ── 背景四层：插画 / 白纱 / 中央提亮 / 光柱（＋浮尘）─────────────────── */
-/* `center 20%`：把画面上移，让长桌压到下方当"前景"，中上部留出干净空间放五个入口 */
+/* `center 20%`：把画面上移 —— 长桌压到下方当前景，中上部留白放五个入口 */
 .kth-bg{position:absolute;inset:-4%;
-  background:url("assets/tech-hall.webp?v=20260922a") center 20%/cover no-repeat;
+  background-image:url("assets/tech-hall.webp?v=20260922a");
+  background-position:center 20%;background-size:cover;background-repeat:no-repeat;
   animation:kthPush 58s ease-in-out infinite alternate}
 @keyframes kthPush{
   from{transform:scale(1.015) translate3d(0,0,0)}
   to{transform:scale(1.075) translate3d(-1.1%,-1.6%,0)}}
 .kth-veil{position:absolute;inset:0;
-  background:linear-gradient(180deg,rgba(253,251,246,.66) 0%,rgba(253,251,246,.36) 30%,
-    rgba(253,251,246,.24) 58%,rgba(253,251,246,.06) 100%)}
+  background:linear-gradient(180deg,var(--kh-veil1) 0%,var(--kh-veil2) 30%,
+    var(--kh-veil3) 58%,var(--kh-veil4) 100%)}
 .kth-lift{position:absolute;inset:0;
-  background:radial-gradient(ellipse 56% 34% at 50% 33%,rgba(255,254,250,.82),rgba(255,254,250,0) 74%)}
+  background:radial-gradient(ellipse 56% 34% at 50% 33%,var(--kh-lift),rgba(255,254,250,0) 74%)}
 .kth-ray{position:absolute;inset:-26% -48%;pointer-events:none;opacity:.9;
   background:
-    linear-gradient(103deg,transparent 23%,rgba(255,251,238,.60) 32%,transparent 39%),
-    linear-gradient(103deg,transparent 51%,rgba(255,251,238,.42) 60%,transparent 67%),
-    linear-gradient(103deg,transparent 77%,rgba(255,250,232,.28) 84%,transparent 90%);
+    linear-gradient(103deg,transparent 23%,var(--kh-ray1) 32%,transparent 39%),
+    linear-gradient(103deg,transparent 51%,var(--kh-ray2) 60%,transparent 67%),
+    linear-gradient(103deg,transparent 77%,var(--kh-ray3) 84%,transparent 90%);
   animation:kthRay 46s ease-in-out infinite alternate}
 @keyframes kthRay{from{transform:translate3d(-2.6%,0,0)}to{transform:translate3d(2.6%,0,0)}}
 /* 浮尘：只是"空气里有光"的感觉，非常轻 */
 .kth-motes{position:absolute;inset:0;pointer-events:none;overflow:hidden}
 .kth-motes i{position:absolute;left:var(--x);top:var(--y);width:var(--s);height:var(--s);
-  border-radius:50%;background:rgba(152,122,68,.40);
+  border-radius:50%;background:var(--kh-mote);
   animation:kthMote var(--dd) linear infinite;animation-delay:var(--dl)}
 @keyframes kthMote{
   0%{transform:translate3d(0,0,0);opacity:0}
@@ -1609,12 +1638,12 @@ img{display:block}
   pointer-events:none}
 .kth-top > *{pointer-events:auto}
 .kth-back{font:inherit;font-size:13px;padding:8px 15px;border-radius:999px;cursor:pointer;
-  color:#3a2f1c;background:rgba(255,254,250,.88);border:1px solid rgba(150,124,80,.34);
+  color:var(--kh-back);background:var(--kh-back-bg);border:1px solid var(--kh-back-line);
   backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);transition:.22s}
 .kth-back[hidden]{display:none}
-.kth-back:hover{background:#fff;color:#c2330f;border-color:#c2330f}
+.kth-back:hover{background:#fff;color:var(--kh-acc);border-color:var(--kh-acc)}
 .kth-t{margin-left:auto;font-size:10px;letter-spacing:.42em;text-transform:uppercase;
-  color:#7a6435}
+  color:var(--kh-dim2)}
 
 /* ── 一 · 大厅：题头 ＋ 五个入口 ───────────────────────────────────────── */
 .kth-hall{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;
@@ -1623,48 +1652,49 @@ img{display:block}
   padding:clamp(62px,9.5vh,98px) clamp(18px,4vw,56px) clamp(150px,29vh,250px);
   transition:opacity .42s ease,transform .54s cubic-bezier(.2,.72,.2,1)}
 .kth-hall.out{opacity:0;transform:scale(.984);pointer-events:none}
-.kth-eyebrow{margin:0;font-size:10px;letter-spacing:.46em;text-transform:uppercase;color:#a48f60}
+.kth-eyebrow{margin:0;font-size:10px;letter-spacing:.46em;text-transform:uppercase;color:var(--kh-dim3)}
 .kth-title{margin:9px 0 0;font-size:clamp(25px,3.2vw,38px);font-weight:700;letter-spacing:.2em;
-  color:#231c10}
-.kth-motto{margin:11px 0 0;font-size:12.5px;line-height:1.85;letter-spacing:.08em;color:#7a6d59}
+  color:var(--kh-ink2)}
+.kth-motto{margin:11px 0 0;font-size:12.5px;line-height:1.85;letter-spacing:.08em;color:var(--kh-dim2)}
 .kth-rule{display:block;width:min(520px,70%);height:1px;margin:20px 0 24px;
-  background:linear-gradient(90deg,transparent,rgba(150,120,70,.5),transparent)}
+  background:linear-gradient(90deg,transparent,var(--kh-rule),transparent)}
 
 .kth-cards{display:flex;width:100%;max-width:1080px;justify-content:center;align-items:stretch;
   gap:clamp(8px,1.3vw,16px)}
 .kth-card{position:relative;flex:1 1 0;min-width:0;max-width:198px;
   display:flex;flex-direction:column;align-items:center;
   padding:20px 12px 17px;font:inherit;text-align:center;cursor:pointer;color:inherit;
-  background:rgba(255,254,250,.82);border:1px solid rgba(150,124,80,.30);border-radius:2px;
-  box-shadow:0 2px 12px rgba(90,66,24,.055),inset 0 1px 0 rgba(255,255,255,.72);
+  background:var(--kh-paper);border:1px solid var(--kh-line);border-radius:2px;
+  box-shadow:0 2px 12px var(--kh-shadow),inset 0 1px 0 rgba(255,255,255,.72);
   transition:transform .32s cubic-bezier(.2,.72,.2,1),box-shadow .32s,
     border-color .32s,background .32s}
 /* 四角细直角 —— 学院装帧感（**只用两个伪元素**做对角，省 DOM） */
 .kth-card::before,.kth-card::after{content:"";position:absolute;width:9px;height:9px;
   pointer-events:none;opacity:.5;transition:.32s}
-.kth-card::before{left:5px;top:5px;border-left:1px solid #9a7c4c;border-top:1px solid #9a7c4c}
-.kth-card::after{right:5px;bottom:5px;border-right:1px solid #9a7c4c;border-bottom:1px solid #9a7c4c}
+.kth-card::before{left:5px;top:5px;border-left:1px solid var(--kh-corner);border-top:1px solid var(--kh-corner)}
+.kth-card::after{right:5px;bottom:5px;border-right:1px solid var(--kh-corner);border-bottom:1px solid var(--kh-corner)}
 .kth-card:hover,.kth-card:focus-visible{transform:translateY(-5px);
-  background:rgba(255,255,252,.97);border-color:rgba(194,51,15,.46);
-  box-shadow:0 14px 30px rgba(90,66,24,.14)}
+  background:var(--kh-paper2);border-color:var(--kh-acc-line);
+  box-shadow:0 14px 30px var(--kh-shadow2)}
 .kth-card:hover::before,.kth-card:hover::after,
-.kth-card:focus-visible::before,.kth-card:focus-visible::after{opacity:1;border-color:#c2330f}
+.kth-card:focus-visible::before,.kth-card:focus-visible::after{opacity:1;border-color:var(--kh-acc)}
 .kth-card.off{opacity:.55}
 .kth-rn{position:absolute;left:11px;top:9px;font-size:10.5px;font-weight:600;
-  letter-spacing:.16em;color:#a48f60;transition:.32s}
-.kth-card:hover .kth-rn{color:#c2330f}
-.kth-em{display:block;width:32px;height:32px;margin:0 0 10px;color:#8a7442;transition:.32s}
+  letter-spacing:.16em;color:var(--kh-dim3);transition:.32s}
+.kth-card:hover .kth-rn{color:var(--kh-acc)}
+.kth-em{display:block;width:32px;height:32px;margin:0 0 10px;color:var(--kh-corner);transition:.32s}
 .kth-em svg{display:block;width:100%;height:100%}
-.kth-card:hover .kth-em{color:#b4462a}
-.kth-nm{display:block;font-size:15px;font-weight:700;letter-spacing:.1em;color:#2b2419}
+.kth-card:hover .kth-em{color:var(--kh-acc2)}
+.kth-nm{display:block;font-family:var(--kh-nm-font);font-size:15px;font-weight:700;
+  letter-spacing:.1em;color:var(--kh-ink)}
 .kth-en{display:block;margin-top:4px;font-style:normal;font-size:9px;line-height:1.45;
-  letter-spacing:.2em;text-transform:uppercase;color:#a08d63}
-.kth-hr{display:block;width:28px;height:1px;margin:12px auto 9px;background:rgba(150,124,80,.4);
+  letter-spacing:.2em;text-transform:uppercase;color:var(--kh-dim3)}
+.kth-hr{display:block;width:28px;height:1px;margin:12px auto 9px;background:var(--kh-line3);
   transition:width .32s,background .32s}
-.kth-card:hover .kth-hr{width:50px;background:rgba(194,51,15,.6)}
-.kth-ct{font-style:normal;font-size:11.5px;letter-spacing:.1em;color:#6f6250}
-.kth-ct b{font-size:13.5px;font-weight:700;color:#b4462a}
-.kth-go{display:block;margin-top:10px;font-size:10px;letter-spacing:.26em;color:#c2330f;
+.kth-card:hover .kth-hr{width:50px;background:var(--kh-acc-line2)}
+.kth-ct{font-style:normal;font-size:11.5px;letter-spacing:.1em;color:var(--kh-dim)}
+.kth-ct b{font-size:13.5px;font-weight:700;color:var(--kh-acc2)}
+.kth-go{display:block;margin-top:10px;font-size:10px;letter-spacing:.26em;color:var(--kh-acc);
   opacity:0;transform:translateY(3px);transition:.3s}
 .kth-card:hover .kth-go,.kth-card:focus-visible .kth-go{opacity:1;transform:none}
 /* 入场：五个入口依次浮现（`backwards` 让动画结束后**回到自然态**，
@@ -1675,8 +1705,8 @@ img{display:block}
 
 .kth-hint{position:absolute;left:0;right:0;bottom:0;z-index:4;margin:0;
   padding:30px clamp(16px,4vw,40px) clamp(15px,3vh,28px);text-align:center;
-  font-size:12.5px;line-height:1.8;letter-spacing:.08em;color:#7a6d59;pointer-events:none;
-  background:linear-gradient(180deg,rgba(253,251,246,0),rgba(253,251,246,.72) 44%)}
+  font-size:12.5px;line-height:1.8;letter-spacing:.08em;color:var(--kh-dim2);pointer-events:none;
+  background:linear-gradient(180deg,rgba(253,251,246,0) 0%,var(--kh-hint) 44%)}
 
 /* ── 二 · 部分页：该部分的文档目录 ─────────────────────────────────────── */
 /* ⚠️ `align-items:center` ＋ `.kth-sec-in` **随内容收放**（不是 `flex:1` 撑满）——
@@ -1690,40 +1720,73 @@ img{display:block}
 .kth-sec.on{opacity:1;transform:none;pointer-events:auto}
 .kth-sec-in{display:flex;flex-direction:column;min-height:0;max-height:100%;
   width:min(1040px,100%);margin:0 auto;
-  background:rgba(255,254,250,.70);border:1px solid rgba(150,124,80,.26);border-radius:2px;
+  background:var(--kh-paper3);border:1px solid var(--kh-line2);border-radius:2px;
   padding:clamp(16px,2.6vh,26px) clamp(16px,2.6vw,30px) clamp(14px,2.4vh,22px);
   backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
 .kth-sec-h{flex:none;display:flex;align-items:flex-end;gap:14px;
-  padding-bottom:12px;border-bottom:1px solid rgba(150,124,80,.34);margin-bottom:13px}
+  padding-bottom:12px;border-bottom:1px solid var(--kh-line3);margin-bottom:13px}
 .kth-sec-rn{flex:none;font-size:25px;font-weight:600;line-height:1;letter-spacing:.06em;
-  color:#c2330f}
+  color:var(--kh-acc)}
 .kth-sec-hb{flex:1;min-width:0}
-.kth-sec-hb h3{margin:0;font-size:18.5px;font-weight:700;letter-spacing:.14em;color:#231c10}
+.kth-sec-hb h3{margin:0;font-family:var(--kh-nm-font);font-size:18.5px;font-weight:700;
+  letter-spacing:.14em;color:var(--kh-ink2)}
 .kth-sec-hb p{margin:3px 0 0;font-size:9.5px;letter-spacing:.24em;text-transform:uppercase;
-  color:#a08d63}
-.kth-sec-c{flex:none;font-size:12px;letter-spacing:.1em;color:#7a6d59}
+  color:var(--kh-dim3)}
+.kth-sec-c{flex:none;font-size:12px;letter-spacing:.1em;color:var(--kh-dim2)}
 .kth-rows{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;
   display:flex;flex-direction:column;gap:7px;padding-right:4px}
 .kth-row{display:flex;align-items:center;gap:14px;width:100%;
   padding:12px 15px;font:inherit;text-align:left;cursor:pointer;color:inherit;
-  background:rgba(255,255,252,.72);border:1px solid rgba(150,124,80,.26);border-radius:2px;
-  border-left:2px solid rgba(150,124,80,.36);
+  background:var(--kh-paper3);border:1px solid var(--kh-line2);border-radius:2px;
+  border-left:2px solid var(--kh-line3);
   transition:background .24s,border-color .24s,transform .24s,box-shadow .24s}
-.kth-row:hover,.kth-row:focus-visible{background:rgba(255,255,253,.99);
-  border-left-color:#c2330f;transform:translateX(4px);box-shadow:0 8px 22px rgba(90,66,24,.10)}
-.kth-row-no{flex:none;font-size:11px;letter-spacing:.14em;color:#a48f60}
+.kth-row:hover,.kth-row:focus-visible{background:var(--kh-paper2);
+  border-left-color:var(--kh-acc);transform:translateX(4px);box-shadow:0 8px 22px var(--kh-shadow2)}
+.kth-row-no{flex:none;font-size:11px;letter-spacing:.14em;color:var(--kh-dim3)}
 .kth-row-b{flex:1;min-width:0}
-.kth-row-b b{display:block;font-size:14.5px;font-weight:600;letter-spacing:.03em;color:#2b2419}
-.kth-row-b i{display:block;margin-top:3px;font-style:normal;font-size:11.5px;color:#7f7159;
+.kth-row-b b{display:block;font-family:var(--kh-nm-font);font-size:14.5px;font-weight:600;
+  letter-spacing:.03em;color:var(--kh-ink)}
+.kth-row-b i{display:block;margin-top:3px;font-style:normal;font-size:11.5px;color:var(--kh-dim2);
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.kth-row-m{flex:none;font-size:10.5px;letter-spacing:.1em;color:#a08d63}
-.kth-row-go{flex:none;font-size:13px;color:#c2330f;opacity:0;transform:translateX(-4px);
+.kth-row-m{flex:none;font-size:10.5px;letter-spacing:.1em;color:var(--kh-dim3)}
+.kth-row-go{flex:none;font-size:13px;color:var(--kh-acc);opacity:0;transform:translateX(-4px);
   transition:.24s}
 .kth-row:hover .kth-row-go,.kth-row:focus-visible .kth-row-go{opacity:1;transform:none}
-.kth-empty{margin:30px 0;text-align:center;font-size:12.5px;letter-spacing:.08em;color:#8a7d62}
+.kth-empty{margin:30px 0;text-align:center;font-size:12.5px;letter-spacing:.08em;color:var(--kh-dim3)}
 
 /* 部分页打开时把「← 回到目录」收走 —— **一屏只留一个返回**（与 `.ks-page-on` 同理） */
 .kn-shelf.kth-part .ks-bar{opacity:0;visibility:hidden;pointer-events:none}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   humanities ＝ 同一座图书馆的**另一间屋子**：赭黄旧纸 ＋ 绛红 ＋ 衬线体
+   ⚠️ 只换变量与背景图 —— 结构、类名、交互**完全与技术文库共用**。
+   ══════════════════════════════════════════════════════════════════════════ */
+.kthwall[data-shelf="humanities"]{
+  --kh-ink:#332619;      --kh-ink2:#2a1e10;
+  --kh-dim:#75613f;      --kh-dim2:#7d6644;   --kh-dim3:#a48b5c;
+  --kh-line:rgba(150,110,60,.34);
+  --kh-line2:rgba(150,110,60,.30);
+  --kh-line3:rgba(150,110,60,.40);
+  --kh-rule:rgba(150,112,56,.52);
+  --kh-corner:#a5824a;
+  --kh-paper:rgba(253,247,233,.86);
+  --kh-paper2:rgba(255,251,241,.98);
+  --kh-paper3:rgba(255,250,238,.74);
+  --kh-acc:#a03418;      --kh-acc2:#8e2c12;
+  --kh-acc-line:rgba(160,52,24,.48);
+  --kh-acc-line2:rgba(160,52,24,.64);
+  --kh-mote:rgba(158,118,56,.42);
+  --kh-veil1:rgba(250,242,226,.70); --kh-veil2:rgba(250,242,226,.40);
+  --kh-veil3:rgba(250,242,226,.26); --kh-veil4:rgba(250,242,226,.05);
+  --kh-lift:rgba(253,246,232,.84);
+  --kh-ray1:rgba(255,244,214,.62); --kh-ray2:rgba(255,244,214,.44); --kh-ray3:rgba(255,240,206,.30);
+  --kh-hint:rgba(250,242,226,.74);
+  --kh-shadow:rgba(96,62,20,.07); --kh-shadow2:rgba(96,62,20,.16);
+  --kh-back:#3a2a16; --kh-back-bg:rgba(253,247,233,.90); --kh-back-line:rgba(150,110,60,.38);
+  /* ⭐ 衬线体 —— 技术文库用无衬线/等宽（"缜密"），人文文库用衬线（"书卷"） */
+  --kh-nm-font:var(--serif)}
+.kthwall[data-shelf="humanities"] .kth-bg{
+  background-image:url("assets/hum-hall.webp?v=20260922a")}
 
 @media (max-width:900px){
   .kth-hall{padding-top:clamp(56px,8.5vh,88px);padding-bottom:clamp(96px,20vh,180px)}
@@ -1733,7 +1796,6 @@ img{display:block}
   .kth-sec{padding-top:clamp(56px,8.5vh,88px)}
   .kth-row{padding:11px 12px;gap:11px}
   .kth-row-m{display:none}
-  .kth-rows{max-height:none}
 }
 @media (max-width:560px){
   .kth-hall{padding-bottom:clamp(70px,15vh,140px)}
@@ -3784,8 +3846,8 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 
         <!-- 一 · 大厅：五个入口 -->
         <div class="kth-hall" id="kthHall">
-          <p class="kth-eyebrow">Technical Library &middot; 五个部分</p>
-          <h3 class="kth-title">技术文库</h3>
+          <p class="kth-eyebrow" id="kthEyebrow"></p>
+          <h3 class="kth-title" id="kthTitle"></h3>
           <p class="kth-motto" id="kthMotto"></p>
           <span class="kth-rule" aria-hidden="true"></span>
           <div class="kth-cards" id="kthCards"></div>
@@ -4272,8 +4334,8 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 </div>
 
 <script src="study-plan.js?v=20260922c"></script>
-<script src="docs.js?v=20260921b"></script>
+<script src="docs.js?v=20260921c"></script>
 <script src="app.js?v=20260920f"></script>
-<script src="knowledge.js?v=20260922k"></script>
+<script src="knowledge.js?v=20260922l"></script>
 </body>
 </html>

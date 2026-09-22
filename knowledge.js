@@ -1562,40 +1562,62 @@ function kstBind() {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   技术文库 · 学院阅览厅（2026-09-22 **四版**：推倒星际风，改白色系学院风）
-   用户原话："算了星际风太丑了，还是你自己参考一下学院风的白色系为主风格，
+   知识文档 · 学院阅览厅（**技术文库 ／ 人文文库 共用**，2026-09-22 四·五版）
+   用户原话（技术文库）："算了星际风太丑了，还是你自己参考一下学院风的白色系为主风格，
    自己创造一个 ui 界面，最好生成一个动态的背景图，按我说的五个部分设置五个入口，
    入口点进去就是对应的部分。"
-   ⚠️ 两级结构：**大厅（五个入口）→ 部分页（该部分的文档目录）→ 阅读页**（原有 `openKnowledge`）。
-      **没有** canvas / rAF / 拖拽 —— 动效全在 CSS 里（极慢推近 ＋ 光柱横移 ＋ 浮尘上升），
-      所以切走这一格不用"停动画"，也不吃主线程。
-   ⚠️ 五个部分的数据来自 `docs.js` 的 **`sub`** 字段（`ksTechDocs()` 分组，缺省落 `etc`）。
+   用户原话（人文文库）："人文文库也一样，分五个部分，历史、社科、财经、文学、哲学。"
+   ⚠️ 两个分类**共用**这套逻辑，靠 `KTH_SHELVES[kthShelf]` 取各自的五个部分；
+      **两级结构**：大厅（五个入口）→ 部分页（该部分目录）→ 阅读页（原有 `openKnowledge`）。
+      **没有** canvas / rAF / 拖拽 —— 动效全在 CSS 里（极慢推近 ＋ 光柱横移 ＋ 浮尘上升）。
+   ⚠️ 归类靠 `docs.js` 的 **`sub`** 字段；每个分类各有自己的 key 集与兜底 key（`fb`）。
    ⚠️ 类名一律 `kth` 前缀 —— `ksgrid` / `kn-inner` 的类名撞车事故已经两次，加类名前先 Grep 全站。
    ══════════════════════════════════════════════════════════════════════════ */
-var KTHPARTS = [
-  { k: "ai",  name: "AI 相关",  rn: "I",   en: "Artificial Intelligence",
-    note: "从提示词到 Agent" },
-  { k: "gis", name: "GIS 相关", rn: "II",  en: "Geographic Information",
-    note: "空间数据的采集、处理与成图" },
-  { k: "cad", name: "CAD 相关", rn: "III", en: "Computer-Aided Design",
-    note: "图纸、建模与二次开发" },
-  { k: "pl",  name: "编程语言", rn: "IV",  en: "Languages",
-    note: "语法、工具链与踩过的坑" },
-  { k: "etc", name: "其他领域", rn: "V",   en: "Miscellany",
-    note: "放不进前四格、迟早用得上的" }
-];
-var KTH_MOTTO = "凡动手做过、且还想再做一次的，都留在这里 —— 分五间屋子收着。";
+var KTH_SHELVES = {
+  tech: {
+    label: "Technical Library", title: "技术文库",
+    motto: "凡动手做过、且还想再做一次的，都留在这里 —— 分五间屋子收着。",
+    fb: "etc",
+    parts: [
+      { k: "ai",  name: "AI 相关",  rn: "I",   en: "Artificial Intelligence", note: "从提示词到 Agent" },
+      { k: "gis", name: "GIS 相关", rn: "II",  en: "Geographic Information",  note: "空间数据的采集、处理与成图" },
+      { k: "cad", name: "CAD 相关", rn: "III", en: "Computer-Aided Design",   note: "图纸、建模与二次开发" },
+      { k: "pl",  name: "编程语言", rn: "IV",  en: "Languages",               note: "语法、工具链与踩过的坑" },
+      { k: "etc", name: "其他领域", rn: "V",   en: "Miscellany",              note: "放不进前四格、迟早用得上的" }
+    ]
+  },
+  humanities: {
+    label: "Humanities Library", title: "人文文库",
+    motto: "人文不解决「怎么做」，只回答「怎么看待」 —— 分五间屋子，慢慢读。",
+    fb: "lit",
+    parts: [
+      { k: "hist", name: "历史", rn: "I",   en: "History",          note: "谁在记录，为什么这样记" },
+      { k: "soc",  name: "社科", rn: "II",  en: "Social Sciences",  note: "观察人群的几种方法" },
+      { k: "fin",  name: "财经", rn: "III", en: "Economics & Finance", note: "钱与判断的算术" },
+      { k: "lit",  name: "文学", rn: "IV",  en: "Literature",       note: "读、写与共情" },
+      { k: "phi",  name: "哲学", rn: "V",   en: "Philosophy",       note: "把「我觉得」拆开来看" }
+    ]
+  }
+};
 
+var kthShelf = "";       // 当前在哪个分类（"tech" / "humanities"）
 var kthPart = "";        // 当前在哪个部分（"" ＝ 大厅）
 var kthDocList = [];     // 当前部分页的文档（列表项按序号取用）
 
-/* 五个部分的细线徽记（内联 SVG：不引外部资源，线宽与铜版画一致） */
+/* 细线徽记（内联 SVG：不引外部资源，线宽与铜版画一致） */
 var KTH_EMBLEM = {
+  /* ── 技术文库 ── */
   ai:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.15" stroke-linejoin="round"><path d="M12 3.1l1.55 7.35L20.9 12l-7.35 1.55L12 20.9l-1.55-7.35L3.1 12l7.35-1.55z"/><circle cx="18.6" cy="18.2" r="1.5"/></svg>',
   gis: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.15"><circle cx="12" cy="12" r="8.3"/><ellipse cx="12" cy="12" rx="3.8" ry="8.3"/><path d="M3.9 12h16.2"/></svg>',
   cad: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.15" stroke-linecap="round"><circle cx="12" cy="4.2" r="1.3"/><path d="M12 5.5L5.6 20.4M12 5.5l6.4 14.9"/><path d="M8 14.2c2.6 1.4 5.4 1.4 8 0"/></svg>',
   pl:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round"><path d="M9.4 3.6H8.2a2 2 0 0 0-2 2v3.1a2.4 2.4 0 0 1-2.4 2.4v1.8a2.4 2.4 0 0 1 2.4 2.4v3.1a2 2 0 0 0 2 2h1.2"/><path d="M14.6 3.6h1.2a2 2 0 0 1 2 2v3.1a2.4 2.4 0 0 0 2.4 2.4v1.8a2.4 2.4 0 0 0-2.4 2.4v3.1a2 2 0 0 1-2 2h-1.2"/></svg>',
-  etc: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.15" stroke-linejoin="round"><path d="M12 6.7C9.8 5.1 7.2 4.5 4.2 4.7v12.6c3-.2 5.6.4 7.8 2 2.2-1.6 4.8-2.2 7.8-2V4.7c-3-.2-5.6.4-7.8 2z"/><path d="M12 6.7v12.6"/></svg>'
+  etc: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.15" stroke-linejoin="round"><path d="M12 6.7C9.8 5.1 7.2 4.5 4.2 4.7v12.6c3-.2 5.6.4 7.8 2 2.2-1.6 4.8-2.2 7.8-2V4.7c-3-.2-5.6.4-7.8 2z"/><path d="M12 6.7v12.6"/></svg>',
+  /* ── 人文文库 ── */
+  hist: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.15" stroke-linecap="round"><path d="M6.8 3.8h10.4M6.8 20.2h10.4"/><path d="M8.4 3.8c0 3.4 7.2 5 7.2 8.2s-7.2 4.8-7.2 8.2"/><path d="M15.6 3.8c0 3.4-7.2 5-7.2 8.2s7.2 4.8 7.2 8.2"/></svg>',
+  soc:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.15"><circle cx="12" cy="5.6" r="2.6"/><circle cx="5.4" cy="17.4" r="2.6"/><circle cx="18.6" cy="17.4" r="2.6"/><path d="M10.4 7.8 7 15.2M13.6 7.8l3.4 7.4M8 17.4h8"/></svg>',
+  fin:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round"><path d="M3.8 20.2h16.4M3.8 20.2V4.2"/><path d="M6.6 16.4l4-4.6 3.2 2.5 4.6-6.3"/><path d="M15.6 8h2.8v2.8"/></svg>',
+  lit:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round"><path d="M19.6 4.4c-5 .4-9.2 3.1-11.2 7.8L6.7 16l3.8-1.7c4.7-2 7.4-6.2 7.8-11.2z"/><path d="M6.9 17 3.6 20.3"/><path d="M11.4 9.2c1.5.4 2.8 1.7 3.2 3.2"/></svg>',
+  phi:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.15" stroke-linejoin="round"><path d="M9.2 20.4h5.6M10.2 20.4v-2.2h3.6v2.2"/><path d="M8.4 15.6c-1.1-1-1.8-2.5-1.8-4.2a5.4 5.4 0 0 1 10.8 0c0 1.7-.7 3.2-1.8 4.2z"/><path d="M12 3.6v1.4"/></svg>'
 };
 
 function kthEsc(s) {
@@ -1606,13 +1628,16 @@ function kthSet(id, txt) {
   var el = document.getElementById(id);
   if (el) el.textContent = txt == null ? "" : txt;
 }
+function kthConf() { return KTH_SHELVES[kthShelf] || { parts: [], fb: "etc" }; }
 function ksPartByK(k) {
-  for (var i = 0; i < KTHPARTS.length; i++) if (KTHPARTS[i].k === k) return KTHPARTS[i];
+  var ps = kthConf().parts;
+  for (var i = 0; i < ps.length; i++) if (ps[i].k === k) return ps[i];
   return null;
 }
-function ksTechDocs() { return knShelfDocs("tech"); }
+function kthShelfDocs() { return knShelfDocs(kthShelf); }
 function kthDocsOf(k) {
-  return ksTechDocs().filter(function (d) { return (d.sub || "etc") === k; });
+  var fb = kthConf().fb;
+  return kthShelfDocs().filter(function (d) { return (d.sub || fb) === k; });
 }
 
 /* 浮尘：一次性生成 26 颗（随机位置/大小/周期），之后全靠 CSS 动画 —— 不占主线程 */
@@ -1629,12 +1654,15 @@ function kthMotesBuild() {
   box.innerHTML = out;
 }
 
-/* 大厅：五个入口卡（编号 / 徽记 / 名 / 西文 / 计数）—— 篇数越多，计数越显眼 */
+/* 大厅：题头 ＋ 五个入口卡（编号 / 徽记 / 名 / 西文 / 计数） */
 function kthCardsRender() {
   var box = document.getElementById("kthCards");
   if (!box) return;
-  kthSet("kthMotto", KTH_MOTTO);
-  box.innerHTML = KTHPARTS.map(function (p, i) {
+  var C = kthConf();
+  kthSet("kthEyebrow", C.label + " · 五个部分");
+  kthSet("kthTitle", C.title);
+  kthSet("kthMotto", C.motto);
+  box.innerHTML = C.parts.map(function (p, i) {
     var n = kthDocsOf(p.k).length;
     return '<button class="kth-card' + (n ? "" : " off") + '" type="button" data-k="' + p.k +
       '" style="--i:' + i + '" aria-label="' + kthEsc(p.name) + '">' +
@@ -1707,7 +1735,7 @@ function kthHome() {
   if (sec) sec.classList.remove("on");
   var back = document.getElementById("kthBack");
   if (back) back.hidden = true;
-  kthSet("kthTopT", "Technical Library");
+  kthSet("kthTopT", kthConf().label || "Knowledge Library");
   var sh = document.getElementById("knShelf");
   if (sh) sh.classList.remove("kth-part");
   window.setTimeout(function () {
@@ -1744,9 +1772,12 @@ function kthBind() {
   }
 }
 
-function kthOpen() {
+/* `shelf` ＝ "tech" / "humanities" —— 决定取哪五个部分、哪张背景图、哪套配色 */
+function kthOpen(shelf) {
   var w = document.getElementById("kthWall");
-  if (!w) return;
+  if (!w || !KTH_SHELVES[shelf]) return;
+  kthShelf = shelf;
+  w.setAttribute("data-shelf", shelf);     // 配色变量与背景图都挂在这上面
   kthMotesBuild();
   kthCardsRender();
   kthBind();
@@ -1793,14 +1824,16 @@ function knOpenShelf(shelf) {
   sh.classList.remove("ks-in");
   void sh.offsetWidth;                                        // 强制重排 → 入场过渡才会跑
   requestAnimationFrame(function () { sh.classList.add("ks-in"); });
-  // 顶栏配色跟着**场景亮度**走：rule（大厅）/ archive（书架区）/ tech（阅览厅）都是
-  // 米纸插画＝亮场景 → 学院风浅色顶栏（深色字）；只剩 humanities 是深场景 → 深色顶栏。
-  var bright = (shelf === "rule" || shelf === "archive" || shelf === "tech");
+  // 顶栏配色跟着**场景亮度**走：rule（大厅）/ archive（书架区）/ tech（阅览厅）/
+  // humanities（人文阅览室）—— 四个都是米纸插画＝亮场景 → 统一学院风浅色顶栏（深色字）。
+  var bright = (shelf === "rule" || shelf === "archive" ||
+                shelf === "tech" || shelf === "humanities");
   var st = document.getElementById("knowledgeStage");
   if (st) { st.classList.toggle("kn-home-on", bright); st.classList.add("kn-subpage"); }
   kstFileClose();                      // 换分类时，收起上一级留下的抽屉
   kthClose();                          // 阅览厅先收（幂等），下面按分类重新开
-  if (shelf === "tech") kthOpen();     // 技术文库 ＝ 学院阅览厅（2026-09-22 四版）
+  // 技术文库 / 人文文库 ＝ 学院阅览厅（2026-09-22 四·五版）—— 两个分类共用这一套
+  if (shelf === "tech" || shelf === "humanities") kthOpen(shelf);
   ksPageReset();                        // 以及可能开着的独立页 / 二级详情
   if (shelf === "rule") kstRender();    // 「年度修习」＝学院大厅 ＋ 六个入口（其余三格仍走卡片列表）
   knPortalClock(false);
@@ -1939,7 +1972,9 @@ function warmGateImages() {
     /* 技术文库 · 学院阅览厅的整幅背景（2026-09-22 四版新增，306 KB）——
        ⚠️ 它挂在 `.kthwall` 上，而那一层平时 `hidden`（背景图不会提前下载）→
        不预热的话，点「技术文库」的瞬间才开始下 306 KB，大厅会先白一下。 */
-    "assets/tech-hall.webp?v=20260922a"
+    "assets/tech-hall.webp?v=20260922a",
+    /* 人文文库 · 同一座楼的老书房（2026-09-22 五版新增，308 KB）—— 同样必须预热 */
+    "assets/hum-hall.webp?v=20260922a"
   ];
   list.forEach(function (u) {
     var im = new Image();
