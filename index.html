@@ -1832,7 +1832,9 @@ img{display:block}
    ⚠️ **舞台 `.arc-stage` 是一个恒定 1.5 的长宽比盒子**（`max()` 撑满视口 → 等价于 cover）：
       这样三张图永不拉伸变形，而门洞／门扇的百分比在任何屏幕上都是同一套数字。
       UI（问候语 / 调阅台 / 底部提示）挂在 `.arcwall` 上，**不跟着舞台被裁**。
-   ⚠️ 素材：`archive-door.webp`（正立面）/ `archive-hall.webp`（内厅）。
+   ⚠️ 素材：`archive-door.webp`（正立面）/ `archive-hall.webp`（内厅，**2048×1360 高清版**）。
+       十六版起内厅走「**高清重绘**」：原图 1536 版里她整张脸只有 ~60px → 放大后必糊；
+       改以 2048 重绘（她的脸 ~150px）后清楚可辨。**换内厅图必须重量 `--ar-head`**。
    ⭐ **三版（用户："接待员呢、前台呢、深度不够、两侧书架离中间太近"）**：接待员与横向长前台
       **整幅画进内厅图**（站在台后）—— 不再有独立人物图层，所以她没有单独淡入，跟着场景一起亮；
       中殿拉开（柱廊退到左右两端）、纵深加到八个开间。`archive-staff.webp` 随之作废（已删）。
@@ -1853,21 +1855,21 @@ img{display:block}
      ⚠️ 她画在图里、挂在舞台的**竖直中线附近**（头顶离中线只差 1.5% 舞台高），
         所以缩放对她的挂点几乎无影响（0.485 → 0.483，约 3px）。 */
   --ar-zoom:1.15;
-  /* 她头顶的高度（量自内厅图：十五版合成图 0.500 × 全高 → 离舞台底边 0.498）。
+  /* 她头顶的高度（量自内厅图：十六版高清 0.487 × 全高 → 离舞台底边 0.513）。
      ⚠️ 换内厅图**必须重量**。⚠️⚠️ **不要用自动判据** —— 穹顶壁画、凹格、远窗的暗线都会在带子里
-        制造假台阶（连骗四次：0.396 / 0.424 / 0.434 …，真值 0.500）。
-     ✅ 可靠做法：**把竖直带收窄到只压住她头发**（x 0.475–0.525），剖面会出现一条干净的大台阶，
-        **再画候选线目视确认**（headcheck 图）**然后手判**，别把自动结果直接写进 CSS。
-     ⭐ 十五版的脸是**从十二版抠过来 1:1 贴回**的（十四版那张脸被"去雾"磨糊了）——
-        同一血统的版本之间**几何是对齐的**，哪一版某个局部更好就直接抠过来，**零出图成本**。 */
-  --ar-head:calc(var(--ar-stage-h) * .498 - var(--ar-crop))}
+        制造假台阶（已连骗五次：0.396 / 0.424 / 0.434 / 0.440 …）。
+     ✅ 唯一可靠做法：**把竖直带收窄到只压住她头发**（x 0.480–0.520），剖面会出现一条干净的大台阶
+        （十六版：686 行 183 → 714 行 84），**再画候选线目视确认**，然后手判。
+     ⭐ 十六版取的是 **0.487**（不是更大那个数）：她的**呆毛**往上一小截，气泡要挂在呆毛之上，
+        所以取的是呆毛顶而不是发顶（两者差约 0.013 全高）。 */
+  --ar-head:calc(var(--ar-stage-h) * .513 - var(--ar-crop))}
 
 /* ── ① 内厅（门背后那一层）─────────────────────────────────────────────── */
 .arc-scene{position:absolute;inset:0;z-index:0;transform:scale(var(--ar-zoom,1));
   transition:transform 2.6s cubic-bezier(.3,.02,.26,1)}
 .arcwall.push .arc-scene{transform:scale(calc(var(--ar-zoom,1) * 1.06))}
 .arc-hall{position:absolute;inset:0;
-  background:url("assets/archive-hall.webp?v=20260922m") center/100% 100% no-repeat}
+  background:url("assets/archive-hall.webp?v=20260922n") center/100% 100% no-repeat}
 .arc-hallv{position:absolute;inset:0;
   background:radial-gradient(ellipse 60% 44% at 50% 44%,rgba(255,252,244,.26),rgba(255,250,240,0) 72%),
     linear-gradient(180deg,rgba(58,42,24,.20),rgba(58,42,24,0) 24%,
@@ -4586,6 +4588,6 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 <script src="study-plan.js?v=20260922c"></script>
 <script src="docs.js?v=20260921c"></script>
 <script src="app.js?v=20260920f"></script>
-<script src="knowledge.js?v=20260922z"></script>
+<script src="knowledge.js?v=20260922aa"></script>
 </body>
 </html>
