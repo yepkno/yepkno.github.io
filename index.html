@@ -1853,19 +1853,20 @@ img{display:block}
      ⚠️ 她画在图里、挂在舞台的**竖直中线附近**（头顶离中线只差 1.5% 舞台高），
         所以缩放对她的挂点几乎无影响（0.485 → 0.483，约 3px）。 */
   --ar-zoom:1.15;
-  /* 她头顶的高度（量自内厅图：六版 0.525 × 全高 → 离舞台底边 0.475）。
-     ⚠️ 换内厅图**必须重量**。⚠️⚠️ **别用简单的"第一条暗行"** —— 六版穹顶加了湿壁画后，
-        中央竖直带在 y≈0.40 处多出一条暗线（凹格/拱券的轮廓），自动判据会把它当成"头发顶"、
-        把气泡顶到天花板上去。正解：**先把候选线画出来目视定夺**，或把搜索窗口收到
-        她应该在的位置附近（本例 y ∈ 0.48–0.60 全高），再取"明显暗于石墙的第一格"。 */
-  --ar-head:calc(var(--ar-stage-h) * .475 - var(--ar-crop))}
+  /* 她头顶的高度（量自内厅图：八版 0.527 × 全高 → 离舞台底边 0.473）。
+     ⚠️ 换内厅图**必须重量**。⚠️⚠️ **别用"第一条暗行"，也别用"最陡下降行"** —— 六版起穹顶有了湿壁画、
+        凹格与拱券轮廓，中央那条竖直带在 y≈0.40–0.43 就有暗线，两种自动判据都会把它当成"头发顶"
+        （实测误判 0.396 / 0.424，真值 0.527），气泡会被顶到天花板上去。
+     ✅ 正解：**把带子收窄到只压住她头发**（本例 x 0.475–0.525），剖面会是一条干净的大台阶
+        （198 → 170 → 142 → 110），再**把候选线画出来目视确认**。 */
+  --ar-head:calc(var(--ar-stage-h) * .473 - var(--ar-crop))}
 
 /* ── ① 内厅（门背后那一层）─────────────────────────────────────────────── */
 .arc-scene{position:absolute;inset:0;z-index:0;transform:scale(var(--ar-zoom,1));
   transition:transform 2.6s cubic-bezier(.3,.02,.26,1)}
 .arcwall.push .arc-scene{transform:scale(calc(var(--ar-zoom,1) * 1.06))}
 .arc-hall{position:absolute;inset:0;
-  background:url("assets/archive-hall.webp?v=20260922f") center/100% 100% no-repeat}
+  background:url("assets/archive-hall.webp?v=20260922g") center/100% 100% no-repeat}
 .arc-hallv{position:absolute;inset:0;
   background:radial-gradient(ellipse 60% 44% at 50% 44%,rgba(255,252,244,.26),rgba(255,250,240,0) 72%),
     linear-gradient(180deg,rgba(58,42,24,.20),rgba(58,42,24,0) 24%,
@@ -4580,6 +4581,6 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 <script src="study-plan.js?v=20260922c"></script>
 <script src="docs.js?v=20260921c"></script>
 <script src="app.js?v=20260920f"></script>
-<script src="knowledge.js?v=20260922s"></script>
+<script src="knowledge.js?v=20260922t"></script>
 </body>
 </html>
