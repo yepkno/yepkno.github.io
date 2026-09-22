@@ -1860,7 +1860,7 @@ img{display:block}
   transition:transform 2.6s cubic-bezier(.3,.02,.26,1)}
 .arcwall.push .arc-scene{transform:scale(calc(var(--ar-zoom,1) * 1.06))}
 .arc-hall{position:absolute;inset:0;
-  background:url("assets/archive-hall.webp?v=20260922c") center/100% 100% no-repeat}
+  background:url("assets/archive-hall.webp?v=20260922d") center/100% 100% no-repeat}
 .arc-hallv{position:absolute;inset:0;
   background:radial-gradient(ellipse 60% 44% at 50% 44%,rgba(255,252,244,.26),rgba(255,250,240,0) 72%),
     linear-gradient(180deg,rgba(58,42,24,.20),rgba(58,42,24,0) 24%,
@@ -1905,14 +1905,20 @@ img{display:block}
   width:11px;height:11px;transform:rotate(45deg);background:var(--kh-paper2);
   border-right:1px solid var(--kh-line);border-bottom:1px solid var(--kh-line)}
 
-/* ── ④ 调阅台卡纸（一壳两态：报编号 / 调阅单）───────────────────────────── */
-.arc-card{position:absolute;left:50%;top:50%;z-index:6;width:min(520px,90vw);
+/* ── ④ 调阅台卡纸（一壳两态：报编号 / 调阅单）─────────────────────────────
+   ⚠️⚠️ 卡纸**必须挂在她的头顶之上**（`--ar-head`），**不能屏幕居中** ——
+      三版她画在画面 55% 处，居中卡纸的下沿正好切在她脸上（2026-09-22 用户截图指出）。
+      `min(…,62vh)` 是兜底：极矮的窗口里不让卡片顶出画面上沿。
+   ⭐ 半透明纸 ＋ 轻磨砂（用户："透明度高一点"）—— 但仍要压得住背后的大理石纹。 */
+.arc-card{position:absolute;left:50%;bottom:min(calc(var(--ar-head) + 4vh),62vh);
+  z-index:6;width:min(520px,90vw);
   padding:22px 24px 20px;text-align:center;opacity:0;visibility:hidden;
-  transform:translate(-50%,-46%) scale(.985);
-  background:var(--kh-paper2);border:1px solid var(--kh-line);border-radius:3px;
-  box-shadow:0 24px 64px rgba(60,44,24,.28);
+  transform:translate(-50%,8px) scale(.985);
+  background:rgba(255,255,252,.70);border:1px solid var(--kh-line);border-radius:3px;
+  backdrop-filter:blur(7px) saturate(1.02);-webkit-backdrop-filter:blur(7px) saturate(1.02);
+  box-shadow:0 22px 60px rgba(60,44,24,.24);
   transition:opacity .34s ease,transform .44s cubic-bezier(.2,.8,.3,1),visibility .34s}
-.arc-card.on{opacity:1;visibility:visible;transform:translate(-50%,-50%) scale(1)}
+.arc-card.on{opacity:1;visibility:visible;transform:translate(-50%,0) scale(1)}
 .arc-card::before,.arc-card::after{content:"";position:absolute;width:11px;height:11px;opacity:.55;
   border-color:var(--kh-corner)}
 .arc-card::before{left:7px;top:7px;border-left:1px solid;border-top:1px solid}
@@ -1922,7 +1928,7 @@ img{display:block}
 .arc-in{display:block;width:100%;margin:16px 0 0;padding:12px 14px;text-align:center;
   font-family:var(--mono,ui-monospace,monospace);font-size:22px;font-weight:600;
   letter-spacing:.34em;text-indent:.34em;color:var(--kh-ink2);
-  background:rgba(255,255,255,.70);border:1px solid var(--kh-line3);border-radius:2px;outline:none;
+  background:rgba(255,255,255,.78);border:1px solid var(--kh-line3);border-radius:2px;outline:none;
   transition:border-color .28s,box-shadow .28s}
 .arc-in:focus{border-color:var(--kh-acc);box-shadow:0 0 0 3px rgba(194,51,15,.10)}
 .arc-in::placeholder{color:var(--kh-dim3);font-weight:400;letter-spacing:.3em}
@@ -1955,6 +1961,16 @@ img{display:block}
   .arc-say{width:min(520px,92vw)}
   .arc-say-b{font-size:14px;padding:11px 17px 12px}
   .arc-card{width:min(460px,92vw)}
+}
+/* ⚠️ 矮窗口（例如 1080×596）里"她头顶之上"只有 250px 左右 —— 卡纸必须**压扁**，
+   否则它的上沿会顶到顶栏、甚至把标题切掉（2026-09-22 实测：268px 的卡纸顶到 y=12px）。 */
+@media (max-height:760px){
+  .arc-card{padding:15px 18px 13px}
+  .arc-card-h{margin-top:7px;font-size:15.5px}
+  .arc-in{margin-top:11px;padding:9px 12px;font-size:19px}
+  .arc-tip{margin-top:8px;font-size:11px;line-height:1.72}
+  .arc-err{margin-top:7px;font-size:12px}
+  .arc-opts{margin-top:12px}
 }
 @media (max-width:560px){
   .arc-say-b{font-size:13px;letter-spacing:.03em;line-height:1.7}
@@ -4558,6 +4574,6 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 <script src="study-plan.js?v=20260922c"></script>
 <script src="docs.js?v=20260921c"></script>
 <script src="app.js?v=20260920f"></script>
-<script src="knowledge.js?v=20260922p"></script>
+<script src="knowledge.js?v=20260922q"></script>
 </body>
 </html>

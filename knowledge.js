@@ -1983,6 +1983,9 @@ function arcAskOpen() {
   if (arcState === "inside" || arcState === "slip") arcState = "ask";
   if (arcState !== "ask") return;
   cardRestore();
+  /* ⚠️ 调阅台一开就把问候语收走 —— 两张纸片挂在同一条竖直线上会互相压
+     （2026-09-22 用户截图："对话框不要遮住接待员的脸"；卡纸的位置也一并挪到她头顶之上）。 */
+  arcOff(arcEl("arcSay"), "on");
   var tip = arcEl("arcTip");
   if (tip) {
     tip.innerHTML = "编号＝<b>A／B</b>（技术／人文）＋ <b>01–05</b>（部分）＋ <b>001</b>（序号）<br>" +
@@ -2268,7 +2271,7 @@ function warmGateImages() {
        门是进门第一眼（必须已经在缓存里），内厅在 760ms 后就要露出来；
        接待员（65 KB）要 2.4s 之后才淡入，留给她自己慢慢下。 */
     "assets/archive-door.webp?v=20260922a",
-    "assets/archive-hall.webp?v=20260922c"
+    "assets/archive-hall.webp?v=20260922d"
   ];
   list.forEach(function (u) {
     var im = new Image();
@@ -2350,6 +2353,7 @@ function warmGateImages() {
       if (arcState === "ask" || arcState === "slip") {
         arcCloseCard();
         arcState = "inside";
+        arcOn(arcEl("arcSay"), "on");      // 收卡纸 → 把问候语放回来（文字还在，不重打）
         arcHint("点一下画面 · 向接待员报出文档编号");
         return;
       }
