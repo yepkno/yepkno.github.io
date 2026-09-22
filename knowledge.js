@@ -2287,7 +2287,7 @@ function warmGateImages() {
        门是进门第一眼（必须已经在缓存里），内厅在 760ms 后就要露出来；
        接待员（65 KB）要 2.4s 之后才淡入，留给她自己慢慢下。 */
     "assets/archive-door.webp?v=20260922a",
-    "assets/archive-hall.webp?v=20260922n"
+    "assets/archive-hall.webp?v=20260922o"
   ];
   list.forEach(function (u) {
     var im = new Image();
