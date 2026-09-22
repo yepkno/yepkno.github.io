@@ -1832,44 +1832,43 @@ img{display:block}
    ⚠️ **舞台 `.arc-stage` 是一个恒定 1.5 的长宽比盒子**（`max()` 撑满视口 → 等价于 cover）：
       这样三张图永不拉伸变形，而门洞／门扇的百分比在任何屏幕上都是同一套数字。
       UI（问候语 / 调阅台 / 底部提示）挂在 `.arcwall` 上，**不跟着舞台被裁**。
-   ⚠️ 素材：`archive-door.webp`（正立面）/`archive-hall.webp`（内厅）/`archive-staff.webp`（接待员·透明底）。
+   ⚠️ 素材：`archive-door.webp`（正立面）/ `archive-hall.webp`（内厅）。
+   ⭐ **三版（用户："接待员呢、前台呢、深度不够、两侧书架离中间太近"）**：接待员与横向长前台
+      **整幅画进内厅图**（站在台后）—— 不再有独立人物图层，所以她没有单独淡入，跟着场景一起亮；
+      中殿拉开（柱廊退到左右两端）、纵深加到八个开间。`archive-staff.webp` 随之作废（已删）。
    ⚠️ 层序：`.arc-scene`(0) < `.arc-ext`(2) < 卡纸(6) < `.ks-bar`(6，在外层)。类名一律 `arc` 前缀。
    ══════════════════════════════════════════════════════════════════════════ */
 .arcwall{--ar-x0:30.5%;--ar-x1:69.5%;--ar-y0:21.5%}     /* 门洞的四个百分比：量自 door 图 */
 /* ⚠️⚠️ 舞台是恒定 1.5 的盒子：视口比例大于 1.5（**宽而扁的窗口 / 手机横屏**）时上下会被裁掉。
-   接待员与气泡**必须按"可见底边"定位**，否则她被切在膝盖以下（1440×700 实测会切 ~58px）。
-   `--ar-crop` ＝ 舞台每边被裁掉的高度（视口比例 ≤1.5 时为 0）。 */
+   `--ar-crop` ＝ 舞台每边被裁掉的高度（视口比例 ≤1.5 时为 0）。
+   问候语要挂在**她的头顶之上**，所以位置必须按"可见底边"换算，否则扁窗口里气泡被顶出画面。 */
 .arc-stage{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
   width:max(100%,calc(100vh * 1.5));height:max(100%,calc(100vw / 1.5))}
 .arcwall{
   --ar-stage-h:max(100vh, calc(100vw / 1.5));
   --ar-crop:max(0px, calc((var(--ar-stage-h) - 100vh) / 2));
-  --ar-foot:calc(var(--ar-crop) + 4vh);                       /* 她的脚离舞台底边 */
-  --ar-staff-h:min(calc(var(--ar-stage-h) * .545), 68vh)}      /* 身高：舞台 54.5%，扁窗口封顶 68vh
-     ⚠️ 这个系数是**合成预演比出来的**（0.637 与 0.545 各出一版真画幅对比）：
-        大一点就像“贴在镜头前的巨型立牌”，小一点纵深才读得出来 —— 她是"站在馆里的人"。 */
+  /* ⭐ 三版加：内厅场景整体先放大一档（1.15）。
+     为什么要它：图是按"开阔"出的，1440 宽屏上她显得小（用户："接待员呢"）；
+     放大后**她跟着变大**，而两侧柱廊被推出画面、中央反而更开阔 —— 一举两得，且零出图成本。
+     ⚠️ 她画在图里、挂在舞台的**竖直中线附近**（头顶离中线只差 1.5% 舞台高），
+        所以缩放对她的挂点几乎无影响（0.485 → 0.483，约 3px）。 */
+  --ar-zoom:1.15;
+  --ar-head:calc(var(--ar-stage-h) * .483 - var(--ar-crop))}
 
-/* ── ① 内厅（门背后那一层）＋ 接待员 ───────────────────────────────────── */
-.arc-scene{position:absolute;inset:0;z-index:0;transform:scale(1);
+/* ── ① 内厅（门背后那一层）─────────────────────────────────────────────── */
+.arc-scene{position:absolute;inset:0;z-index:0;transform:scale(var(--ar-zoom,1));
   transition:transform 2.6s cubic-bezier(.3,.02,.26,1)}
-.arcwall.push .arc-scene{transform:scale(1.06)}
+.arcwall.push .arc-scene{transform:scale(calc(var(--ar-zoom,1) * 1.06))}
 .arc-hall{position:absolute;inset:0;
-  background:url("assets/archive-hall.webp?v=20260922b") center/100% 100% no-repeat}
+  background:url("assets/archive-hall.webp?v=20260922c") center/100% 100% no-repeat}
 .arc-hallv{position:absolute;inset:0;
   background:radial-gradient(ellipse 60% 44% at 50% 44%,rgba(255,252,244,.26),rgba(255,250,240,0) 72%),
     linear-gradient(180deg,rgba(58,42,24,.20),rgba(58,42,24,0) 24%,
       rgba(58,42,24,0) 68%,rgba(58,42,24,.26))}
-/* 接待员：透明底立像（宽高比与 webp 一致 → 永不拉伸）；阴影单独一层，落在她脚下 */
-.arc-sh{position:absolute;left:50%;bottom:calc(var(--ar-foot) - 1.4vh);z-index:1;
-  width:19%;height:2.8%;transform:translateX(-50%);opacity:0;pointer-events:none;border-radius:50%;
-  background:radial-gradient(ellipse at 50% 50%,rgba(62,48,32,.44),rgba(62,48,32,0) 70%);
-  transition:opacity .9s ease 1.15s}
-.arc-staff{position:absolute;left:50%;bottom:var(--ar-foot);z-index:2;
-  height:var(--ar-staff-h);aspect-ratio:368/1200;
-  transform:translateX(-50%);opacity:0;pointer-events:none;
-  background:url("assets/archive-staff.webp?v=20260922b") center bottom/100% 100% no-repeat;
-  transition:opacity .9s ease 1.15s}
-.arcwall.push .arc-sh,.arcwall.push .arc-staff{opacity:1}
+/* 中庭正中一小片极淡的压暗 —— 把浅调插画人物的轮廓从大理石里托出来（三版加，.16 就够） */
+.arc-her{position:absolute;left:50%;bottom:0;z-index:1;width:34%;height:64%;
+  transform:translateX(-50%);pointer-events:none;
+  background:radial-gradient(ellipse 46% 62% at 50% 86%,rgba(58,44,26,.16),rgba(58,44,26,0) 72%)}
 
 /* ── ② 外景：三片立面（中间挖空＝门洞）＋ 两片门扇 ───────────────────────── */
 .arc-ext{position:absolute;inset:0;z-index:2;transform-origin:50% 46%;
@@ -1891,10 +1890,8 @@ img{display:block}
 .arc-ext::after{content:"";position:absolute;inset:0;pointer-events:none;
   background:radial-gradient(ellipse 74% 62% at 50% 46%,rgba(48,34,18,0) 52%,rgba(48,34,18,.30) 100%)}
 
-/* ── ③ 问候语气泡（位置＝她头顶之上 3vh —— 扁窗口里也跟着她走）─────────────────
-   ⚠️ 气泡挂 `.arcwall`（底边＝视口底），而她的 `--ar-foot` 是相对**舞台**底边的 ——
-      两者差一个 `--ar-crop`，所以这里**不能**再减 crop：她的脚离视口底就是 4vh。 */
-.arc-say{position:absolute;left:50%;bottom:calc(7vh + var(--ar-staff-h));
+/* ── ③ 问候语气泡（挂在**她的头顶之上** —— 三版起她画在图里，挂点量自图）────────── */
+.arc-say{position:absolute;left:50%;bottom:calc(var(--ar-head) + 2vh);
   z-index:6;width:min(580px,88vw);
   transform:translate(-50%,10px);opacity:0;pointer-events:none;text-align:center;
   transition:opacity .5s ease,transform .6s cubic-bezier(.3,.02,.3,1)}
@@ -1967,7 +1964,7 @@ img{display:block}
   .arc-opts{gap:18px}
 }
 @media (prefers-reduced-motion:reduce){
-  .arc-scene,.arc-ext,.arc-leaf,.arc-staff,.arc-sh{transition-duration:.01ms !important;
+  .arc-scene,.arc-ext,.arc-leaf{transition-duration:.01ms !important;
     transition-delay:0s !important}
 }
 
@@ -4049,8 +4046,7 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
           <div class="arc-scene">
             <div class="arc-hall" aria-hidden="true"></div>
             <div class="arc-hallv" aria-hidden="true"></div>
-            <span class="arc-sh" aria-hidden="true"></span>
-            <div class="arc-staff" id="arcStaff" aria-hidden="true"></div>
+            <div class="arc-her" aria-hidden="true"></div>
           </div>
           <div class="arc-ext" id="arcExt">
             <i class="arc-face arc-face-l" aria-hidden="true"></i>
@@ -4562,6 +4558,6 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 <script src="study-plan.js?v=20260922c"></script>
 <script src="docs.js?v=20260921c"></script>
 <script src="app.js?v=20260920f"></script>
-<script src="knowledge.js?v=20260922o"></script>
+<script src="knowledge.js?v=20260922p"></script>
 </body>
 </html>
