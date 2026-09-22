@@ -1579,9 +1579,9 @@ var KTH_SHELVES = {
     motto: "凡动手做过、且还想再做一次的，都留在这里 —— 分五间屋子收着。",
     fb: "etc",
     parts: [
-      { k: "ai",  name: "AI 相关",  rn: "I",   en: "Artificial Intelligence", note: "从提示词到 Agent" },
-      { k: "gis", name: "GIS 相关", rn: "II",  en: "Geographic Information",  note: "空间数据的采集、处理与成图" },
-      { k: "cad", name: "CAD 相关", rn: "III", en: "Computer-Aided Design",   note: "图纸、建模与二次开发" },
+      { k: "ai",  name: "AI 应用",     rn: "I",   en: "Artificial Intelligence", note: "从提示词到 Agent" },
+      { k: "gis", name: "地理空间系统", rn: "II",  en: "Geospatial Systems",      note: "空间数据的采集、处理与成图" },
+      { k: "cad", name: "CAD 制图",    rn: "III", en: "Computer-Aided Design",   note: "图纸、建模与二次开发" },
       { k: "pl",  name: "编程语言", rn: "IV",  en: "Languages",               note: "语法、工具链与踩过的坑" },
       { k: "etc", name: "其他领域", rn: "V",   en: "Miscellany",              note: "放不进前四格、迟早用得上的" }
     ]
