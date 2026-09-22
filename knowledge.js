@@ -1797,6 +1797,291 @@ function kthClose() {
   if (sh) sh.classList.remove("kth-part");
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   知识文档 · **馆藏原件 ＝ 罗马图书馆**（2026-09-22 新做）
+   用户原话："馆藏原件要有一个深邃、宏大、千万不能小家子气的图书馆，采用罗马风格建筑体系，
+   我希望点击按钮后有一个开门的动画，视角逐渐放大到博物馆内，中间站着一个女性、可爱、20-24岁的
+   接待员，不提供任何按钮，她会先说一句'早上好/中午好/下午好/晚上好，请问您需要调取哪篇文档资料？'，
+   你再点击就会弹出一个文本框：需要输入编号，输入编号格式对了才会弹出对应的文档信息，
+   不对就回复抱歉，你输入的文档编号不存在"
+   ⚠️ 场景里**零按钮**：进门＝点画面；报编号＝键盘回车。卡纸里只有文本式的调取／回到目录。
+   ⚠️ 时序（改任一步都要回头改后面每步的 delay，视觉与 CSS 里的 transition 是对表的）：
+       点门 → `open`（门扇 1.45s 转开）→ 760ms `push`（外景放大淡出 ＋ 内厅推近 ＋ 她淡入）
+            → 2400ms 问候语打字机 → 之后随便点一下画面 → 调阅台
+   ⚠️ 编号规则（用户口述）：**A/B ＋ 部分 01-05 ＋ 序号 001**；`S` 前缀是站内补的馆务档。
+   ══════════════════════════════════════════════════════════════════════════ */
+var ARC_LETTER = { tech: "A", humanities: "B" };
+var arcIdxCache = null;
+var arcState = "";          /* "" | door | opening | inside | ask | slip */
+var arcTimers = [];
+var arcHit = null;          /* 调阅单上那一件 */
+
+function arcEl(id) { return document.getElementById(id); }
+function arcPad(n, w) { var s = String(n); while (s.length < w) s = "0" + s; return s; }
+function arcSet(id, t) {
+  var el = arcEl(id);
+  if (el) el.textContent = (t == null ? "" : t);
+}
+function arcAfter(fn, ms) { var t = window.setTimeout(fn, ms); arcTimers.push(t); return t; }
+/* 入场类名一律【rAF ＋ 60ms 兜底】：headless / 后台标签下 rAF 会被节流甚至不跑（本仓踩过） */
+function arcOn(el, cls) {
+  if (!el) return;
+  el.hidden = false;
+  el.classList.remove(cls);
+  void el.offsetWidth;
+  requestAnimationFrame(function () { el.classList.add(cls); });
+  window.setTimeout(function () { el.classList.add(cls); }, 60);
+}
+function arcOff(el, cls) { if (el) { el.classList.remove(cls); el.hidden = true; } }
+
+/* 编号表：{ "A01001": {doc, shelf, part, code} } —— `sub` 决定落在第几个部分，部分内按 docs.js 顺序排 */
+function arcBuildIndex() {
+  var map = {};
+  ["tech", "humanities"].forEach(function (sh) {
+    var conf = KTH_SHELVES[sh];
+    if (!conf) return;
+    var docs = knShelfDocs(sh);
+    conf.parts.forEach(function (p, pi) {
+      var seq = 0;
+      docs.forEach(function (d) {
+        if ((d.sub || conf.fb) !== p.k) return;
+        seq++;
+        var code = ARC_LETTER[sh] + arcPad(pi + 1, 2) + arcPad(seq, 3);
+        map[code] = { doc: d, shelf: sh, part: p, code: code };
+      });
+    });
+  });
+  /* ⚠️ 站内补的 `S` 前缀：馆务文档（《取阅须知》《原件清单》）不在 A/B 两库里，
+        不给编号就彻底没有入口 —— 用户口述的规则只覆盖 A/B，这一条在报告里言明。 */
+  knShelfDocs("archive").forEach(function (d, i) {
+    var code = "S" + arcPad(i + 1, 5);
+    map[code] = { doc: d, shelf: "archive", part: null, code: code };
+  });
+  return map;
+}
+function arcIndex() {
+  if (!arcIdxCache) arcIdxCache = arcBuildIndex();
+  return arcIdxCache;
+}
+/* 输入归一化：全角→半角、去掉空格/连字符/点、转大写；部分号少写一位也认（A1001 → A01001） */
+function arcNorm(raw) {
+  var t = String(raw == null ? "" : raw).replace(/[\uFF01-\uFF5E]/g, function (c) {
+    return String.fromCharCode(c.charCodeAt(0) - 0xFEE0);
+  });
+  t = t.replace(/[\s\-_.·、,，/\\]/g, "").toUpperCase();
+  if (/^[ABS]\d{4}$/.test(t)) t = t.charAt(0) + "0" + t.slice(1);
+  return t;
+}
+/* 问候语随时段走（5-11 早上／11-13 中午／13-18 下午／其余 晚上） */
+function arcGreetWord() {
+  var h = (new Date()).getHours();
+  if (h >= 5 && h < 11) return "早上好";
+  if (h >= 11 && h < 13) return "中午好";
+  if (h >= 13 && h < 18) return "下午好";
+  return "晚上好";
+}
+function arcGreetText() { return arcGreetWord() + "，请问您需要调取哪篇文档资料？"; }
+function arcHint(t) {
+  var el = arcEl("arcHint");
+  if (!el) return;
+  el.textContent = t || "";
+  el.classList.toggle("on", !!t);
+}
+/* ⚠️⚠️ 判"这一层真的开着"**不能只看 `hidden`** —— 要两个条件。
+   `hidden === false` 只是半个条件：**年度修习那张纸（`#ksta`）在切走分类之后会留着
+   `hidden=false`**（它的父级 `.ks-study` 已经 `display:none` 了，所以肉眼根本看不见），
+   而 ESC 分级链原先只判 `hidden` → **那张看不见的纸会把 ESC 吃掉一次**，
+   表现就是"按了 ESC 什么都没发生"（2026-09-22 在馆藏原件的回归里抓到：
+   现场 dump 出 `paper:false` 而画面上什么纸都没有）。
+   `getClientRects().length` 在「自身或任一祖先 `display:none`」时为 0 —— 这才叫"真的在画面上"。
+   ⚠️ 别用 `offsetParent === null` 代替：`position:fixed` 的元素恒为 null。 */
+function ksRendered(el) {
+  return !!(el && !el.hidden && el.getClientRects().length > 0);
+}
+/* 这一层是否"在场"：`#arcWall` 显示着，**且阅读页没打开** ——
+   ⚠️ 阅读页是叠在它上面的另一层（进正文时 `#knShelf` 只是 `visibility:hidden`，
+      `#arcWall.hidden` 仍然是 false）→ 判"在场"只看 `hidden` 会把正文页里的 ESC 抢走。
+   ⚠️⚠️ 判阅读页**也不能用 `style.display !== "none"`**：它初始 `display:none` 是写在 **CSS** 里的，
+      而代码里有人把它清成了空串 → `"" !== "none"` 恒真，判据整个失效（当天实测过一次）。
+      统一走 `ksRendered`。 */
+function arcActive() {
+  var w = arcEl("arcWall");
+  if (!w || w.hidden) return false;
+  return !ksRendered(arcEl("knowledgeDetail"));
+}
+function arcCloseCard() {
+  var c = arcEl("arcCard");
+  if (c) { c.classList.remove("on"); c.hidden = true; }
+  arcOff(arcEl("arcErr"), "shake");
+  var a = arcEl("arcAsk"); if (a) a.hidden = false;
+  var s = arcEl("arcSlip"); if (s) s.hidden = true;
+  arcHit = null;
+}
+function arcReset() {
+  for (var i = 0; i < arcTimers.length; i++) window.clearTimeout(arcTimers[i]);
+  arcTimers = [];
+  arcHit = null;
+  arcState = "";
+  var w = arcEl("arcWall");
+  if (w) w.classList.remove("in", "open", "push");
+  arcOff(arcEl("arcSay"), "on");
+  arcSet("arcSayB", "");
+  arcCloseCard();
+  var inp = arcEl("arcCode"); if (inp) inp.value = "";
+  arcHint("");
+}
+/* 问候语：逐字打出（`prefers-reduced-motion` 下整句直出） */
+function arcSay() {
+  var box = arcEl("arcSay"), b = arcEl("arcSayB");
+  if (!box || !b) return;
+  var txt = arcGreetText();
+  arcOn(box, "on");
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reduce) { b.textContent = txt; return; }
+  var i = 0;
+  b.textContent = "";
+  (function step() {
+    if (i > txt.length) return;
+    b.textContent = txt.slice(0, i);
+    i++;
+    arcAfter(step, 56);
+  })();
+}
+function arcOpen() {
+  var w = arcEl("arcWall");
+  if (!w) return;
+  arcReset();
+  arcBind();
+  w.hidden = false;
+  void w.offsetWidth;
+  requestAnimationFrame(function () { w.classList.add("in"); });
+  window.setTimeout(function () { w.classList.add("in"); }, 60);
+  arcState = "door";
+  arcHint("轻触门扉 · 进入馆内");
+}
+function arcClose() {
+  arcReset();
+  var w = arcEl("arcWall");
+  if (w) w.hidden = true;
+}
+/* 点门 → 两片门扇转开 ＋ 镜头推入到内厅 */
+function arcEnter() {
+  var w = arcEl("arcWall");
+  if (!w || arcState !== "door") return;
+  arcState = "opening";
+  arcHint("");
+  w.classList.add("open");
+  arcAfter(function () { w.classList.add("push"); }, 760);
+  arcAfter(function () {
+    arcState = "inside";
+    arcSay();
+    arcHint("点一下画面 · 向接待员报出文档编号");
+  }, 2400);
+}
+/* 再点画面 → 弹出调阅台（文本框） */
+function arcAskOpen() {
+  if (arcState === "inside" || arcState === "slip") arcState = "ask";
+  if (arcState !== "ask") return;
+  cardRestore();
+  var tip = arcEl("arcTip");
+  if (tip) {
+    tip.innerHTML = "编号＝<b>A／B</b>（技术／人文）＋ <b>01–05</b>（部分）＋ <b>001</b>（序号）<br>" +
+      "例 <b>A01001</b> ／ <b>B04002</b> · 本馆现存 <b>" + Object.keys(arcIndex()).length +
+      "</b> 件 · 回车确认";
+  }
+  arcOn(arcEl("arcCard"), "on");
+  arcHint("");
+  arcAfter(function () { var i = arcEl("arcCode"); if (i) i.focus(); }, 190);
+}
+function cardRestore() {
+  var a = arcEl("arcAsk"); if (a) a.hidden = false;
+  var s = arcEl("arcSlip"); if (s) s.hidden = true;
+  var e = arcEl("arcErr"); if (e) { e.hidden = true; e.textContent = ""; }
+  arcHit = null;
+}
+/* 提交编号：命中 → 调阅单；没命中（含格式不对）→ 同一句回话 */
+function arcSubmit() {
+  if (arcState !== "ask") return;
+  var inp = arcEl("arcCode");
+  var hit = arcIndex()[arcNorm(inp ? inp.value : "")];
+  var er = arcEl("arcErr");
+  if (!hit) {
+    if (er) {
+      er.textContent = "抱歉，你输入的文档编号不存在";
+      er.hidden = false;
+      er.classList.remove("shake");
+      void er.offsetWidth;
+      er.classList.add("shake");
+    }
+    if (inp) { if (inp.select) inp.select(); inp.focus(); }
+    return;
+  }
+  arcHit = hit;
+  arcState = "slip";
+  if (er) { er.hidden = true; er.textContent = ""; }
+  arcSet("arcSlipC", "NO. " + hit.code);
+  arcSet("arcSlipT", hit.doc.title || "（无题）");
+  arcSet("arcSlipS", hit.doc.summary || "");
+  var lib = hit.shelf === "tech" ? "技术文库" : hit.shelf === "humanities" ? "人文文库" : "馆务";
+  arcSet("arcSlipM", lib + " ｜ " + (hit.part ? hit.part.rn + " · " + hit.part.name : "馆内须知") +
+    (hit.doc.date ? " ｜ " + hit.doc.date : "") +
+    (hit.doc.tags && hit.doc.tags.length ? " ｜ " + hit.doc.tags.join(" · ") : ""));
+  var a = arcEl("arcAsk"); if (a) a.hidden = true;
+  var s = arcEl("arcSlip"); if (s) s.hidden = false;
+}
+/* 调阅单 → 阅读页（`openKnowledge` 会把 `#knShelf` 整块收走，本层也在里面） */
+function arcReadNow() {
+  if (arcState !== "slip" || !arcHit) return;
+  var d = arcHit.doc;
+  arcHint("");
+  openKnowledge(d);
+}
+function arcBind() {
+  var w = arcEl("arcWall");
+  if (!w) return;
+  if (!w.__arc) {
+    w.__arc = 1;
+    w.addEventListener("click", function (e) {
+      /* 卡纸内部的点击不算"点画面" —— 否则输入框刚弹出来就被自己关掉 */
+      if (e.target.closest && e.target.closest(".arc-card")) return;
+      if (arcState === "door") arcEnter();
+      else if (arcState === "inside" || arcState === "slip") arcAskOpen();
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key !== "Enter") return;
+      /* ⚠️ 输入框里那一下回车**必须排除**：它在 `#arcCode` 上已经 `arcSubmit()` 出了调阅单，
+         事件再冒到这儿时状态正好是 `slip` → 会把刚生成的调阅单**立刻**当"回车阅读"吃掉
+         （2026-09-22 实测：填完编号按回车直接蹦进正文，跳过了调阅单）。 */
+      var t = e.target;
+      if (t && t.id === "arcCode") return;
+      if (arcState === "slip" && arcActive()) { e.preventDefault(); arcReadNow(); }
+    });
+  }
+  var inp = arcEl("arcCode");
+  if (inp && !inp.__arc) {
+    inp.__arc = 1;
+    inp.addEventListener("keydown", function (e) {
+      if (e.key !== "Enter") return;
+      e.preventDefault();
+      arcSubmit();
+    });
+  }
+  var g = arcEl("arcGo");
+  if (g && !g.__arc) { g.__arc = 1; g.addEventListener("click", arcSubmit); }
+  var bk = arcEl("arcToPortal");
+  if (bk && !bk.__arc) {
+    bk.__arc = 1;
+    bk.addEventListener("click", function () { knShelfBack(); });
+  }
+  var rd = arcEl("arcRead");
+  if (rd && !rd.__arc) { rd.__arc = 1; rd.addEventListener("click", arcReadNow); }
+  var ag = arcEl("arcAgain");
+  if (ag && !ag.__arc) {
+    ag.__arc = 1;
+    ag.addEventListener("click", function () { if (arcState === "slip") arcAskOpen(); });
+  }
+}
+
 function knOpenShelf(shelf) {
   var list = knShelfDocs(shelf);
   if (!list.length) return;
@@ -1832,8 +2117,11 @@ function knOpenShelf(shelf) {
   if (st) { st.classList.toggle("kn-home-on", bright); st.classList.add("kn-subpage"); }
   kstFileClose();                      // 换分类时，收起上一级留下的抽屉
   kthClose();                          // 阅览厅先收（幂等），下面按分类重新开
+  arcClose();                          // 罗马图书馆同理先收（幂等）
   // 技术文库 / 人文文库 ＝ 学院阅览厅（2026-09-22 四·五版）—— 两个分类共用这一套
   if (shelf === "tech" || shelf === "humanities") kthOpen(shelf);
+  // 馆藏原件 ＝ 罗马图书馆（2026-09-22 新做）：站在门外，点画面推门进去
+  if (shelf === "archive") arcOpen();
   ksPageReset();                        // 以及可能开着的独立页 / 二级详情
   if (shelf === "rule") kstRender();    // 「年度修习」＝学院大厅 ＋ 六个入口（其余三格仍走卡片列表）
   knPortalClock(false);
@@ -1842,6 +2130,7 @@ function knOpenShelf(shelf) {
 // 分类空间 → 回门户目录
 function knShelfBack() {
   kthClose();
+  arcClose();
   var sh = document.getElementById("knShelf");
   if (sh) { sh.classList.remove("ks-in"); sh.hidden = true; sh.setAttribute("data-shelf", ""); }
   knShelfList = [];
@@ -1974,7 +2263,12 @@ function warmGateImages() {
        不预热的话，点「技术文库」的瞬间才开始下 306 KB，大厅会先白一下。 */
     "assets/tech-hall.webp?v=20260922a",
     /* 人文文库 · 同一座楼的老书房（2026-09-22 五版新增，308 KB）—— 同样必须预热 */
-    "assets/hum-hall.webp?v=20260922a"
+    "assets/hum-hall.webp?v=20260922a",
+    /* 馆藏原件 · 罗马图书馆（2026-09-22 新增）：**只预热"门"和"内厅"**——
+       门是进门第一眼（必须已经在缓存里），内厅在 760ms 后就要露出来；
+       接待员（65 KB）要 2.4s 之后才淡入，留给她自己慢慢下。 */
+    "assets/archive-door.webp?v=20260922a",
+    "assets/archive-hall.webp?v=20260922a"
   ];
   list.forEach(function (u) {
     var im = new Image();
@@ -2041,24 +2335,37 @@ function warmGateImages() {
       return;
     }
     // ESC 的层级：门 > 单件详情 > 法则纸 > 独立页 > 修习档案 > 阅读页 > 整个舞台
+    // ⚠️ 这五级一律走 `ksRendered`（`hidden=false` 但祖先已 display:none 的不算"开着"），
+    //    否则一张看不见的纸／页会白吃掉一次 ESC（见 `ksRendered` 的注释）。
     var kleaf = document.getElementById("ksLeaf");
-    if (kleaf && !kleaf.hidden) { ksLeafClose(); return; }
+    if (ksRendered(kleaf)) { ksLeafClose(); return; }
     var klaw = document.getElementById("ksLaw");
-    if (klaw && !klaw.hidden) { kstLawClose(); return; }
+    if (ksRendered(klaw)) { kstLawClose(); return; }
     var kpage = document.getElementById("ksPage");
-    if (kpage && !kpage.hidden) { ksPageClose(); return; }
+    if (ksRendered(kpage)) { ksPageClose(); return; }
     var kfile = document.getElementById("kstFile");
-    if (kfile && !kfile.hidden) { kstFileClose(); return; }
+    if (ksRendered(kfile)) { kstFileClose(); return; }
+    // 馆藏原件：调阅台/调阅单开着 → 先收卡纸（回到内厅）；否则退出这一格（回门户）
+    if (arcActive()) {
+      if (arcState === "ask" || arcState === "slip") {
+        arcCloseCard();
+        arcState = "inside";
+        arcHint("点一下画面 · 向接待员报出文档编号");
+        return;
+      }
+      knShelfBack();
+      return;
+    }
     // 技术文库：停在某个部分页 → 先回大厅（五个入口），别一步退出知识文档
     var kthsec = document.getElementById("kthSec");
-    if (kthsec && !kthsec.hidden) { kthHome(); return; }
+    if (ksRendered(kthsec)) { kthHome(); return; }
     // 最后才收大厅里那张纸 —— 回到"进场只看见前台对话条"的状态
     var kpaper = document.getElementById("ksta");
-    if (kpaper && !kpaper.hidden) { ksPaper(false); return; }
+    if (ksRendered(kpaper)) { ksPaper(false); return; }
     var st = document.getElementById("knowledgeStage");
     if (st && !st.hidden) {
       var kd = document.getElementById("knowledgeDetail");
-      if (kd && kd.style.display !== "none") {
+      if (ksRendered(kd)) {
         // 详情内 ESC = 回到门户首页
         knBackToHome();
       } else if (ex) {
