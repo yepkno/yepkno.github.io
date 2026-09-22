@@ -1881,12 +1881,12 @@ function arcGreetWord() {
   return "晚上好";
 }
 function arcGreetText() { return arcGreetWord() + "，请问您需要调取哪篇文档资料？"; }
-function arcHint(t) {
-  var el = arcEl("arcHint");
-  if (!el) return;
-  el.textContent = t || "";
-  el.classList.toggle("on", !!t);
-}
+/* ⚠️ 底部提示条已按用户要求**整个移除**（2026-09-22：那条白色渐变底把场景底部压出一道白边，
+   很出戏 —— 见 `index.html` 里被注释掉的 `.arc-hint` 样式）。
+   引导改由两层承担：她的时段问候（"请问您需要调取哪篇文档资料？"）＋ 卡纸里的文本选项。
+   `arcHint()` 保留为**空操作** —— 状态机里十来个调用点先不动，将来想恢复提示时
+   把 `#arcHint` 元素和 `.arc-hint` 样式加回来就能用。 */
+function arcHint(t) { }
 /* ⚠️⚠️ 判"这一层真的开着"**不能只看 `hidden`** —— 要两个条件。
    `hidden === false` 只是半个条件：**年度修习那张纸（`#ksta`）在切走分类之后会留着
    `hidden=false`**（它的父级 `.ks-study` 已经 `display:none` 了，所以肉眼根本看不见），
@@ -2287,7 +2287,7 @@ function warmGateImages() {
        门是进门第一眼（必须已经在缓存里），内厅在 760ms 后就要露出来；
        接待员（65 KB）要 2.4s 之后才淡入，留给她自己慢慢下。 */
     "assets/archive-door.webp?v=20260922a",
-    "assets/archive-hall.webp?v=20260922h"
+    "assets/archive-hall.webp?v=20260922i"
   ];
   list.forEach(function (u) {
     var im = new Image();

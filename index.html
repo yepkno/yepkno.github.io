@@ -1853,12 +1853,11 @@ img{display:block}
      ⚠️ 她画在图里、挂在舞台的**竖直中线附近**（头顶离中线只差 1.5% 舞台高），
         所以缩放对她的挂点几乎无影响（0.485 → 0.483，约 3px）。 */
   --ar-zoom:1.15;
-  /* 她头顶的高度（量自内厅图：十版 0.502 × 全高 → 离舞台底边 0.498）。
+  /* 她头顶的高度（量自内厅图：十一版 0.500 × 全高 → 离舞台底边 0.498，实测刚好对上）。
      ⚠️ 换内厅图**必须重量**。⚠️⚠️ 别用"第一条暗行／最陡下降行"这种全宽带判据 —— 穹顶的
         湿壁画、凹格与拱券轮廓都会在带子里制造假台阶（已连骗三次：0.396 / 0.424）。
      ✅ 唯一可靠：**把竖直带收窄到只压住她头发**（x 0.475–0.525），剖面会出现一条干净的大台阶
-        （十版：167 → 139 → 105 → 85），落差就是发顶；再画线目视确认。
-        （她现在是蓝发呆毛造型，呆毛细、窄带量不出来 —— 气泡与呆毛之间留的 2vh 够用。） */
+        （十一版：195 → 163 → 125 → 99 → 88），落差就是发顶；再画线目视确认。 */
   --ar-head:calc(var(--ar-stage-h) * .498 - var(--ar-crop))}
 
 /* ── ① 内厅（门背后那一层）─────────────────────────────────────────────── */
@@ -1866,7 +1865,7 @@ img{display:block}
   transition:transform 2.6s cubic-bezier(.3,.02,.26,1)}
 .arcwall.push .arc-scene{transform:scale(calc(var(--ar-zoom,1) * 1.06))}
 .arc-hall{position:absolute;inset:0;
-  background:url("assets/archive-hall.webp?v=20260922h") center/100% 100% no-repeat}
+  background:url("assets/archive-hall.webp?v=20260922i") center/100% 100% no-repeat}
 .arc-hallv{position:absolute;inset:0;
   background:radial-gradient(ellipse 60% 44% at 50% 44%,rgba(255,252,244,.26),rgba(255,250,240,0) 72%),
     linear-gradient(180deg,rgba(58,42,24,.20),rgba(58,42,24,0) 24%,
@@ -1956,12 +1955,16 @@ img{display:block}
 .arc-slip-m{margin:12px 0 0;padding-top:11px;font-size:11px;letter-spacing:.1em;
   color:var(--kh-dim3);border-top:1px solid var(--kh-line2)}
 
-/* ── ⑤ 底部提示（与 `.kth-hint` 同一副面孔）────────────────────────────── */
+/* ── ⑤ 底部提示条：**已按用户要求移除**（2026-09-22 截图反馈"把下面那个白色的提示框去掉"）——
+   那条白色渐变底（`--kh-hint`）会在场景底部压出一道白边，很出戏。
+   引导改由她的时段问候 ＋ 卡纸里的文本选项承担；`arcHint()` 在 knowledge.js 里已是空操作。
+   将来要恢复：把下面这段样式 ＋ `<p class="arc-hint" id="arcHint">` 元素一起加回来。
 .arc-hint{position:absolute;left:0;right:0;bottom:0;z-index:5;margin:0;opacity:0;
   padding:46px 20px 20px;font-size:12.5px;line-height:1.8;letter-spacing:.1em;text-align:center;
   color:var(--kh-dim2);pointer-events:none;transition:opacity .5s ease;
   background:linear-gradient(180deg,rgba(253,251,246,0) 0%,var(--kh-hint) 44%)}
 .arc-hint.on{opacity:1}
+──────────────────────────────────────────────────────────────────────────── */
 
 @media (max-width:900px){
   .arc-say{width:min(520px,92vw)}
@@ -4113,7 +4116,7 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
           </div>
         </div>
 
-        <p class="arc-hint" id="arcHint"></p>
+        <!-- 底部提示条（#arcHint）已按用户 2026-09-22 要求移除 —— 见上面 .arc-hint 的注释。 -->
       </div>
 
       <div class="ks-wrap">
@@ -4581,6 +4584,6 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 <script src="study-plan.js?v=20260922c"></script>
 <script src="docs.js?v=20260921c"></script>
 <script src="app.js?v=20260920f"></script>
-<script src="knowledge.js?v=20260922u"></script>
+<script src="knowledge.js?v=20260922v"></script>
 </body>
 </html>
