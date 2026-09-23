@@ -2712,9 +2712,48 @@ body.map-dragging{-webkit-user-select:none;user-select:none;cursor:grabbing}
       留出 60px —— 那 60px 原本是舞台顶栏的位置，而阅读页里顶栏已被 `kn-subpage` 隐藏，
       于是**露出一条 `.stagewall` 的深色底**。整页都是深色时看不出来，换成纸面后
       它就是一条很扎眼的黑边（2026-09-23 抓图时发现）。 */
-.stagewall #knowledgeDetail{inset:0;padding-top:34px;background:linear-gradient(to bottom,#fbf9f4,#f2eee6)}
+/* ── 阅读页的"纸说话"：每一架上一种呼应主题的**学院风底纹**（2026-09-23）
+   用户："阅读界面的背景分别加一个呼应技术和人文主题的，并且满足学院风"。
+   ⚠️ 全部用 **CSS 多背景层**画（不是生成图）——阅读页要长时间滚动、正文压在上面，
+      插画背景的纹理/明暗不可控；CSS 画**零出图成本、零清晰度风险、且对比度可精确定**。
+   ⚠️⚠️ **每一架都必须把 `background-image` 整套写全**：背景是"整体替换"而不是叠加，
+      少写一层就会漏（tech 的方格纸漏到 humanities 上）。别靠源序赌特异性。
+   ⚠️ `background-attachment` 用默认的 `scroll`：滚动容器里背景固定于可视区、
+      **不随内容滚** → 观感是"字在格纸上移动"。（改用 `local` 会让背景只覆盖第一屏、
+      往下滚就是纯色 —— 因为背景尺寸＝元素高度而不是滚动内容高度。） */
+.stagewall #knowledgeDetail{
+  inset:0;padding-top:34px;
+  /* ① 左侧"图纸刻度带" ② 主格线 120px（横/竖） ③ 方格纸 24px（横/竖） ④ 齿轮准星水印 ⑤ 冷白纸底 */
+  background-color:#f6f3ed;
+  background-image:
+    linear-gradient(90deg,rgba(70,96,132,.22) 0 1px,transparent 1px),
+    repeating-linear-gradient(180deg,rgba(70,96,132,.26) 0 1px,transparent 1px 22px),
+    repeating-linear-gradient(0deg,rgba(70,96,132,.11) 0 1px,transparent 1px 120px),
+    repeating-linear-gradient(90deg,rgba(70,96,132,.11) 0 1px,transparent 1px 120px),
+    repeating-linear-gradient(0deg,rgba(70,96,132,.075) 0 1px,transparent 1px 24px),
+    repeating-linear-gradient(90deg,rgba(70,96,132,.075) 0 1px,transparent 1px 24px),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120' fill='none' stroke='%233c5a82' stroke-opacity='.30' stroke-width='3' stroke-linecap='round'%3E%3Ccircle cx='60' cy='60' r='38' stroke-dasharray='11 7'/%3E%3Ccircle cx='60' cy='60' r='27'/%3E%3Ccircle cx='60' cy='60' r='8'/%3E%3Cpath d='M60 7v13M60 100v13M7 60h13M100 60h13'/%3E%3C/svg%3E"),
+    linear-gradient(to bottom,#fbf9f4,#f2eee6);
+  background-size:13px 100%, 13px 100%, auto, auto, auto, auto, 172px 172px, auto;
+  background-position:0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 30px calc(100% - 26px), 0 0;
+  background-repeat:no-repeat, no-repeat, repeat, repeat, repeat, repeat, no-repeat, no-repeat}
+/* 人文：**古籍抄本**的纸 —— 竖界行 ＋ 四周单线版框 ＋ 一枚朱红「學」印 */
 .stagewall #knowledgeDetail[data-shelf="humanities"]{
-  background:linear-gradient(to bottom,#faf5ea,#f2ebdb);--kd-font:var(--serif)}
+  --kd-font:var(--serif);
+  background-color:#f9f3e7;
+  background-image:
+    linear-gradient(rgba(150,110,60,.30) 0 1px,transparent 1px),
+    linear-gradient(rgba(150,110,60,.30) 0 1px,transparent 1px),
+    linear-gradient(90deg,rgba(150,110,60,.30) 0 1px,transparent 1px),
+    linear-gradient(90deg,rgba(150,110,60,.30) 0 1px,transparent 1px),
+    repeating-linear-gradient(90deg,rgba(150,110,60,.135) 0 1px,transparent 1px 38px),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect x='12' y='12' width='96' height='96' fill='none' stroke='%23a03418' stroke-opacity='.26' stroke-width='7'/%3E%3Ctext x='60' y='89' font-size='62' text-anchor='middle' fill='%23a03418' fill-opacity='.26' font-family='serif'%3E學%3C/text%3E%3C/svg%3E"),
+    linear-gradient(to bottom,#faf5ea,#f2ebdb);
+  background-size:100% 1px, 100% 1px, 1px 100%, 1px 100%, auto, 150px 150px, auto;
+  background-position:18px 18px, 18px calc(100% - 18px), 18px 18px, calc(100% - 18px) 18px,
+    0 0, 30px calc(100% - 26px), 0 0;
+  background-repeat:no-repeat, no-repeat, no-repeat, no-repeat, repeat, no-repeat, no-repeat}
+/* 档案纸：不加纹（罗马图书馆那一格的重点是场景与调阅台，正文纸保持素净） */
 .stagewall #knowledgeDetail[data-shelf="archive"]{background:linear-gradient(to bottom,#fbf7ee,#efe6d4)}
 /* 纸面上的滚动条：基类那条是 `rgba(255,255,255,.18)`（白滑块压白纸＝看不见） */
 .stagewall #knowledgeDetail::-webkit-scrollbar-track{background:rgba(150,124,80,.06)}
@@ -2722,7 +2761,13 @@ body.map-dragging{-webkit-user-select:none;user-select:none;cursor:grabbing}
 .stagewall #knowledgeDetail::-webkit-scrollbar-thumb:hover{background:rgba(150,124,80,.48)}
 #knowledgeDetail{scrollbar-color:rgba(150,124,80,.34) transparent}
 /* 正文字体跟着书架走（人文＝衬线）；标题本来就写死 `--serif`，不动 */
-#knowledgeDetail .content-body{font-family:var(--kd-font)}
+#knowledgeDetail .content-body{font-family:var(--kd-font);
+  /* 纸放薄一档：`--card` 是 86–88% 不透明的纸色，底纹只能透出十几个百分点 →
+     格线/界行只在正文四周露一圈，看着像"给卡片描了边"而不是"整页是一张纸"。
+     改成 ~65% 后底纹能穿过正文，同时文字仍是深墨压在浅纸上、对比度不受影响。 */
+  background:rgba(255,254,250,.66)}
+#knowledgeDetail[data-shelf="humanities"] .content-body{background:rgba(253,248,236,.62)}
+#knowledgeDetail[data-shelf="archive"] .content-body{background:rgba(253,248,238,.80)}
 /* 代码块：基类是写死的深色 `#0a0d11` —— 压在纸上像一块黑板。改成"印刷代码清单" */
 #knowledgeDetail .content-body pre{background:rgba(150,124,80,.11);color:var(--ks-ink2,var(--ks-ink));
   border-color:var(--ks-card-line)}
