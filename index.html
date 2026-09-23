@@ -1342,7 +1342,10 @@ img{display:block}
    ⚠️ 这一格从"冷静缜密的蓝 · 深色空间"改成**白纸学院风** —— 用户："算了星际风太丑了，
    还是你自己参考一下学院风的白色系为主风格"。变量必须跟着换成浅色，
    否则沿用变量的 `.ks-back` 等元素会变成"浅字压白底"，直接看不见。 */
-.kn-shelf[data-shelf="tech"]{--ks-ink:#2b2419;--ks-dim:#8a8371;--ks-accent:#b4462a;
+/* ⚠️ 选择器里带上 `#knowledgeDetail`（阅读页）—— 它的父节点是 `#knowledgeStage`、
+   **不在** `#knShelf` 里，所以**不会**继承 `--ks-*`。挂在这里＝**单一口径**：
+   以后改大厅配色，阅读页自动跟随，不用两处改。 */
+.kn-shelf[data-shelf="tech"], #knowledgeDetail{--ks-ink:#2b2419;--ks-dim:#8a8371;--ks-accent:#b4462a;
   --ks-card:rgba(255,254,250,.86);--ks-card-line:rgba(150,124,80,.30);
   --ks-shadow:0 10px 30px rgba(90,66,24,.12);--ks-radius:2px;--ks-track:.06em;
   --ks-glow:rgba(176,140,84,.16);--ks-top:rgba(252,250,245,.92);--ks-bot:rgba(246,242,234,.95)}
@@ -1359,7 +1362,7 @@ img{display:block}
    ⚠️ 这一格也从"红 · 深色空间"改成**暖纸学院风**（用户："人文文库也一样"）——
    变量必须同步换成浅色，否则 `.ks-back` 等沿用变量的元素会变成"浅字压白底"看不见。
    真正的暖色区分在 `.kthwall[data-shelf="humanities"]` 那组变量里，这里只兜底。 */
-.kn-shelf[data-shelf="humanities"]{--ks-ink:#332619;--ks-dim:#75613f;--ks-accent:#a03418;
+.kn-shelf[data-shelf="humanities"], #knowledgeDetail[data-shelf="humanities"]{--ks-ink:#332619;--ks-dim:#75613f;--ks-accent:#a03418;
   --ks-card:rgba(253,247,233,.88);--ks-card-line:rgba(150,110,60,.34);
   --ks-shadow:0 10px 30px rgba(96,62,20,.14);--ks-radius:3px;--ks-track:.05em;
   --ks-glow:rgba(178,132,72,.16);--ks-top:rgba(250,243,229,.92);--ks-bot:rgba(244,236,220,.95)}
@@ -1378,7 +1381,7 @@ img{display:block}
 /* ---------- 主题 archive：罗马图书馆的调阅台（暖褐 ＋ 档案卡）----------
    ⚠️ 2026-09-22 起这一格改走「罗马图书馆」（`.arcwall`）—— 卡片列表与 `hall-shelf.webp`
       都不再需要（门票那一格已整块让位），但 `--ks-*` 仍要给「← 回到目录」上色。 */
-.kn-shelf[data-shelf="archive"]{--ks-ink:#3a2b1c;--ks-dim:#8a7154;--ks-accent:#a8763a;
+.kn-shelf[data-shelf="archive"], #knowledgeDetail[data-shelf="archive"]{--ks-ink:#3a2b1c;--ks-dim:#8a7154;--ks-accent:#a8763a;
   --ks-card:rgba(252,247,235,.90);--ks-card-line:rgba(150,116,66,.32);
   --ks-shadow:0 20px 46px rgba(48,32,14,.26);--ks-radius:8px;--ks-track:.02em;
   --ks-glow:rgba(255,220,150,.34);--ks-top:rgba(255,246,226,.66);--ks-bot:rgba(64,44,20,.34)}
@@ -2679,6 +2682,139 @@ body.map-dragging{-webkit-user-select:none;user-select:none;cursor:grabbing}
 .tback:hover{color:var(--text);border-color:var(--accent);background:var(--accent-soft)}
 .tdtitle{font-size:19px;font-weight:600;color:var(--text)}
 .tdmeta{font-size:11px;color:var(--faint)}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   知识文档 · 阅读页换肤（2026-09-23）
+   用户："技术文库和人文文库点进去的阅读界面还是黑色的，和现有风格不搭。"
+   ⚠️ 做法：**不去逐条改** `.content-body` / `.doc-toc` / 表格 / 代码那些规则 ——
+      它们写的全是站点的**全局令牌**（`--text/--muted/--border/--card/--accent-text/…`）。
+      只要在 `#knowledgeDetail` 这一层**把令牌重定义成"纸"的那一套**，
+      底下所有规则**一行都不用动**就整体变成浅色纸面。这是本次最小、最不易漏的做法。
+   ⚠️ 那三组 `--ks-*` 调色板已把 `#knowledgeDetail` 加进选择器（见上面 tech/humanities/archive）：
+      默认（无 `data-shelf` 或未知值）落到 **tech 冷白纸** —— **绝不允许再出现黑底**。
+   ⚠️ 底纹必须带 ID 才压得住基类那条深色渐层 `.stagewall .detailview{background:…rgba(5,8,14,.95)}`
+      （那条是"两个 class"，同权重看源序，源序还比这里靠前）。
+   ══════════════════════════════════════════════════════════════════════════ */
+#knowledgeDetail{
+  --text:var(--ks-ink);            --muted:var(--ks-dim);
+  --faint:var(--ks-dim3,var(--ks-dim));
+  --border:var(--ks-card-line);    --card:var(--ks-card);
+  --accent-text:var(--ks-accent);  --code-inline:var(--ks-accent);
+  --accent-soft:var(--ks-glow);
+  --tag-bg:rgba(150,124,80,.10);
+  --sel:rgba(255,70,31,.22);
+  --on-accent:#fffdf6;             /* 朱红实心按钮上压白字（深墨只适合压在纯朱红上） */
+  --shadow:var(--ks-shadow);       --shadow-lift:var(--ks-shadow);
+  --kd-font:var(--sans);
+  color:var(--text)}
+/* 底＝同一座楼的"桌面"（与大厅 `.ks-warm` 同源，只是大厅那张是"墙上"）
+   ⚠️⚠️ 阅读页必须**盖满整个舞台**：基类 `.stagewall .detailview{inset:60px 0 0}` 会在顶部
+      留出 60px —— 那 60px 原本是舞台顶栏的位置，而阅读页里顶栏已被 `kn-subpage` 隐藏，
+      于是**露出一条 `.stagewall` 的深色底**。整页都是深色时看不出来，换成纸面后
+      它就是一条很扎眼的黑边（2026-09-23 抓图时发现）。 */
+.stagewall #knowledgeDetail{inset:0;padding-top:34px;background:linear-gradient(to bottom,#fbf9f4,#f2eee6)}
+.stagewall #knowledgeDetail[data-shelf="humanities"]{
+  background:linear-gradient(to bottom,#faf5ea,#f2ebdb);--kd-font:var(--serif)}
+.stagewall #knowledgeDetail[data-shelf="archive"]{background:linear-gradient(to bottom,#fbf7ee,#efe6d4)}
+/* 纸面上的滚动条：基类那条是 `rgba(255,255,255,.18)`（白滑块压白纸＝看不见） */
+.stagewall #knowledgeDetail::-webkit-scrollbar-track{background:rgba(150,124,80,.06)}
+.stagewall #knowledgeDetail::-webkit-scrollbar-thumb{background:rgba(150,124,80,.30)}
+.stagewall #knowledgeDetail::-webkit-scrollbar-thumb:hover{background:rgba(150,124,80,.48)}
+#knowledgeDetail{scrollbar-color:rgba(150,124,80,.34) transparent}
+/* 正文字体跟着书架走（人文＝衬线）；标题本来就写死 `--serif`，不动 */
+#knowledgeDetail .content-body{font-family:var(--kd-font)}
+/* 代码块：基类是写死的深色 `#0a0d11` —— 压在纸上像一块黑板。改成"印刷代码清单" */
+#knowledgeDetail .content-body pre{background:rgba(150,124,80,.11);color:var(--ks-ink2,var(--ks-ink));
+  border-color:var(--ks-card-line)}
+#knowledgeDetail .content-body pre code{color:inherit}
+
+/* ── 阅读页 · 笔记与批注（2026-09-23 用户："增加重点标红、注记、加粗等一系列笔记该有的修改功能"）
+   ⚠️ 这里是"看得见"的那一半（纸面配色）＋ 笔记 UI 的外观；
+      "改得动"的那一半（选区包裹、存读、撤销）在 `knowledge.js` 的 `notesModule`。 */
+/* 顶部笔记条（与 `.tdbar` 同一条纸面） */
+.nb-bar{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:-4px 0 16px}
+.nb-tag{font-size:10.5px;letter-spacing:.22em;color:var(--faint);
+  font-family:ui-monospace,Consolas,monospace}
+.nb-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;cursor:pointer;
+  font-family:inherit;font-size:12px;color:var(--muted);
+  background:rgba(255,255,255,.55);border:1px solid var(--border);border-radius:var(--r-pill);
+  transition:color .2s,border-color .2s,background .2s}
+.nb-chip b{font-weight:600;color:var(--accent-text)}
+.nb-chip:hover{color:var(--text);border-color:var(--accent);background:#fff}
+.nb-chip[aria-expanded="true"]{color:var(--on-accent);background:var(--accent);border-color:var(--accent)}
+.nb-chip[aria-expanded="true"] b{color:var(--on-accent)}
+.nb-chip[disabled]{opacity:.4;cursor:default;border-color:var(--border)}
+.nb-hint{font-size:11px;color:var(--faint)}
+/* 选区浮条：`position:fixed` 跟着选区走，**不能挂在 content-body 里**（会被滚动带走） */
+.nb-float{position:fixed;z-index:420;display:flex;align-items:center;gap:2px;padding:4px;
+  background:rgba(255,254,250,.97);border:1px solid var(--border);border-radius:var(--r-pill);
+  box-shadow:0 1px 2px rgba(90,66,24,.14),0 10px 26px rgba(90,66,24,.16);
+  transform:translate(-50%,-100%);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.nb-float[hidden]{display:none}
+.nb-float button{min-width:34px;height:30px;padding:0 9px;cursor:pointer;font-family:inherit;
+  font-size:12.5px;color:var(--muted);background:none;border:0;border-radius:var(--r-pill);
+  transition:color .16s,background .16s}
+.nb-float button:hover{color:var(--on-accent);background:var(--accent)}
+.nb-float .nb-sep{width:1px;height:18px;background:var(--border);margin:0 3px}
+.nb-float [data-nb="hot"]{color:var(--accent-text)}
+.nb-float [data-nb="hot"]:hover{color:var(--on-accent)}
+/* 正文里的笔记样式 —— 「红」用的是本架子的强调色（技术＝朱红 / 人文＝绛红 / 原件＝赭） */
+.content-body .nb-b{font-weight:700}
+.content-body .nb-hot{color:var(--accent-text);font-weight:600}
+.content-body .nb-hl{background:rgba(255,206,86,.44);border-radius:2px;
+  box-shadow:0 0 0 1px rgba(214,150,26,.18)}
+.content-body .nb-u{text-decoration:underline;text-decoration-color:var(--accent-text);
+  text-underline-offset:3px;text-decoration-thickness:1.5px}
+.content-body .nb-note{border-bottom:1px dashed var(--accent-text);cursor:pointer}
+.content-body .nb-mark{display:inline-block;margin:0 2px;padding:0 4px;cursor:pointer;
+  font-size:10px;line-height:15px;font-style:normal;vertical-align:super;
+  color:#fffdf6;background:var(--accent-text);border-radius:var(--r-pill)}
+/* 注记编辑卡 */
+.nb-pop{position:fixed;z-index:430;width:min(320px,86vw);padding:12px 13px 11px;
+  background:rgba(255,255,252,.98);border:1px solid var(--border);border-radius:var(--r-action);
+  box-shadow:0 1px 2px rgba(90,66,24,.14),0 14px 34px rgba(90,66,24,.18)}
+.nb-pop[hidden]{display:none}
+.nb-pop-t{margin:0 0 8px;font-size:10.5px;letter-spacing:.18em;color:var(--faint);
+  font-family:ui-monospace,Consolas,monospace}
+.nb-pop-in{display:block;width:100%;box-sizing:border-box;padding:8px 10px;resize:vertical;
+  font-family:inherit;font-size:13px;line-height:1.7;color:var(--text);
+  background:rgba(255,255,255,.78);border:1px solid var(--border);border-radius:var(--r-action);outline:none}
+.nb-pop-in:focus{border-color:var(--accent)}
+.nb-pop-b{display:flex;align-items:center;gap:8px;margin-top:9px}
+.nb-pop-b button{padding:6px 13px;cursor:pointer;font-family:inherit;font-size:12.5px;
+  color:var(--muted);background:none;border:1px solid var(--border);border-radius:var(--r-pill);
+  transition:color .18s,background .18s,border-color .18s,opacity .18s}
+.nb-pop-b .nb-ok{color:var(--on-accent);background:var(--accent);border-color:var(--accent)}
+.nb-pop-b .nb-ok:hover{opacity:.86}
+.nb-pop-b .nb-del{margin-right:auto;color:var(--accent-text)}
+.nb-pop-b .nb-del:hover{color:var(--on-accent);background:var(--accent);border-color:var(--accent)}
+/* 笔记列表（右上角浮层） */
+.nb-panel{position:fixed;z-index:425;right:18px;top:76px;width:min(300px,86vw);
+  max-height:min(62vh,540px);display:flex;flex-direction:column;padding:12px 12px 10px;
+  background:rgba(255,255,252,.98);border:1px solid var(--border);border-radius:var(--r-action);
+  box-shadow:0 1px 2px rgba(90,66,24,.14),0 14px 34px rgba(90,66,24,.18)}
+.nb-panel[hidden]{display:none}
+.nb-panel-h{margin:0 0 9px;font-size:10.5px;letter-spacing:.18em;color:var(--faint);
+  font-family:ui-monospace,Consolas,monospace}
+.nb-panel-list{overflow:auto;display:flex;flex-direction:column;gap:7px}
+.nb-panel-list button{text-align:left;cursor:pointer;font-family:inherit;font-size:12.5px;
+  line-height:1.65;color:var(--muted);background:rgba(150,124,80,.07);border:1px solid transparent;
+  border-radius:var(--r-action);padding:7px 9px;transition:color .16s,border-color .16s,background .16s}
+.nb-panel-list button b{display:block;color:var(--accent-text);font-size:10.5px;margin-bottom:3px;
+  letter-spacing:.1em;font-family:ui-monospace,Consolas,monospace}
+.nb-panel-list button:hover{color:var(--text);background:#fff;border-color:var(--border)}
+.nb-panel-empty{font-size:12px;color:var(--faint);padding:2px 1px 4px}
+.nb-panel-b{display:flex;gap:8px;margin-top:9px;padding-top:9px;border-top:1px solid var(--border)}
+.nb-panel-b button{flex:1;padding:6px 0;cursor:pointer;font-family:inherit;font-size:12px;
+  color:var(--muted);background:none;border:1px solid var(--border);border-radius:var(--r-pill);
+  transition:color .16s,border-color .16s}
+.nb-panel-b button:hover{color:var(--accent-text);border-color:var(--accent)}
+@media (max-width:600px){
+  .nb-float button{min-width:30px;height:28px;padding:0 7px;font-size:12px}
+  .nb-panel{left:10px;right:10px;width:auto;top:auto;bottom:12px;max-height:52vh}
+}
+
+
 .mono{font-family:ui-monospace,"SFMono-Regular",Consolas,monospace;letter-spacing:.08em}
 .tseg{display:inline-flex;gap:2px;padding:3px;background:rgba(0,0,0,.25);border:1px solid var(--border);margin-bottom:20px}
 .ts3{display:flex;align-items:center;gap:8px;padding:9px 22px;background:none;border:0;color:var(--muted);
@@ -4140,10 +4276,52 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
         <span class="tdtitle" id="knTitle"></span>
         <span class="tdmeta mono" id="knMeta"></span>
       </div>
+      <!-- ⭐ 阅读页 · 笔记条（2026-09-23 用户："增加重点标红、注记、加粗等一系列笔记该有的修改功能"）
+           逻辑全在 `knowledge.js` 的 `notesModule`；这里只有壳。 -->
+      <div class="nb-bar" id="nbBar">
+        <span class="nb-tag">NOTES</span>
+        <button class="nb-chip" id="nbListBtn" type="button" aria-expanded="false">
+          笔记 <b id="nbCount">0</b>
+        </button>
+        <button class="nb-chip" id="nbUndoBtn" type="button" disabled>撤销</button>
+        <button class="nb-chip" id="nbResetBtn" type="button" disabled>恢复原文</button>
+        <span class="nb-hint" id="nbHint">选中正文即可标重点 / 加注记</span>
+      </div>
       <div class="doc-wrap">
         <div class="content-body" id="knBody"></div>
         <aside class="doc-toc" id="knToc" hidden></aside>
       </div>
+
+      <!-- 笔记的三个浮层：`position:fixed`，**必须留在 `#knowledgeDetail` 内**——
+           它 `display:none` 时这几个也该跟着藏；`.stagewall` 上没有 transform/filter，
+           所以 fixed 仍然相对视口定位（不会被滚动带走）。 -->
+      <div class="nb-float" id="nbFloat" hidden role="toolbar" aria-label="笔记工具">
+        <button type="button" data-nb="bold" title="加粗"><b>B</b></button>
+        <button type="button" data-nb="hot" title="标红重点">重点</button>
+        <button type="button" data-nb="hl" title="荧光笔">荧光</button>
+        <button type="button" data-nb="ul" title="下划线"><u>U</u></button>
+        <button type="button" data-nb="note" title="加一条注记">注记</button>
+        <span class="nb-sep"></span>
+        <button type="button" data-nb="clear" title="清掉这段上的笔记格式">清除</button>
+      </div>
+      <div class="nb-pop" id="nbPop" hidden>
+        <p class="nb-pop-t" id="nbPopT">NEW NOTE</p>
+        <textarea class="nb-pop-in" id="nbPopIn" rows="3" placeholder="写给自己的话…"></textarea>
+        <div class="nb-pop-b">
+          <button type="button" class="nb-del" id="nbPopDel" hidden>删除</button>
+          <button type="button" class="nb-ok" id="nbPopOk">保存</button>
+          <button type="button" class="nb-cancel" id="nbPopCancel">取消</button>
+        </div>
+      </div>
+      <aside class="nb-panel" id="nbPanel" hidden>
+        <p class="nb-panel-h" id="nbPanelH">NOTES</p>
+        <div class="nb-panel-list" id="nbPanelList"></div>
+        <div class="nb-panel-b">
+          <button type="button" id="nbExport">导出</button>
+          <button type="button" id="nbImport">导入</button>
+        </div>
+      </aside>
+      <input id="nbFile" type="file" accept="application/json,.json" hidden>
     </div>
   </div>
 
@@ -4588,6 +4766,6 @@ footer .ft-legal b{color:var(--muted);font-weight:500}
 <script src="study-plan.js?v=20260922c"></script>
 <script src="docs.js?v=20260921c"></script>
 <script src="app.js?v=20260920f"></script>
-<script src="knowledge.js?v=20260922ab"></script>
+<script src="knowledge.js?v=20260923a"></script>
 </body>
 </html>

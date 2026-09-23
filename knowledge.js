@@ -2247,10 +2247,15 @@ function openKnowledge(d) {
   knPortalClock(false);
   var kd = document.getElementById("knowledgeDetail");
   kd.style.display = "";
+  /* ⭐ 阅读页跟着"这篇属于哪个书架"换肤（2026-09-23）——
+     属性只在这里写**一处**，CSS 用 `#knowledgeDetail[data-shelf=…]` 去取那一架的纸面色板。
+     ⚠️ 空值 / 未知书架会落到 tech 那套兜底（冷白纸），**任何情况下都不再出现黑底**。 */
+  kd.setAttribute("data-shelf", d.shelf || "");
   document.getElementById("knTitle").textContent = d.title;
   document.getElementById("knMeta").textContent = (d.date || "") + "  ·  知识文档";
   document.getElementById("knBody").innerHTML = d.content || "<p>暂无内容</p>";
   buildToc("knBody", "knToc");
+  if (typeof nbOpen === "function") nbOpen(d);   // 套用本篇已存的笔记（源文变了就不套，见 notesModule）
   kd.scrollTop = 0;
 }
 
@@ -2353,6 +2358,8 @@ function warmGateImages() {
       document.body.style.overflow = "";
       return;
     }
+    // 阅读页笔记：注记编辑卡 / 笔记列表 / 选区浮条开着 → 先收它们（它们浮在阅读页之上）
+    if (typeof nbEsc === "function" && nbEsc()) return;
     // ESC 的层级：门 > 单件详情 > 法则纸 > 独立页 > 修习档案 > 阅读页 > 整个舞台
     // ⚠️ 这五级一律走 `ksRendered`（`hidden=false` 但祖先已 display:none 的不算"开着"），
     //    否则一张看不见的纸／页会白吃掉一次 ESC（见 `ksRendered` 的注释）。
@@ -2387,4 +2394,422 @@ function warmGateImages() {
       }
     }
   });
+})();
+
+/* ---------- 8. 阅读页 · 笔记与批注（2026-09-23）--------------------------------
+   用户："增加重点标红、注记、加粗等一系列笔记该有的修改功能"。
+
+   ⭐ 设计取舍：**不做 `contenteditable`**，只做"加法式批注"（选区 → 外面包一层 `<span>`）。
+   理由：阅读页的正文来自 `docs.js`。若允许在页面上直接删字改字，等于给用户造出一份
+   **只存在于他这台设备**的副本；原文一更新，两边就再也对不上，而且误删是**静默**的。
+   批注是"往原文上加东西"，天然可撤销、可清空、出问题也不伤原文。
+   撤销因此自己实现（innerHTML 快照栈），不依赖浏览器的 undo。
+
+   存储：`localStorage`，键 = `kn_note_v1::<shelf>::<title>`。
+   ⚠️ 每条同时存**原文指纹**（长度 + djb2 散列）。开篇时指纹对不上（说明 `docs.js` 里这篇
+      改过）就**不套用**旧笔记 —— 否则包裹会落在错误的文字上；**也不删**，留着等原文回退。
+   ⚠️ 本站主题偏好是**刻意不持久化**的（"进站一律黑夜"的要求），但笔记**必须持久化**，
+      两者不冲突：笔记是用户自己写的内容，不是站点偏好。
+   ⚠️ 新增 class 一律 `nb-` 前缀（本站撞过两次类名，加类名前先 Grep 全站）。 */
+var nbOpen, nbEsc;   // `openKnowledge` 与 ESC 链在上面引用它们；调用都发生在运行时，安全
+(function notesModule() {
+  var LS = "kn_note_v1";
+  var MARKS = ".nb-b,.nb-hot,.nb-hl,.nb-u,.nb-note";
+  var cur = null;        // {key, hash, srcHtml}
+  var undo = [];         // innerHTML 快照栈（最多 30 步）
+  var lastRange = null;  // 点浮条那一刻的选区（点下去之前先克隆一份）
+  var editEl = null;     // 正在编辑的注记元素（null = 新建）
+
+  function $(id) { return document.getElementById(id); }
+  function bodyEl() { return $("knBody"); }
+  function detailEl() { return $("knowledgeDetail"); }
+  function detailOpen() {
+    var d = detailEl();
+    // ⚠️ 判"开着"用 `getClientRects()`，不用 `offsetParent` —— 后者对 fixed 元素恒为 null
+    //    （本项目的老坑，见 `ksRendered` 的注释）。
+    return !!(d && !d.hidden && d.style.display !== "none" && d.getClientRects().length > 0);
+  }
+
+  /* ---- 小工具 ------------------------------------------------------ */
+  function esc(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+  function djb2(s) {                       // 原文指纹：长度 + 散列（够用，不是安全用途）
+    var h = 5381, i = s.length;
+    while (i) { h = ((h * 33) ^ s.charCodeAt(--i)) >>> 0; }
+    return h.toString(36) + ":" + s.length;
+  }
+
+  /* ---- 存 / 读 ------------------------------------------------------ */
+  function readStore() {
+    if (!cur) return null;
+    var raw = null;
+    try { raw = localStorage.getItem(cur.key); } catch (e) { return null; }
+    if (!raw) return null;
+    try { return JSON.parse(raw); } catch (e) { return null; }
+  }
+  function save() {
+    if (!cur) return;
+    var b = bodyEl(); if (!b) return;
+    try {
+      if (b.querySelector(MARKS)) {
+        localStorage.setItem(cur.key, JSON.stringify({ v: 1, h: cur.hash, html: b.innerHTML }));
+      } else {
+        localStorage.removeItem(cur.key);   // 笔记被清空 → 不留空壳
+      }
+    } catch (e) { /* 隐私模式 / 配额满 → 静默降级为"本次会话有效" */ }
+    refreshBar();
+  }
+
+  /* ---- 状态与按钮 -------------------------------------------------- */
+  function markCount() {
+    var b = bodyEl();
+    return b ? b.querySelectorAll(".nb-note").length : 0;
+  }
+  function anyMarks() {
+    var b = bodyEl();
+    return !!(b && b.querySelector(MARKS));
+  }
+  function syncPanelBtn() {
+    var l = $("nbListBtn"), p = $("nbPanel");
+    if (l) l.setAttribute("aria-expanded", (p && !p.hidden) ? "true" : "false");
+  }
+  function refreshBar() {
+    var c = $("nbCount"); if (c) c.textContent = String(markCount());
+    var u = $("nbUndoBtn"); if (u) u.disabled = undo.length === 0;
+    var r = $("nbResetBtn"); if (r) r.disabled = !anyMarks();
+    syncPanelBtn();
+  }
+  function hint(t) { var h = $("nbHint"); if (h) h.textContent = t; }
+
+  /* ---- 撤销栈 ------------------------------------------------------ */
+  function pushUndo() {
+    var b = bodyEl(); if (!b) return;
+    undo.push(b.innerHTML);
+    if (undo.length > 30) undo.shift();
+    refreshBar();
+  }
+  function doUndo() {
+    var b = bodyEl();
+    if (!b || !undo.length) return;
+    b.innerHTML = undo.pop();
+    save(); refreshBar();
+  }
+
+  /* ---- 选区与浮条 -------------------------------------------------- */
+  function selRange() {
+    var s = window.getSelection();
+    if (!s || !s.rangeCount) return null;
+    var r = s.getRangeAt(0), b = bodyEl();
+    if (!b || r.collapsed || !b.contains(r.commonAncestorContainer)) return null;
+    return r;
+  }
+  function hideFloat() { var f = $("nbFloat"); if (f) f.hidden = true; }
+  function showFloat(rect) {
+    var f = $("nbFloat"); if (!f) return;
+    f.hidden = false;
+    var w = f.offsetWidth || 320, h = f.offsetHeight || 38;
+    var x = Math.max(w / 2 + 8, Math.min(rect.left + rect.width / 2, window.innerWidth - w / 2 - 8));
+    var y = rect.top - 8;
+    if (y - h < 8) y = rect.bottom + h + 10;        // 选区贴着顶 → 翻到下面
+    f.style.left = x + "px";
+    f.style.top = y + "px";
+  }
+  function onSelChange() {
+    if (!cur || !detailOpen()) { hideFloat(); return; }
+    var f = $("nbFloat");
+    if (f && !f.hidden && f.matches(":hover")) return;   // 鼠标正压在浮条上 → 别收
+    var r = selRange();
+    if (r) { lastRange = r.cloneRange(); showFloat(r.getBoundingClientRect()); }
+    else hideFloat();
+  }
+
+  /* ---- 包裹 / 解包 -------------------------------------------------- */
+  function wrapRange(range, tag, cls) {
+    var el = document.createElement(tag);
+    if (cls) el.className = cls;
+    try { range.surroundContents(el); }              // 干净路径
+    catch (e) {                                       // 跨了元素边界 → 抽出内容再包
+      var f = range.extractContents();
+      el.appendChild(f);
+      range.insertNode(el);
+    }
+    return el;
+  }
+  function unwrap(el) {
+    var p = el.parentNode; if (!p) return;
+    while (el.firstChild) p.insertBefore(el.firstChild, el);
+    p.removeChild(el);
+    p.normalize();
+  }
+  function removeNote(el) {
+    var m = el.nextElementSibling;
+    if (m && m.classList && m.classList.contains("nb-mark")) m.parentNode.removeChild(m);
+    unwrap(el);
+    renumber();
+  }
+  function renumber() {
+    var b = bodyEl(); if (!b) return;
+    var ms = b.querySelectorAll(".nb-mark");
+    for (var i = 0; i < ms.length; i++) {
+      ms[i].textContent = String(i + 1);
+      ms[i].setAttribute("data-i", String(i + 1));
+    }
+  }
+
+  /* ---- 施加格式 ---------------------------------------------------- */
+  function toggle(r, cls, tag) {
+    var host = r.commonAncestorContainer;
+    host = host.nodeType === 1 ? host : host.parentNode;
+    var inside = (host && host.closest) ? host.closest("." + cls) : null;
+    if (inside && r.toString() === inside.textContent) unwrap(inside);   // 再点一次 = 取消
+    else wrapRange(r, tag, cls);
+  }
+  function apply(kind) {
+    var b = bodyEl(); if (!b) return;
+    var r = (lastRange && !lastRange.collapsed) ? lastRange : selRange();
+    if (!r) { hideFloat(); return; }
+    pushUndo();
+    try { r = r.cloneRange(); } catch (e) {}
+    if (kind === "clear") {
+      var els = b.querySelectorAll(MARKS);
+      for (var i = els.length - 1; i >= 0; i--) {
+        var el = els[i];
+        if (r.intersectsNode(el)) {
+          if (el.classList.contains("nb-note")) removeNote(el); else unwrap(el);
+        }
+      }
+      renumber();
+    } else if (kind === "bold") { toggle(r, "nb-b", "b"); }
+    else if (kind === "ul") { toggle(r, "nb-u", "span"); }
+    else if (kind === "hot") { toggle(r, "nb-hot", "span"); }
+    else if (kind === "hl") { toggle(r, "nb-hl", "span"); }
+    lastRange = null;
+    save(); refreshBar(); hideFloat();
+    var s = window.getSelection(); if (s && s.removeAllRanges) s.removeAllRanges();
+  }
+
+  /* ---- 注记编辑卡 -------------------------------------------------- */
+  function closeNotePop() { var p = $("nbPop"); if (p) p.hidden = true; editEl = null; }
+  function openNotePop(el, rect) {
+    var pop = $("nbPop"); if (!pop) return;
+    editEl = el || null;
+    $("nbPopT").textContent = el ? "EDIT NOTE" : "NEW NOTE";
+    $("nbPopIn").value = el ? (el.getAttribute("data-note") || "") : "";
+    $("nbPopDel").hidden = !el;
+    pop.hidden = false;
+    var w = pop.offsetWidth || 320, h = pop.offsetHeight || 150;
+    var x = Math.max(10, Math.min(rect.left + rect.width / 2 - w / 2, window.innerWidth - w - 10));
+    var y = rect.bottom + 10;
+    if (y + h > window.innerHeight - 10) y = Math.max(10, rect.top - h - 10);
+    pop.style.left = x + "px"; pop.style.top = y + "px";
+    setTimeout(function () { var i = $("nbPopIn"); if (i) i.focus(); }, 30);
+  }
+  function saveNote() {
+    var txt = ($("nbPopIn") ? $("nbPopIn").value : "").replace(/\s+$/, "");
+    if (!txt) { closeNotePop(); return; }
+    if (editEl) {
+      pushUndo();
+      editEl.setAttribute("data-note", txt);
+      editEl.setAttribute("title", txt);
+      var m0 = editEl.nextElementSibling;
+      if (m0 && m0.classList && m0.classList.contains("nb-mark")) m0.setAttribute("title", txt);
+    } else {
+      var r = (lastRange && !lastRange.collapsed) ? lastRange : selRange();
+      if (!r) { closeNotePop(); return; }
+      pushUndo();
+      var el = wrapRange(r, "span", "nb-note");
+      el.setAttribute("data-note", txt);
+      el.setAttribute("title", txt);
+      var sup = document.createElement("sup");
+      sup.className = "nb-mark"; sup.setAttribute("title", txt);
+      if (el.nextSibling) el.parentNode.insertBefore(sup, el.nextSibling);
+      else el.parentNode.appendChild(sup);
+      renumber();
+      lastRange = null;
+    }
+    save(); refreshBar(); closeNotePop();
+    var s = window.getSelection(); if (s && s.removeAllRanges) s.removeAllRanges();
+    if ($("nbPanel") && !$("nbPanel").hidden) buildPanel();
+  }
+  function delNote() {
+    if (!editEl) return;
+    pushUndo();
+    removeNote(editEl);
+    save(); refreshBar(); closeNotePop();
+    if ($("nbPanel") && !$("nbPanel").hidden) buildPanel();
+  }
+
+  /* ---- 笔记列表 ---------------------------------------------------- */
+  function buildPanel() {
+    var b = bodyEl(), list = $("nbPanelList");
+    if (!b || !list) return;
+    list.innerHTML = "";
+    var ns = b.querySelectorAll(".nb-note");
+    var h = $("nbPanelH");
+    if (h) h.textContent = "NOTES · 本篇 " + ns.length + " 条";
+    if (!ns.length) {
+      list.innerHTML = '<p class="nb-panel-empty">还没有注记。选中正文 → 点「注记」。</p>';
+      return;
+    }
+    var mk = function (el, i) {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.innerHTML = "<b>#" + (i + 1) + "</b>" + esc(el.getAttribute("data-note") || "");
+      btn.addEventListener("click", function () {
+        if (el.scrollIntoView) el.scrollIntoView({ block: "center", behavior: "smooth" });
+        var old = el.style.outline;
+        el.style.outline = "2px solid var(--accent-text)";
+        el.style.outlineOffset = "2px";
+        setTimeout(function () { el.style.outline = old; el.style.outlineOffset = ""; }, 1100);
+      });
+      list.appendChild(btn);
+    };
+    for (var i = 0; i < ns.length; i++) mk(ns[i], i);
+  }
+
+  /* ---- 导出 / 导入（笔记只在本地，换设备得自己搬）------------------ */
+  function exportNotes() {
+    var rec = readStore();
+    if (!rec || !cur) return;
+    var blob = new Blob([JSON.stringify({ title: cur.key, saved: rec }, null, 2)],
+      { type: "application/json" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "notes-" + cur.key.replace(/[\\/:*?"<>|\s]+/g, "_").slice(-48) + ".json";
+    document.body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); if (a.parentNode) a.remove(); }, 300);
+  }
+  function importNotes(ev) {
+    var f = ev.target.files && ev.target.files[0];
+    if (!f || !cur) return;
+    var fr = new FileReader();
+    fr.onload = function () {
+      try {
+        var o = JSON.parse(String(fr.result));
+        var rec = (o && o.saved) ? o.saved : o;
+        if (!rec || !rec.html) return;
+        if (rec.h !== cur.hash &&
+            !window.confirm("这份笔记是针对另一版原文导出的，套用后位置可能不准。仍要套用吗？")) return;
+        pushUndo();
+        bodyEl().innerHTML = rec.html;
+        renumber(); save(); refreshBar();
+        hint("已导入本篇笔记");
+      } catch (e) { /* 不是本格式的文件，忽略 */ }
+      ev.target.value = "";
+    };
+    fr.readAsText(f);
+  }
+
+  /* ---- 对外：开篇套用 / ESC 分级 ----------------------------------- */
+  nbOpen = function (d) {
+    if (!detailEl()) return;
+    cur = {
+      key: LS + "::" + (d.shelf || "") + "::" + (d.title || ""),
+      hash: djb2(d.content || ""),
+      srcHtml: bodyEl() ? bodyEl().innerHTML : ""
+    };
+    undo = []; editEl = null; lastRange = null;
+    hideFloat(); closeNotePop();
+    if ($("nbPanel")) $("nbPanel").hidden = true;
+    var rec = readStore();
+    if (rec && rec.html && rec.h !== cur.hash) {
+      hint("原文已更新 · 本篇旧笔记未套用（仍留在本地）");
+    } else if (rec && rec.html) {
+      bodyEl().innerHTML = rec.html;
+      renumber();
+      hint("已套用本篇笔记 · 选中正文可继续标");
+    } else {
+      hint("选中正文即可标重点 / 加注记");
+    }
+    refreshBar();
+  };
+  nbEsc = function () {
+    if ($("nbPop") && !$("nbPop").hidden) { closeNotePop(); return true; }
+    if ($("nbPanel") && !$("nbPanel").hidden) { $("nbPanel").hidden = true; syncPanelBtn(); return true; }
+    if ($("nbFloat") && !$("nbFloat").hidden) { hideFloat(); return true; }
+    return false;
+  };
+
+  /* ---- 绑定 -------------------------------------------------------- */
+  (function bind() {
+    var f = $("nbFloat");
+    if (f) {
+      // ⚠️ 必须挡掉 mousedown：否则按下去的瞬间选区就塌了，点击时已经不知道该包谁
+      f.addEventListener("mousedown", function (e) { e.preventDefault(); });
+      f.addEventListener("click", function (e) {
+        var btn = e.target.closest ? e.target.closest("button[data-nb]") : null;
+        if (!btn) return;
+        var kind = btn.getAttribute("data-nb");
+        if (kind === "note") {
+          var r = (lastRange && !lastRange.collapsed) ? lastRange : selRange();
+          if (r) { openNotePop(null, r.getBoundingClientRect()); hideFloat(); }
+          else { hint("先选中一段正文，再点「注记」"); hideFloat(); }
+        } else apply(kind);
+      });
+    }
+    document.addEventListener("selectionchange", function () {
+      if (!cur) return;
+      onSelChange();
+    });
+    var b = bodyEl();
+    if (b) {
+      b.addEventListener("click", function (e) {
+        var t = e.target;
+        var el = (t.closest) ? t.closest(".nb-note") : null;
+        if (!el && t.closest) {
+          var m = t.closest(".nb-mark");
+          if (m && m.previousElementSibling &&
+              m.previousElementSibling.classList.contains("nb-note")) el = m.previousElementSibling;
+        }
+        if (el) { lastRange = null; hideFloat(); openNotePop(el, el.getBoundingClientRect()); }
+      });
+      // Ctrl/⌘+Z：只在阅读页里接管（别的地方还给浏览器）
+      document.addEventListener("keydown", function (e) {
+        if (!cur || !detailOpen()) return;
+        if ($("nbPop") && !$("nbPop").hidden) return;
+        if ((e.ctrlKey || e.metaKey) && !e.shiftKey && (e.key === "z" || e.key === "Z")) {
+          if (!undo.length) return;
+          e.preventDefault(); doUndo();
+        }
+      });
+    }
+    var lb = $("nbListBtn");
+    if (lb) lb.addEventListener("click", function () {
+      var p = $("nbPanel"); if (!p) return;
+      p.hidden = !p.hidden;
+      if (!p.hidden) buildPanel();
+      syncPanelBtn();
+    });
+    var ub = $("nbUndoBtn"); if (ub) ub.addEventListener("click", doUndo);
+    var rb = $("nbResetBtn");
+    if (rb) rb.addEventListener("click", function () {
+      if (!anyMarks() || !cur) return;
+      if (!window.confirm("清掉本篇的全部笔记、恢复原文？\n（清掉之后仍可按「撤销」找回）")) return;
+      pushUndo();                                   // 先存一份 → 「撤销」能把笔记找回来
+      bodyEl().innerHTML = cur.srcHtml;
+      try { localStorage.removeItem(cur.key); } catch (e) {}
+      refreshBar();
+      hint("已恢复原文 · 试按「撤销」可以找回来");
+    });
+    var ok = $("nbPopOk"); if (ok) ok.addEventListener("click", saveNote);
+    var dl = $("nbPopDel"); if (dl) dl.addEventListener("click", delNote);
+    var cx = $("nbPopCancel"); if (cx) cx.addEventListener("click", closeNotePop);
+    var pin = $("nbPopIn");
+    if (pin) pin.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); saveNote(); }
+    });
+    var exp = $("nbExport"); if (exp) exp.addEventListener("click", exportNotes);
+    var imp = $("nbImport");
+    if (imp) imp.addEventListener("click", function () { var fi = $("nbFile"); if (fi) fi.click(); });
+    var fi = $("nbFile"); if (fi) fi.addEventListener("change", importNotes);
+    // 离开阅读页时，把浮层一并收掉（否则返回后它们还挂在屏幕上）
+    var bk = $("knowledgeBack");
+    if (bk) bk.addEventListener("click", function () {
+      hideFloat(); closeNotePop();
+      if ($("nbPanel")) $("nbPanel").hidden = true;
+      syncPanelBtn();
+    });
+  })();
 })();
