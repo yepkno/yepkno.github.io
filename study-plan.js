@@ -355,7 +355,7 @@ window.STUDY_PLAN = {
       done: "所有项目都有 Git 历史，能回滚 / 比对 / 分支" }
   ],
 
-  /* ── 软件工具（表 03，29 条；pri = S/A/B，inst = 🟢/🟡/🔵） ────────────── */
+  /* ── 软件工具（表 03，29 条 ＋ 2026-09-24 用户补的 5 条 ＝ 35 条；pri = S/A/B，inst = 🟢/🟡/🔵） ── */
   tools: [
     { name: "ChatGPT", cat: "AI对话/多模态", pri: "S", nature: "AI平台/网页+客户端", inst: "🟡 可直接网页使用；客户端可选", url: "https://chatgpt.com/", why: "复杂分析、学习、代码审查、图像/PDF/资料理解", learn: "项目规划；多模态；文件分析；代码解释；自定义工作流思路" },
     { name: "Claude", cat: "AI对话/长文本", pri: "A", nature: "AI平台/网页+客户端", inst: "🟡 可直接网页使用；客户端可选", url: "https://claude.ai/", why: "长文档和代码分析，作为第二意见", learn: "文件分析、代码审查、长上下文工作方式" },
@@ -363,6 +363,16 @@ window.STUDY_PLAN = {
     { name: "DeepSeek / Qwen / GLM / Kimi / Seed", cat: "国产AI模型", pri: "A", nature: "AI平台/模型服务", inst: "🟡 以网页/官方客户端为主；按实际平台选择", url: "各厂商官方平台", why: "中文任务、成本与模型分流", learn: "知道各自优势场景；会切换模型；不必逐个深学" },
     { name: "Claude Code", cat: "AI Coding Agent", pri: "S", nature: "终端AI编程工具", inst: "🟢 需要安装 CLI/相关运行环境", url: "https://docs.anthropic.com/en/docs/claude-code/overview", why: "终端式 AI 开发，适合复杂代码库和多步骤任务", learn: "项目上下文、文件修改、命令执行、Git、Agent 流程、安全权限" },
     { name: "OpenCode", cat: "AI Coding Agent", pri: "S", nature: "终端AI编程工具", inst: "🟢 需要安装 CLI", url: "https://opencode.ai/", why: "模型选择灵活，适合作为备用 / 替代 AI Coding Agent", learn: "模型配置、Agent 任务、终端操作、Git、MCP" },
+    /* 2026-09-24 用户要求补：AI Agent 侧的五个新面孔。
+       ⚠️ 定位已逐个核实过（别凭名字猜）：
+          Codex ＝ OpenAI 的终端编程智能体；ZCode ＝ 智谱 Z.ai 的开源 coding agent 工作台（GLM 生态）；
+          WorkBuddy ＝ 本知识库站点的制作环境（桌面智能体）；OpenClaw ＝ 自托管个人助手（原 Clawd/Moltbot）；
+          Hermes ＝ Nous Research 的开源自改进 Agent（不是同名的 Hermes IDE 终端工作台）。 */
+    { name: "Codex", cat: "AI Coding Agent", pri: "A", nature: "终端 AI 编程智能体（OpenAI）", inst: "🟢 需要安装 CLI；也提供 IDE 扩展", url: "https://github.com/openai/codex", why: "OpenAI 阵营的终端编程智能体，作为 Claude Code 之外的第二/第三选择（第一方集成、交互延迟低）", learn: "安装与登录、审批与沙箱模式、多文件改动与测试循环、与 Git 协作、和 Claude Code 的分工" },
+    { name: "ZCode", cat: "AI Coding Agent", pri: "A", nature: "开源 coding agent 工作台（智谱 Z.ai）", inst: "🟢 需要安装（桌面端/浏览器/终端三入口；从源码构建需 Node ＋ pnpm）", url: "https://github.com/zai-org/ZCode", why: "GLM 生态的开源 agent 工作台：三种入口共用一套 Agent 运行时，也能接本地模型", learn: "安装与工作区概念、Agent CLI（zcode ／ zcode --web）、模型与供应商配置、MCP、远程工作区（SSH/WSL）" },
+    { name: "WorkBuddy", cat: "AI 桌面智能体", pri: "A", nature: "桌面 AI 助手 / 智能体工作台", inst: "🟢 需要下载安装（桌面客户端）", url: "https://www.workbuddy.cn/", why: "能读写本机文件、跑脚本与浏览器的桌面智能体 —— 这个知识库站点就是在这个环境里做出来的", learn: "任务与技能（Skill）编排、本地文件与命令执行、连接器接入、定时自动化" },
+    { name: "OpenClaw", cat: "自托管个人 Agent", pri: "B", nature: "开源自托管的个人 AI 助手平台", inst: "🟢 需要安装并跑在自己机器上（自托管）", url: "https://openclaw.ai/", why: "把 AI 助手跑在自己机器上、从日常聊天软件里指挥，数据不出本地 —— 与 n8n 那条自动化线能接上", learn: "自托管与网关、渠道接入、模型配置、Skills 扩展；尤其要懂权限与安全边界（提示注入仍是行业未解难题）" },
+    { name: "Hermes", cat: "自托管个人 Agent", pri: "B", nature: "开源自改进 Agent（Nous Research）", inst: "🟢 需要安装 CLI（Linux/macOS/WSL2）", url: "https://github.com/NousResearch/hermes-agent", why: "带「学习回路」的 Agent：跨会话持久记忆 ＋ 自己写技能，可接多家模型与消息平台 —— 与 OpenClaw 同类但侧重不同", learn: "安装与模型供应商配置、记忆/技能机制、MCP、消息渠道、定时任务、沙箱执行" },
     { name: "VS Code", cat: "代码编辑器", pri: "S", nature: "桌面软件/代码编辑器", inst: "🟢 需要下载安装", url: "https://code.visualstudio.com/", why: "Python、Web、Agent、MCP 的主工作台", learn: "扩展、终端、调试、Git、项目结构、Python/TS 开发" },
     { name: "Visual Studio 2026", cat: "IDE", pri: "S", nature: "桌面软件/专业IDE", inst: "🟢 需要下载安装", url: "https://visualstudio.microsoft.com/", why: "C#、WPF、ArcGIS Pro SDK、AutoCAD .NET 核心开发环境", learn: "解决方案、NuGet、Debugger、项目模板、发布、Git" },
     { name: "Git", cat: "版本控制", pri: "S", nature: "开发工具/命令行软件", inst: "🟢 需要下载安装", url: "https://git-scm.com/", why: "防止 AI 改崩代码；让你能回滚、比较、分支", learn: "clone、commit、branch、merge、diff、reset、log" },
